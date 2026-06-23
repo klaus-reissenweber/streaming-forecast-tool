@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { AlgoPositioningModule } from "@/components/release/AlgoPositioningModule";
 import { ChannelMixRecommendation } from "@/components/release/ChannelMixRecommendation";
-import { DailyEntryGrid } from "@/components/release/DailyEntryGrid";
+import { DailyEntrySection } from "@/components/release/DailyEntrySection";
 import { FlagsPanel } from "@/components/release/FlagsPanel";
 import { GenrePlaybook } from "@/components/release/GenrePlaybook";
 import { HealthBanner } from "@/components/release/HealthBanner";
@@ -87,7 +87,11 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
           <FlagsPanel phase={viewModel.phase} />
         </section>
 
-        <DailyEntryGrid />
+        <DailyEntrySection
+          releaseId={id}
+          initialDailyData={viewModel.dailyData}
+          status={viewModel.header.status}
+        />
 
         <section className="space-y-6" aria-label="Charts">
           <StreamCurveChart
