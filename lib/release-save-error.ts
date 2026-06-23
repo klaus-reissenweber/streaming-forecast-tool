@@ -1,10 +1,10 @@
 /** User-facing copy when a release insert may succeed on retry. */
 export const RELEASE_SAVE_ERROR_RETRY =
-  "Could not save release — please try again. If this keeps happening, contact your platform admin.";
+  "Could not save release. Please try again. If this keeps happening, contact your platform admin.";
 
 /** User-facing copy when retry is unlikely to help. */
 export const RELEASE_SAVE_ERROR_FATAL =
-  "Could not save release — internal error. Please contact your platform admin and don't retry.";
+  "Could not save release. Internal error. Please contact your platform admin and don't retry.";
 
 export interface ClassifiableDbError {
   code?: string | null;
@@ -20,7 +20,7 @@ const PERSISTENT_POSTGRES_PREFIXES = ["22", "23"] as const;
 
 /**
  * Explicit codes where a retry might succeed (network, pool, JWT expiry, RLS/auth blips).
- * Not exhaustive — unknown codes default to fatal (conservative).
+ * Not exhaustive. Unknown codes default to fatal (conservative).
  */
 const RETRIABLE_ERROR_CODES = new Set<string>([
   // PostgREST connection / pool failures
@@ -28,7 +28,7 @@ const RETRIABLE_ERROR_CODES = new Set<string>([
   "PGRST001",
   "PGRST002",
   "PGRST003",
-  // JWT expired — session refresh may recover on retry
+  // JWT expired. Session refresh may recover on retry
   "PGRST301",
   // Postgres connection / availability
   "08000",
@@ -39,7 +39,7 @@ const RETRIABLE_ERROR_CODES = new Set<string>([
   "08007",
   "57P01",
   "57P03",
-  // insufficient_privilege — often RLS or expired auth; user asked to treat as retriable
+  // insufficient_privilege. Often RLS or expired auth; user asked to treat as retriable
   "42501",
 ]);
 

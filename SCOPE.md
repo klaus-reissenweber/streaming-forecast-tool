@@ -1,4 +1,4 @@
-# Streaming Forecast Platform — Build Scope
+# Streaming Forecast Platform: Build Scope
 
 **Project:** Web-based forecasting and monitoring tool for music releases. Single-release focus, model retrains as new releases close.
 **Owner:** Red Light Creative
@@ -15,9 +15,9 @@ A web app that does three things in sequence for each music release:
 2. **Monitors** the release daily by accepting actual stream/save/source-mix data and surfacing health flags + tactical responses.
 3. **Learns** from each closed release by retraining the underlying regression coefficients and using them on the next release.
 
-The current model is already fitted and characterized — coefficients, error bands, genre rates, and playbooks are all specified in this document. The build is taking the working prototype (see Claude artifact v3.2) and turning it into a persistent, deployable product.
+The current model is already fitted and characterized. Coefficients, error bands, genre rates, and playbooks are all specified in this document. The build is taking the working prototype (see Claude artifact v3.2) and turning it into a persistent, deployable product.
 
-## Scope — IN
+## Scope: IN
 
 - One release in focus in the working view (multiple active releases allowed; dashboard picks via dropdown or most-recent default)
 - Pre-release forecast: streams + saves + paid social impressions/reach/clicks + channel mix recommendation
@@ -29,7 +29,7 @@ The current model is already fitted and characterized — coefficients, error ba
 - Public deployment with simple URL
 - Saves catalog data + current coefficients seeded on first run
 
-## Scope — OUT (explicit, do not build)
+## Scope: OUT (explicit, do not build)
 
 - Enforcing a single active release at creation time (overlapping launches are allowed; UI handles selection)
 - User authentication, multi-user, or role-based permissions
@@ -39,7 +39,7 @@ The current model is already fitted and characterized — coefficients, error ba
 - TikTok/Instagram performance modules
 - Email notifications or scheduled reports
 - Any feature that needs background workers or job schedulers
-- Genres outside dubstep / house / jam-bass / downtempo / big-room
+- Genres outside dubstep / house / melodic-bass / downtempo / big-room
 
 If something is desirable but not listed in IN, it's OUT for v1. Resist scope creep.
 
@@ -104,10 +104,10 @@ streaming-forecast/
 | `id` | uuid | Primary key |
 | `track_name` | text | "Is It Over Now?" |
 | `artist_name` | text | "Elderbrook" |
-| `genre` | text | Enum: dubstep, house, jam/bass, downtempo, big-room |
+| `genre` | text | Enum: dubstep, house, melodic-bass, downtempo, big-room |
 | `monthly_listeners` | bigint | Numeric, no formatting |
 | `is_feature` | boolean | Solo vs feature/collab |
-| `editorial_tier` | int | 0–3 — expected Spotify editorial coverage at lock time (see definitions below) |
+| `editorial_tier` | int | 0–3, expected Spotify editorial coverage at lock time (see definitions below) |
 | `release_date` | date | Thursday assumed |
 | `release_type` | text | single / ep / album (default `single`); drives Spotify CPS lookup |
 | `spotify_format` | text | marquee / showcase (default `marquee`); drives Spotify CPS lookup |
@@ -128,7 +128,7 @@ streaming-forecast/
 | 0 | None | No editorial coverage of any kind. |
 | 1 | Small | 1–2 placements on smaller editorial playlists (genre-specific, regional, niche). Not on flagship playlists. |
 | 2 | Medium | A few placements including at least one prominent placement (mid-tier editorial cover slot), or multiple smaller placements totaling meaningful reach. |
-| 3 | Large | Major coverage — New Music Friday placement, flagship editorial cover slot, or OOH/billboard support tied to the release. |
+| 3 | Large | Major coverage: New Music Friday placement, flagship editorial cover slot, or OOH/billboard support tied to the release. |
 
 Canonical copy lives in `lib/constants.ts` as `EDITORIAL_TIER_DEFINITIONS`. The `/new` form shows the selected tier's description below the toggle.
 
@@ -182,11 +182,11 @@ Editable cells. On change: persist to `daily_data` (upsert by release_id + day_n
 
 ### 4. Forecast math (`lib/forecast.ts`)
 Pure functions, no DB access:
-- `predictStreams(inputs, coefficients)` — pre-release or day-by-day refinement
+- `predictStreams(inputs, coefficients)`: pre-release or day-by-day refinement
 - `predictSaves(inputs, coefficients)`
-- `predictAdImpact(inputs)` — Spotify + Meta
-- `predictPaidDelivery(spend, objective)` — impressions, reach, clicks
-- `algoPositioningBand(saves, tier)` — weak/typical/strong/elite
+- `predictAdImpact(inputs)`: Spotify + Meta
+- `predictPaidDelivery(spend, objective)`: impressions, reach, clicks
+- `algoPositioningBand(saves, tier)`: weak/typical/strong/elite
 
 ### 5. Flags logic (`lib/flags.ts`)
 Pure function `computeFlags(release, dailyData)` returns array of `{type, title, detail}` objects. Mirror the artifact's flag rules:
@@ -243,7 +243,7 @@ Formula at day N (N=0 means pre-release): `streams_wk1 = exp(intercept + log(d_N
     "genre_offset": {
       "house": 0,
       "dubstep": 1.0885,
-      "jam/bass": 0.5846,
+      "melodic-bass": 0.5846,
       "downtempo": 0.1662,
       "big-room": -0.7494
     }
@@ -272,7 +272,7 @@ Formula at day N (N=0 means pre-release): `streams_wk1 = exp(intercept + log(d_N
   },
   "meta_rates_by_genre": {
     "dubstep": 0.24,
-    "jam/bass": 0.24,
+    "melodic-bass": 0.24,
     "house": 2.73,
     "big-room": 2.73,
     "downtempo": 14.69
@@ -298,7 +298,7 @@ Tier definition: `ml < 500K = developing`, `500K ≤ ml < 2M = mid`, `ml ≥ 2M 
 {
   "save_bands": {
     "dubstep":   {"lo": 17, "hi": 22},
-    "jam/bass":  {"lo": 13, "hi": 23},
+    "melodic-bass":  {"lo": 13, "hi": 23},
     "house":     {"lo": 9,  "hi": 16},
     "big-room":  {"lo": 5,  "hi": 10},
     "downtempo": {"lo": 10, "hi": 16}
@@ -320,7 +320,7 @@ Tier definition: `ml < 500K = developing`, `500K ≤ ml < 2M = mid`, `ml ≥ 2M 
 
 ### Genre playbooks
 
-Five genre playbook objects, each with `engine` description, `do` list (4 items), `avoid` list (2 items). Pull verbatim from the artifact v3.2 — see `components/GenrePlaybook.tsx` reference in the prototype.
+Five genre playbook objects, each with `optimize_for`, `best_practices`, `creative`, and `avoid`. Copy lives in `lib/constants/playbooks.ts`.
 
 ## Retraining logic (`retrain/retrain.py`)
 
@@ -338,7 +338,7 @@ Runs locally when a release closes. Script flow:
 7. Log a summary: which models updated, R² before/after, sample size before/after.
 
 **Guardrails (important):**
-- If new R² for a model is worse than current by more than 0.05, do not flip is_active — log a warning and keep old model. Manual override required.
+- If new R² for a model is worse than current by more than 0.05, do not flip is_active. Log a warning and keep old model. Manual override required.
 - Minimum sample size to retrain: 40 releases. Below that, log "insufficient data, retain current model."
 - Always keep history. Never DELETE from `model_coefficients`; only flip flags.
 
@@ -361,7 +361,7 @@ Build in this order. Don't skip ahead. Each step should be working before moving
 2. **Forecast math library.** Pure TypeScript module with no UI. Write `lib/forecast.ts` and `lib/constants.ts`. Add a quick test page that calls the functions with known inputs and verifies outputs match the prototype.
 3. **Release creation form.** Build `/new` with all inputs. On submit, compute forecast, write to DB, redirect.
 4. **Active release view (pre-release state).** Pull release from DB by ID, render forecast + playbook + channel mix recommendation. No daily entry yet.
-5. **Daily entry grid + persistence.** Add the 3×28 entry grid, persist on edit. No flags or live monitoring yet.
+5. **Daily entry grid + persistence.** Add the 3×28 entry grid, persist on edit. Support manual per-cell entry and bulk CSV upload (spreadsheet workflow). No flags or live monitoring yet.
 6. **Live monitoring features.** Health banner, metric cards, flags panel, stream curve chart with actuals, source-of-streams chart, algo positioning module. All driven from daily data.
 7. **Archive view.** List closed releases.
 8. **Retrain script.** Local Python script, manual run.
@@ -370,6 +370,8 @@ Build in this order. Don't skip ahead. Each step should be working before moving
 ## Open questions
 
 Things to decide during the build, not now:
+
+- **Partner directory / partner CRM.** Deferred to phase 2 (after step 9 deploy). Not in step 4 or v1 scope. Meaningful partner CRM module planned for a later build.
 
 - **Release status transition.** Does "closed" happen automatically when day 28 is entered, or is it a manual button? Recommend: automatic, but with a 7-day grace period before retraining can use it (in case data needs correction).
 - **What happens to in-flight releases when model retrains?** Recommend: the model version used for a release's locked forecast is stored on the release row. Live monitoring uses the latest active model. Forecasts don't retroactively change.

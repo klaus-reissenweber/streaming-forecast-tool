@@ -2,7 +2,7 @@
 // Pure parse + validation for the intern import page. No DB, no React, no model math.
 // Mirrors the logic in the preview artifact so behavior is identical.
 
-export const GENRES = ["dubstep", "house", "jam/bass", "downtempo", "big-room"] as const;
+export const GENRES = ["dubstep", "house", "melodic-bass", "downtempo", "big-room"] as const;
 export type Genre = (typeof GENRES)[number];
 
 export interface ReleaseMeta {
@@ -123,13 +123,13 @@ export function validateRelease(
     if (daysSince !== null && daysSince < 28)
       reasons.push(`released ${daysSince} day(s) ago (need ≥28)`);
     warnings.push(
-      `Will be saved as ACTIVE, not closed — ${reasons.join(
+      `Will be saved as ACTIVE, not closed. ${reasons.join(
         " and "
       )}. The retrain script only trains on closed releases.`
     );
   }
   if (forceClosed && !eligible)
-    warnings.push("Forcing CLOSED before the 28-day window — verify before retraining.");
+    warnings.push("Forcing CLOSED before the 28-day window. Verify before retraining.");
 
   const wk1Streams = parsed.rows
     .filter((r) => r.day_number >= 1 && r.day_number <= 7)

@@ -54,7 +54,7 @@ async function main(): Promise<number> {
   if (data?.[0]) {
     console.log("Sample row:", data[0]);
   } else {
-    console.log("(No release rows yet — column check passed.)");
+    console.log("(No release rows yet. Column check passed.)");
   }
   return 0;
 }

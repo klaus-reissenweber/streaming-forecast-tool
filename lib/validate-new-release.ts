@@ -30,7 +30,7 @@ export interface NewReleaseFormValues {
 
 /**
  * Raw values from controlled inputs while typing.
- * Numeric fields may be empty strings — see `coerceNewReleaseFormValues`.
+ * Numeric fields may be empty strings. See `coerceNewReleaseFormValues`.
  */
 export interface NewReleaseFormRawValues {
   trackName: string;
@@ -121,7 +121,7 @@ function coerceEditorialTier(
 
 /**
  * Step 1 of the form pipeline: coerce transient empty strings on numeric fields.
- * Does not validate business rules — call `validateNewReleaseForm` next.
+ * Does not validate business rules. Call `validateNewReleaseForm` next.
  */
 export function coerceNewReleaseFormValues(
   raw: NewReleaseFormRawValues,
@@ -250,7 +250,7 @@ export function validateNewReleaseForm(
     fieldErrors.monthlyListeners = `Monthly listeners cannot exceed ${MAX_MONTHLY_LISTENERS.toLocaleString()}.`;
   } else if (ml > Number.MAX_SAFE_INTEGER) {
     warnings.push(
-      "Monthly listeners exceeds JavaScript's safe integer range — value may round on save.",
+      "Monthly listeners exceeds JavaScript's safe integer range. Value may round on save.",
     );
   }
 
@@ -301,7 +301,7 @@ export function validateNewReleaseForm(
     values.spotifySpendPlanned === 0
   ) {
     warnings.push(
-      "No paid spend entered — forecast will be organic-only (no ad lift modeled).",
+      "No paid spend entered. Forecast will be organic-only (no ad lift modeled).",
     );
   }
 
@@ -311,7 +311,7 @@ export function validateNewReleaseForm(
   return { fieldErrors, formErrors, warnings, valid };
 }
 
-/** Coerce then validate — used by client preview and Server Action. */
+/** Coerce then validate. Used by client preview and Server Action. */
 export function parseAndValidateNewReleaseForm(raw: NewReleaseFormRawValues): {
   values: NewReleaseFormValues;
   fieldErrors: Partial<Record<NewReleaseFieldKey, string>>;

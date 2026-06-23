@@ -13,7 +13,7 @@ import {
 export type Genre =
   | "dubstep"
   | "house"
-  | "jam/bass"
+  | "melodic-bass"
   | "downtempo"
   | "big-room";
 

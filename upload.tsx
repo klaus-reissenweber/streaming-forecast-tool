@@ -1,6 +1,6 @@
 // pages/upload.tsx
 // Intern-facing import page. Captures one closed release (metadata + daily data)
-// and writes it to Supabase. Does NO model math — retraining is run separately
+// and writes it to Supabase. Does NO model math. Retraining is run separately
 // via retrain/retrain.py.
 //
 // Depends on:
@@ -11,7 +11,7 @@
 // locked_forecast_streams, locked_forecast_saves, meta_spend_planned,
 // spotify_spend_planned, meta_objective and model_version_used are left null on
 // import. If your `releases` table marks any of those NOT NULL, either relax the
-// constraint or add a DEFAULT — the retrain script reads none of them.
+// constraint or add a DEFAULT. The retrain script reads none of them.
 
 import React, { useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
@@ -110,7 +110,7 @@ export default function UploadPage() {
     const { error: dayErr } = await supabase.from("daily_data").insert(dailyRows);
 
     if (dayErr) {
-      // The release exists but its days failed — surface clearly so it can be
+      // The release exists but its days failed. Surface clearly so it can be
       // fixed rather than leaving a silent half-write.
       setSave({
         phase: "error",
@@ -145,7 +145,7 @@ export default function UploadPage() {
       <header className="mb-6 border-b border-stone-200 pb-4">
         <h1 className="text-2xl font-semibold text-stone-900">Closed Release Import</h1>
         <p className="mt-1 text-sm text-stone-500">
-          Enter one finished release. This saves to the database — retraining is run separately.
+          Enter one finished release. This saves to the database. Retraining is run separately.
         </p>
       </header>
 
@@ -153,7 +153,7 @@ export default function UploadPage() {
         <div className="mb-6 rounded-lg border-2 border-emerald-600 bg-white p-4">
           <p className="font-semibold text-emerald-700">✓ Saved</p>
           <p className="mt-1 text-sm text-stone-700">
-            <b>{save.track}</b> — {save.days} day(s), status{" "}
+            <b>{save.track}</b>, {save.days} day(s), status{" "}
             <b className={save.status === "closed" ? "text-emerald-700" : "text-amber-700"}>
               {save.status.toUpperCase()}
             </b>
@@ -204,7 +204,7 @@ export default function UploadPage() {
             <span className="text-sm font-medium text-stone-700">Editorial tier</span>
             <select className="rounded border border-stone-300 px-3 py-2 text-sm" value={meta.editorial_tier} onChange={set("editorial_tier")}>
               {TIERS.map((t) => (
-                <option key={t.v} value={t.v}>{t.v} — {t.label}</option>
+                <option key={t.v} value={t.v}>{t.v}: {t.label}</option>
               ))}
             </select>
           </label>
@@ -258,9 +258,9 @@ export default function UploadPage() {
                 {parsed.rows.map((r, i) => (
                   <tr key={i} className="border-t border-stone-100 text-stone-800">
                     <td className="px-3 py-1.5">{r.day_number}</td>
-                    <td className="px-3 py-1.5">{Number.isFinite(r.streams) ? r.streams.toLocaleString() : "—"}</td>
-                    <td className="px-3 py-1.5">{Number.isFinite(r.saves) ? r.saves.toLocaleString() : "—"}</td>
-                    <td className="px-3 py-1.5">{r.other_pct ?? "—"}</td>
+                    <td className="px-3 py-1.5">{Number.isFinite(r.streams) ? r.streams.toLocaleString() : "n/a"}</td>
+                    <td className="px-3 py-1.5">{Number.isFinite(r.saves) ? r.saves.toLocaleString() : "n/a"}</td>
+                    <td className="px-3 py-1.5">{r.other_pct ?? "n/a"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -274,8 +274,8 @@ export default function UploadPage() {
         <h2 className="mb-4 text-lg font-semibold text-stone-900">3 · Check &amp; save</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Stat label="Days entered" value={v.validDays} />
-          <Stat label="Days since release" value={v.daysSince ?? "—"} />
-          <Stat label="Week-1 streams (sum d1–7)" value={v.wk1Streams ? v.wk1Streams.toLocaleString() : "—"} />
+          <Stat label="Days since release" value={v.daysSince ?? "n/a"} />
+          <Stat label="Week-1 streams (sum d1–7)" value={v.wk1Streams ? v.wk1Streams.toLocaleString() : "n/a"} />
         </div>
 
         <label className="mt-4 flex items-center gap-2 text-sm text-stone-700">

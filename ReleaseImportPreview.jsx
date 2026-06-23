@@ -1,18 +1,18 @@
 import React, { useState, useMemo } from "react";
 
 /**
- * Closed Release Import — intern-facing data entry page (PREVIEW).
+ * Closed Release Import: intern-facing data entry page (PREVIEW).
  *
  * This standalone version mocks the database write so it runs here in chat.
  * The real Next.js page (pages/upload.tsx) shares the same parse + validation
  * logic and swaps the mock for a Supabase insert. See the accompanying files.
  *
- * Design intent: a calm "lab instrument" — unambiguous, high-contrast, every
+ * Design intent: a calm "lab instrument": unambiguous, high-contrast, every
  * validation state visible. The whole point is data integrity feeding a model,
  * so nothing here is decorative noise.
  */
 
-const GENRES = ["dubstep", "house", "jam/bass", "downtempo", "big-room"];
+const GENRES = ["dubstep", "house", "melodic-bass", "downtempo", "big-room"];
 const TIERS = [
   { v: 0, label: "None" },
   { v: 1, label: "Small" },
@@ -113,13 +113,13 @@ function validate(meta, parsed, forceClosed) {
     if (daysSince !== null && daysSince < 28)
       reasons.push(`released ${daysSince} day(s) ago (need ≥28)`);
     warnings.push(
-      `Will be saved as ACTIVE, not closed — ${reasons.join(
+      `Will be saved as ACTIVE, not closed. ${reasons.join(
         " and "
       )}. The retrain script only trains on closed releases.`
     );
   }
   if (forceClosed && !eligible)
-    warnings.push("You forced CLOSED before the 28-day window — double-check before retraining.");
+    warnings.push("You forced CLOSED before the 28-day window. Double-check before retraining.");
 
   const wk1 = parsed.rows
     .filter((r) => r.day_number >= 1 && r.day_number <= 7)
@@ -211,8 +211,8 @@ export default function ReleaseImportPreview() {
       release_date: meta.release_date,
       status: v.closed ? "closed" : "active",
       closed_at: v.closed ? new Date().toISOString() : null,
-      // forecast / spend / model_version columns intentionally omitted —
-      // retraining never reads them. Left null on import.
+      // forecast / spend / model_version columns intentionally omitted.
+      // Retraining never reads them. Left null on import.
     };
     const dailyRows = parsed.rows.map((r) => ({
       day_number: r.day_number,
@@ -244,7 +244,7 @@ export default function ReleaseImportPreview() {
               Closed Release Import
             </h1>
             <p style={{ color: "var(--muted)" }} className="mt-1 text-sm">
-              Enter one finished release. Saves to the database — retraining is run separately.
+              Enter one finished release. Saves to the database. Retraining is run separately.
             </p>
           </div>
           <span
@@ -266,11 +266,11 @@ export default function ReleaseImportPreview() {
                 ✓ Ready to write
               </span>
               <span style={{ color: "var(--muted)" }} className="text-xs">
-                (preview — the deployed page inserts this into Supabase)
+                (preview: the deployed page inserts this into Supabase)
               </span>
             </div>
             <p style={{ color: "var(--ink)" }} className="mt-2 text-sm">
-              <b>{result.releaseRow.track_name}</b> — {result.releaseRow.dailyRows ? "" : ""}
+              <b>{result.releaseRow.track_name}</b>, {result.releaseRow.dailyRows ? "" : ""}
               {result.dailyRows.length} day(s), status{" "}
               <b style={{ color: result.releaseRow.status === "closed" ? "var(--ok)" : "var(--warn)" }}>
                 {result.releaseRow.status.toUpperCase()}
@@ -316,7 +316,7 @@ export default function ReleaseImportPreview() {
             <Field label="Editorial tier">
               <select style={inputStyle} className="rounded px-3 py-2 text-sm" value={meta.editorial_tier} onChange={set("editorial_tier")}>
                 {TIERS.map((t) => (
-                  <option key={t.v} value={t.v}>{t.v} — {t.label}</option>
+                  <option key={t.v} value={t.v}>{t.v}: {t.label}</option>
                 ))}
               </select>
             </Field>
@@ -380,9 +380,9 @@ export default function ReleaseImportPreview() {
                   {parsed.rows.map((r, i) => (
                     <tr key={i} style={{ borderTop: "1px solid var(--line)", color: "var(--ink)" }}>
                       <td className="px-3 py-1.5">{r.day_number}</td>
-                      <td className="px-3 py-1.5">{Number.isFinite(r.streams) ? r.streams.toLocaleString() : "—"}</td>
-                      <td className="px-3 py-1.5">{Number.isFinite(r.saves) ? r.saves.toLocaleString() : "—"}</td>
-                      <td className="px-3 py-1.5">{r.other_pct ?? "—"}</td>
+                      <td className="px-3 py-1.5">{Number.isFinite(r.streams) ? r.streams.toLocaleString() : "n/a"}</td>
+                      <td className="px-3 py-1.5">{Number.isFinite(r.saves) ? r.saves.toLocaleString() : "n/a"}</td>
+                      <td className="px-3 py-1.5">{r.other_pct ?? "n/a"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -395,8 +395,8 @@ export default function ReleaseImportPreview() {
         <Section n="3" title="Check & save">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <Stat label="Days entered" value={v.validDays} />
-            <Stat label="Days since release" value={v.daysSince ?? "—"} />
-            <Stat label="Week-1 streams (sum d1–7)" value={v.wk1 ? v.wk1.toLocaleString() : "—"} />
+            <Stat label="Days since release" value={v.daysSince ?? "n/a"} />
+            <Stat label="Week-1 streams (sum d1–7)" value={v.wk1 ? v.wk1.toLocaleString() : "n/a"} />
           </div>
 
           <label className="mt-4 flex items-center gap-2 text-sm">

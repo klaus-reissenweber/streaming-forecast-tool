@@ -7,7 +7,7 @@ export const TIER_ML_THRESHOLDS = {
 export const GENRES = [
   "dubstep",
   "house",
-  "jam/bass",
+  "melodic-bass",
   "downtempo",
   "big-room",
 ] as const;
@@ -48,7 +48,7 @@ export const EDITORIAL_TIER_DEFINITIONS = {
   3: {
     label: "Large",
     description:
-      "Major coverage — New Music Friday placement, flagship editorial cover slot, or OOH/billboard support tied to the release.",
+      "Major coverage: New Music Friday placement, flagship editorial cover slot, or OOH/billboard support tied to the release.",
   },
 } as const;
 
@@ -59,7 +59,7 @@ export const EDITORIAL_TIER_VALUES = [0, 1, 2, 3] as const satisfies readonly Ed
 /** Options for editorial-tier ToggleGroup labels (descriptions shown separately). */
 export const EDITORIAL_TIER_TOGGLE_OPTIONS = EDITORIAL_TIER_VALUES.map((tier) => ({
   value: tier,
-  label: `${tier} — ${EDITORIAL_TIER_DEFINITIONS[tier].label}`,
+  label: `${tier}: ${EDITORIAL_TIER_DEFINITIONS[tier].label}`,
 }));
 
 /** % of week-1 streams by day (index 0 = day 1 … index 27 = day 28). */
@@ -83,7 +83,7 @@ export type CurvePercentile = keyof typeof STREAM_CURVE_TEMPLATE;
 
 export const META_RATES_BY_GENRE = {
   dubstep: 0.24,
-  "jam/bass": 0.24,
+  "melodic-bass": 0.24,
   house: 2.73,
   "big-room": 2.73,
   downtempo: 14.69,
@@ -101,10 +101,10 @@ export const META_DELIVERY_PER_OBJECTIVE = {
   reach: { cpm: 2.09, cpr: 2.18, cpc: 0.89 },
 } as const;
 
-/** Save-rate health benchmarks (%), used by flags/monitoring — not forecast math. */
+/** Save-rate health benchmarks (%), used by flags/monitoring, not forecast math. */
 export const SAVE_RATE_BANDS = {
   dubstep: { lo: 17, hi: 22 },
-  "jam/bass": { lo: 13, hi: 23 },
+  "melodic-bass": { lo: 13, hi: 23 },
   house: { lo: 9, hi: 16 },
   "big-room": { lo: 5, hi: 10 },
   downtempo: { lo: 10, hi: 16 },
@@ -116,3 +116,5 @@ export const SAVE_COUNT_BANDS = {
   mid: { p25: 7545, p75: 22628, p90: 42747 },
   established: { p25: 19038, p75: 53399, p90: 71510 },
 } as const;
+
+export { GENRE_PLAYBOOKS, type GenrePlaybook } from "@/lib/constants/playbooks";
