@@ -19,7 +19,7 @@ The current model is already fitted and characterized — coefficients, error ba
 
 ## Scope — IN
 
-- One active release at a time in the working view
+- One release in focus in the working view (multiple active releases allowed; dashboard picks via dropdown or most-recent default)
 - Pre-release forecast: streams + saves + paid social impressions/reach/clicks + channel mix recommendation
 - Daily monitoring: enter actuals, see deviation flags + tactical responses
 - Algorithmic positioning module (weak/typical/strong/elite save bands by tier)
@@ -31,7 +31,7 @@ The current model is already fitted and characterized — coefficients, error ba
 
 ## Scope — OUT (explicit, do not build)
 
-- Multi-release simultaneous tracking (one active release, but archive of closed ones)
+- Enforcing a single active release at creation time (overlapping launches are allowed; UI handles selection)
 - User authentication, multi-user, or role-based permissions
 - Client-facing vs marketer-facing split (one view; Red Light internal)
 - Apify integration or any organic social prediction
@@ -107,17 +107,30 @@ streaming-forecast/
 | `genre` | text | Enum: dubstep, house, jam/bass, downtempo, big-room |
 | `monthly_listeners` | bigint | Numeric, no formatting |
 | `is_feature` | boolean | Solo vs feature/collab |
-| `editorial_tier` | int | 0–3 (None, Small, Medium, Large) |
+| `editorial_tier` | int | 0–3 — expected Spotify editorial coverage at lock time (see definitions below) |
 | `release_date` | date | Thursday assumed |
+| `release_type` | text | single / ep / album (default `single`); drives Spotify CPS lookup |
+| `spotify_format` | text | marquee / showcase (default `marquee`); drives Spotify CPS lookup |
 | `meta_spend_planned` | numeric | USD, planned |
 | `meta_objective` | text | traffic / awareness / reach |
 | `spotify_spend_planned` | numeric | USD, planned |
 | `locked_forecast_streams` | int | Computed at creation, stored |
 | `locked_forecast_saves` | int | Computed at creation, stored |
-| `model_version_used` | uuid | FK to model_coefficients used at lock time |
+| `model_version_used` | uuid | FK to the active `streams_d0` row at lock time (pre-release streams model) |
 | `status` | text | active / closed |
 | `created_at` | timestamptz | |
 | `closed_at` | timestamptz | Set when day 28 data entered |
+
+**Editorial tier definitions** (`editorial_tier` 0–3):
+
+| Tier | Label | Meaning |
+|---|---|---|
+| 0 | None | No editorial coverage of any kind. |
+| 1 | Small | 1–2 placements on smaller editorial playlists (genre-specific, regional, niche). Not on flagship playlists. |
+| 2 | Medium | A few placements including at least one prominent placement (mid-tier editorial cover slot), or multiple smaller placements totaling meaningful reach. |
+| 3 | Large | Major coverage — New Music Friday placement, flagship editorial cover slot, or OOH/billboard support tied to the release. |
+
+Canonical copy lives in `lib/constants.ts` as `EDITORIAL_TIER_DEFINITIONS`. The `/new` form shows the selected tier's description below the toggle.
 
 ### Table: `daily_data`
 
@@ -154,9 +167,9 @@ All model parameters including ad_rates are stored as rows in the model_coeffici
 These mirror what the Claude artifact v3.2 already does. Build them as React components, fed by the DB.
 
 ### 1. Release creation form (`/new`)
-Inputs: track name, artist, genre (5-option toggle), monthly listeners (slider), feature/collab toggle, editorial tier (4-option toggle), release date, planned Meta spend, Meta objective, planned Spotify spend.
+Inputs: track name, artist, genre (5-option toggle), monthly listeners (slider), feature/collab toggle, editorial tier (4-option toggle with live description for the selected tier), release date, release type (single / ep / album), Spotify format (marquee / showcase), planned Meta spend, Meta objective, planned Spotify spend.
 
-On submit: compute forecasts using current active coefficients, save to `releases`, redirect to `/release/[id]`.
+On submit: compute forecasts using current active coefficients, save to `releases` (including `release_type`, `spotify_format`, locked forecast values, and `model_version_used` pointing at active `streams_d0`), set `status: active` without checking for other active releases, redirect to `/release/[id]`.
 
 ### 2. Active release dashboard (`/` and `/release/[id]`)
 Top section: locked forecast banner (streams + saves + implied save rate + locked date).
@@ -360,7 +373,7 @@ Things to decide during the build, not now:
 
 - **Release status transition.** Does "closed" happen automatically when day 28 is entered, or is it a manual button? Recommend: automatic, but with a 7-day grace period before retraining can use it (in case data needs correction).
 - **What happens to in-flight releases when model retrains?** Recommend: the model version used for a release's locked forecast is stored on the release row. Live monitoring uses the latest active model. Forecasts don't retroactively change.
-- **How are releases archived from the active view?** Recommend: there's always exactly one "active" release shown on `/`. Others are in `/archive`. The active one is the most recently created non-closed release.
+- **How are releases archived from the active view?** Decided: multiple releases may be `active` at once (overlapping launches). `/` defaults to the most recently created non-closed release; a dropdown switches focus. Closed releases live in `/archive`.
 - **Multiple users editing the same release.** Out of scope for v1, but the DB design supports it cleanly if added later.
 - **Mobile layout.** The prototype was desktop-focused. Decide during the UI build whether mobile is a requirement.
 

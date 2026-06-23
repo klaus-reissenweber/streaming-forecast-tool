@@ -20,6 +20,7 @@ const STREAM_MODEL_KEYS: StreamsModelKey[] = [
 ];
 
 interface ModelCoefficientRow {
+  id: string;
   model_type: string;
   coefficients_json: unknown;
 }
@@ -28,7 +29,7 @@ async function fetchActiveModelRows(): Promise<ModelCoefficientRow[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("model_coefficients")
-    .select("model_type, coefficients_json")
+    .select("id, model_type, coefficients_json")
     .eq("is_active", true);
 
   if (error) {
@@ -86,14 +87,24 @@ function parseAdRates(rows: ModelCoefficientRow[]): AdRates {
   return payload;
 }
 
+function parseModelVersionId(rows: ModelCoefficientRow[]): string {
+  const streamsD0 = rows.find((row) => row.model_type === "streams_d0");
+  if (!streamsD0?.id) {
+    throw new Error("Missing active coefficient row: streams_d0 (with id)");
+  }
+  return streamsD0.id;
+}
+
 export async function loadForecastData(): Promise<{
   coefficients: ForecastCoefficients;
   adRates: AdRates;
+  modelVersionId: string;
 }> {
   const rows = await fetchActiveModelRows();
   return {
     coefficients: parseForecastCoefficients(rows),
     adRates: parseAdRates(rows),
+    modelVersionId: parseModelVersionId(rows),
   };
 }
 

@@ -29,6 +29,39 @@ export const SPOTIFY_FORMATS = [
   "showcase",
 ] as const;
 
+/** Expected Spotify editorial coverage at lock time (forecast input 0–3). */
+export const EDITORIAL_TIER_DEFINITIONS = {
+  0: {
+    label: "None",
+    description: "No editorial coverage of any kind.",
+  },
+  1: {
+    label: "Small",
+    description:
+      "1-2 placements on smaller editorial playlists (genre-specific, regional, niche). Not on flagship playlists.",
+  },
+  2: {
+    label: "Medium",
+    description:
+      "A few placements including at least one prominent placement (mid-tier editorial cover slot), or multiple smaller placements totaling meaningful reach.",
+  },
+  3: {
+    label: "Large",
+    description:
+      "Major coverage — New Music Friday placement, flagship editorial cover slot, or OOH/billboard support tied to the release.",
+  },
+} as const;
+
+export type EditorialTierValue = keyof typeof EDITORIAL_TIER_DEFINITIONS;
+
+export const EDITORIAL_TIER_VALUES = [0, 1, 2, 3] as const satisfies readonly EditorialTierValue[];
+
+/** Options for editorial-tier ToggleGroup labels (descriptions shown separately). */
+export const EDITORIAL_TIER_TOGGLE_OPTIONS = EDITORIAL_TIER_VALUES.map((tier) => ({
+  value: tier,
+  label: `${tier} — ${EDITORIAL_TIER_DEFINITIONS[tier].label}`,
+}));
+
 /** % of week-1 streams by day (index 0 = day 1 … index 27 = day 28). */
 export const STREAM_CURVE_TEMPLATE = {
   median: [
