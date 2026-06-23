@@ -15,24 +15,28 @@ import { formatCompactNumber } from "@/lib/format";
 import type { StreamCurveForecast } from "@/lib/forecast";
 
 export interface StreamCurveChartProps {
-  streamCurve: StreamCurveForecast;
+  lockedStreamCurve: StreamCurveForecast;
+  projectedStreamCurve?: StreamCurveForecast | null;
   actualStreamsByDay: (number | null)[];
   phase: ReleasePhase;
 }
 
 interface ChartRow {
   day: number;
-  expected: number;
+  locked: number;
+  projected: number | null;
   actual: number | null;
 }
 
 function buildChartRows(
-  streamCurve: StreamCurveForecast,
+  lockedStreamCurve: StreamCurveForecast,
+  projectedStreamCurve: StreamCurveForecast | null | undefined,
   actualStreamsByDay: (number | null)[],
 ): ChartRow[] {
-  return streamCurve.dailyStreams.map((expected, index) => ({
+  return lockedStreamCurve.dailyStreams.map((locked, index) => ({
     day: index + 1,
-    expected,
+    locked,
+    projected: projectedStreamCurve?.dailyStreams[index] ?? null,
     actual: actualStreamsByDay[index] ?? null,
   }));
 }
@@ -42,18 +46,24 @@ function formatAxisTick(value: number): string {
 }
 
 export function StreamCurveChart({
-  streamCurve,
+  lockedStreamCurve,
+  projectedStreamCurve,
   actualStreamsByDay,
   phase,
 }: StreamCurveChartProps) {
-  const chartData = buildChartRows(streamCurve, actualStreamsByDay);
+  const chartData = buildChartRows(
+    lockedStreamCurve,
+    projectedStreamCurve,
+    actualStreamsByDay,
+  );
   const hasActuals = actualStreamsByDay.some((value) => value != null);
+  const hasProjected = projectedStreamCurve != null;
 
   return (
     <section className="rounded-lg border border-stone-200 bg-white p-5">
       <h2 className="text-lg font-semibold text-stone-900">Stream curve</h2>
       <p className="mt-1 text-sm text-stone-500">
-        Daily streams vs locked forecast median template (D1–D28)
+        Locked forecast, live pace projection, and actual daily streams (D1–D28)
       </p>
       {phase === "pre-release" || !hasActuals ? (
         <p className="mt-2 text-xs text-stone-400">
@@ -89,13 +99,24 @@ export function StreamCurveChart({
             <Legend />
             <Line
               type="monotone"
-              dataKey="expected"
-              name="Expected"
+              dataKey="locked"
+              name="Locked"
               stroke="#c2410c"
               strokeWidth={2}
               dot={false}
               activeDot={{ r: 4 }}
             />
+            {hasProjected ? (
+              <Line
+                type="monotone"
+                dataKey="projected"
+                name="Projected"
+                stroke="#2563eb"
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 4 }}
+              />
+            ) : null}
             {hasActuals ? (
               <Line
                 type="monotone"

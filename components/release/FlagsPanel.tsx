@@ -1,10 +1,7 @@
 import type { ReleasePhase } from "@/lib/build-release-view-model";
+import type { ReleaseFlag } from "@/lib/flags";
 
-export interface ReleaseFlag {
-  type: "positive" | "warning" | "info";
-  title: string;
-  detail: string;
-}
+export type { ReleaseFlag } from "@/lib/flags";
 
 export interface FlagsPanelProps {
   phase: ReleasePhase;
@@ -29,7 +26,7 @@ export function FlagsPanel({ phase, flags = [] }: FlagsPanelProps) {
         <ul className="mt-5 space-y-3">
           {flags.map((flag) => (
             <li
-              key={`${flag.type}-${flag.title}`}
+              key={flag.id}
               className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-3"
             >
               <p className="text-sm font-semibold text-stone-900">{flag.title}</p>

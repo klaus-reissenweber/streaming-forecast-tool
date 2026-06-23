@@ -2,8 +2,10 @@ import { formatCompactNumber } from "@/lib/format";
 
 export interface MetricCardsProps {
   projectedWk1Streams: number;
+  projectedWk1Sublabel: string;
   saveVelocity: string | null;
   algoBandLabel: string;
+  algoBandSublabel: string;
   modelConfidenceR2: number;
 }
 
@@ -40,8 +42,10 @@ function MetricCard({
 
 export function MetricCards({
   projectedWk1Streams,
+  projectedWk1Sublabel,
   saveVelocity,
   algoBandLabel,
+  algoBandSublabel,
   modelConfidenceR2,
 }: MetricCardsProps) {
   return (
@@ -50,7 +54,7 @@ export function MetricCards({
         <MetricCard
           label="Projected wk1"
           value={formatCompactNumber(projectedWk1Streams)}
-          sublabel="Locked streams forecast"
+          sublabel={projectedWk1Sublabel}
         />
         <MetricCard
           label="Save velocity"
@@ -60,7 +64,7 @@ export function MetricCards({
         <MetricCard
           label="Algo positioning"
           value={algoBandLabel}
-          sublabel="From locked forecast saves"
+          sublabel={algoBandSublabel}
         />
         <MetricCard
           label="Model confidence"

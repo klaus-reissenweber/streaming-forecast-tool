@@ -4,6 +4,8 @@ import {
 } from "@/lib/format";
 import type { ChannelMixRecommendation } from "@/lib/channel-mix";
 import { recommendChannelMix } from "@/lib/channel-mix";
+import { computeFlagsForRelease } from "@/lib/flags";
+import type { ReleaseFlag } from "@/lib/flags";
 import type {
   AdRates,
   AlgoPositioningResult,
@@ -15,6 +17,11 @@ import {
   buildStreamCurve,
   type StreamCurveForecast,
 } from "@/lib/forecast";
+import {
+  computeMonitoringSummary,
+  emptyMonitoringSummary,
+  type MonitoringSummary,
+} from "@/lib/monitoring";
 import {
   releaseRowToForecastInputs,
   type DailyDataPoint,
@@ -58,6 +65,8 @@ export interface ReleaseViewModel {
   streamCurve: StreamCurveForecast;
   actualStreamsByDay: (number | null)[];
   otherPctByDay: OtherPctDayPoint[];
+  monitoring: MonitoringSummary;
+  flags: readonly ReleaseFlag[];
 }
 
 function chartSeriesFromDailyData(dailyData: DailyDataPoint[]): {
@@ -119,6 +128,16 @@ export function buildReleaseViewModel(
   const { actualStreamsByDay, otherPctByDay } =
     chartSeriesFromDailyData(dailyData);
 
+  const monitoring =
+    phase === "monitoring"
+      ? computeMonitoringSummary(release, inputs, dailyData, locked)
+      : emptyMonitoringSummary(locked);
+
+  const flags =
+    phase === "monitoring"
+      ? computeFlagsForRelease(release, inputs, dailyData, locked, monitoring)
+      : [];
+
   return {
     release,
     inputs,
@@ -141,5 +160,7 @@ export function buildReleaseViewModel(
     streamCurve,
     actualStreamsByDay,
     otherPctByDay,
+    monitoring,
+    flags,
   };
 }

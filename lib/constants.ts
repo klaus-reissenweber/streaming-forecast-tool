@@ -112,9 +112,9 @@ export const SAVE_RATE_BANDS = {
 
 /** Algorithmic positioning thresholds (week-1 save counts) by artist tier. */
 export const SAVE_COUNT_BANDS = {
-  developing: { p25: 3018, p75: 9101, p90: 13116 },
-  mid: { p25: 7545, p75: 22628, p90: 42747 },
-  established: { p25: 19038, p75: 53399, p90: 71510 },
+  developing: { p25: 3018, p50: 5341, p75: 9101, p90: 13116 },
+  mid: { p25: 7545, p50: 12284, p75: 22628, p90: 42747 },
+  established: { p25: 19038, p50: 32482, p75: 53399, p90: 71510 },
 } as const;
 
 export { GENRE_PLAYBOOKS, type GenrePlaybook } from "@/lib/constants/playbooks";

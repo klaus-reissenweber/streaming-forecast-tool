@@ -53,7 +53,23 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
     coefficients.streams.streams_d0.r2,
   );
 
-  const algoBandLabel = ALGO_BAND_DISPLAY[viewModel.algoPositioning.band].label;
+  const { health, saveVelocity, liveAlgoPositioning } = viewModel.monitoring;
+  const lockedAlgoBandLabel =
+    ALGO_BAND_DISPLAY[viewModel.algoPositioning.band].label;
+  const liveAlgoBandLabel = liveAlgoPositioning
+    ? ALGO_BAND_DISPLAY[liveAlgoPositioning.band].label
+    : lockedAlgoBandLabel;
+
+  const projectedWk1Sublabel =
+    health.streamDaysEntered > 0
+      ? health.streamDaysEntered === 1
+        ? "From D1 pace"
+        : `From D1–D${health.streamDaysEntered} pace`
+      : "Locked forecast";
+
+  const algoBandSublabel = liveAlgoPositioning
+    ? "Live pace"
+    : "Locked forecast";
 
   return (
     <main className="mx-auto max-w-6xl px-5 py-8">
@@ -75,16 +91,18 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
         />
 
         <section className="space-y-6" aria-label="Monitoring summary">
-          <HealthBanner phase={viewModel.phase} />
+          <HealthBanner health={viewModel.monitoring.health} />
 
           <MetricCards
-            projectedWk1Streams={viewModel.locked.streams}
-            saveVelocity={null}
-            algoBandLabel={algoBandLabel}
+            projectedWk1Streams={health.projectedWk1}
+            projectedWk1Sublabel={projectedWk1Sublabel}
+            saveVelocity={saveVelocity.display}
+            algoBandLabel={liveAlgoBandLabel}
+            algoBandSublabel={algoBandSublabel}
             modelConfidenceR2={viewModel.modelConfidenceR2}
           />
 
-          <FlagsPanel phase={viewModel.phase} />
+          <FlagsPanel phase={viewModel.phase} flags={viewModel.flags} />
         </section>
 
         <DailyEntrySection
@@ -95,7 +113,8 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
 
         <section className="space-y-6" aria-label="Charts">
           <StreamCurveChart
-            streamCurve={viewModel.streamCurve}
+            lockedStreamCurve={viewModel.streamCurve}
+            projectedStreamCurve={viewModel.monitoring.projectedStreamCurve}
             actualStreamsByDay={viewModel.actualStreamsByDay}
             phase={viewModel.phase}
           />

@@ -1,34 +1,10 @@
-import type { ReleasePhase } from "@/lib/build-release-view-model";
+import type { HealthSummary } from "@/lib/monitoring";
 
 export interface HealthBannerProps {
-  phase: ReleasePhase;
+  health: HealthSummary;
 }
 
-type HealthTone = "neutral" | "positive" | "warning" | "negative";
-
-interface HealthContent {
-  tone: HealthTone;
-  title: string;
-  detail: string;
-}
-
-function healthContentForPhase(phase: ReleasePhase): HealthContent {
-  if (phase === "pre-release") {
-    return {
-      tone: "neutral",
-      title: "Awaiting day 1 data",
-      detail:
-        "Health scoring activates once daily streams and saves are entered after release.",
-    };
-  }
-
-  return {
-    tone: "neutral",
-    title: "Monitoring active",
-    detail:
-      "On-track / outperforming / lagging states will compare actuals to the locked forecast in step 6.",
-  };
-}
+type HealthTone = HealthSummary["tone"];
 
 const TONE_STYLES: Record<
   HealthTone,
@@ -56,17 +32,16 @@ const TONE_STYLES: Record<
   },
 };
 
-export function HealthBanner({ phase }: HealthBannerProps) {
-  const content = healthContentForPhase(phase);
-  const styles = TONE_STYLES[content.tone];
+export function HealthBanner({ health }: HealthBannerProps) {
+  const styles = TONE_STYLES[health.tone];
 
   return (
     <section
       className={`rounded-lg border p-4 ${styles.container}`}
       aria-label="Release health"
     >
-      <p className={`text-sm font-semibold ${styles.title}`}>{content.title}</p>
-      <p className={`mt-1 text-sm ${styles.detail}`}>{content.detail}</p>
+      <p className={`text-sm font-semibold ${styles.title}`}>{health.title}</p>
+      <p className={`mt-1 text-sm ${styles.detail}`}>{health.detail}</p>
     </section>
   );
 }
