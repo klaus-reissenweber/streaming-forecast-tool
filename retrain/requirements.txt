@@ -1,0 +1,10 @@
+# Offline retrain script dependencies (see RETRAINING.md).
+# Install: pip install -r requirements.txt
+
+numpy>=2.0,<3
+statsmodels>=0.14,<1
+supabase>=2.0,<3
+python-dotenv>=1.0,<2
+
+# Elderbrook parity test + validate-retrain-output shape checks
+pytest>=8.0,<9
