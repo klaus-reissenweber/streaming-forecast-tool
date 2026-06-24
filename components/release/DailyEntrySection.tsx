@@ -179,11 +179,13 @@ export function DailyEntrySection({
         onDayBlur={handleDayBlur}
       />
 
-      <DailyDataImport
-        releaseId={releaseId}
-        readOnly={readOnly}
-        onImportSuccess={refreshPage}
-      />
+      {!readOnly ? (
+        <DailyDataImport
+          releaseId={releaseId}
+          readOnly={readOnly}
+          onImportSuccess={refreshPage}
+        />
+      ) : null}
     </section>
   );
 }

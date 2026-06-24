@@ -21,7 +21,7 @@ export function ReleasePageHeader({
   status,
 }: ReleasePageHeaderProps) {
   const tierLabel = EDITORIAL_TIER_DEFINITIONS[editorialTier].label;
-  const statusLabel = status === "active" ? "Active" : "Closed";
+  const isClosed = status === "closed";
 
   return (
     <header className="border-b border-stone-200 pb-4">
@@ -38,22 +38,29 @@ export function ReleasePageHeader({
         </div>
 
         <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
-          <span
-            className={
-              "inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium " +
-              (status === "active"
-                ? "bg-emerald-100 text-emerald-800"
-                : "bg-stone-200 text-stone-700")
-            }
-          >
-            {statusLabel}
-          </span>
-          <Link
-            href="/new"
-            className="text-sm font-medium text-orange-700 hover:text-orange-800 hover:underline"
-          >
-            Create another release
-          </Link>
+          {isClosed ? (
+            <span className="inline-flex rounded-full bg-stone-200 px-2.5 py-0.5 text-xs font-medium text-stone-800">
+              Closed release · read-only
+            </span>
+          ) : (
+            <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800">
+              Active
+            </span>
+          )}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+            <Link
+              href="/archive"
+              className="font-medium text-orange-700 hover:text-orange-800 hover:underline"
+            >
+              Archive
+            </Link>
+            <Link
+              href="/new"
+              className="font-medium text-orange-700 hover:text-orange-800 hover:underline"
+            >
+              Create another release
+            </Link>
+          </div>
         </div>
       </div>
     </header>
