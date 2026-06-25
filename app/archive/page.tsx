@@ -2,11 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArchiveFilters, ArchiveTable } from "@/components/archive/ArchiveTable";
 import { ArchiveSummaryBar } from "@/components/archive/ArchiveSummaryBar";
+import { RetrainProgress } from "@/components/archive/RetrainProgress";
 import {
   buildArchiveViewModel,
+  type ArchiveRow,
   type ArchiveSortOption,
 } from "@/lib/build-archive-view-model";
 import { GENRES } from "@/lib/constants";
+import { formatReleaseDate } from "@/lib/format";
 import type { Genre } from "@/lib/forecast";
 import { loadClosedReleasesWithDailyData } from "@/lib/load-closed-releases";
 
@@ -38,6 +41,26 @@ function parseSortOption(value: string | undefined): ArchiveSortOption {
   return "closed_at_desc";
 }
 
+function formatArchiveDateRange(rows: ArchiveRow[]): string | null {
+  if (rows.length === 0) {
+    return null;
+  }
+
+  const dates = rows
+    .map((row) => row.releaseDate)
+    .filter(Boolean)
+    .sort();
+
+  if (dates.length === 0) {
+    return null;
+  }
+
+  const earliest = formatReleaseDate(dates[0]);
+  const latest = formatReleaseDate(dates[dates.length - 1]);
+
+  return earliest === latest ? earliest : `${earliest} – ${latest}`;
+}
+
 interface ArchivePageProps {
   searchParams: Promise<{ genre?: string; sort?: string }>;
 }
@@ -54,31 +77,53 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
     sort,
   });
 
+  const closedReleaseCount = viewModel.summary.totalClosed;
+  const dateRange = formatArchiveDateRange(viewModel.rows);
+  const closedReleaseLabel = `${closedReleaseCount} closed release${closedReleaseCount === 1 ? "" : "s"}`;
+  const archiveMetaLine = dateRange
+    ? `${closedReleaseLabel} · ${dateRange}`
+    : closedReleaseLabel;
+
   return (
     <main className="mx-auto max-w-6xl px-5 py-8">
-      <header className="border-b border-stone-200 pb-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-stone-900">
+      <header className="border-b border-border pb-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="font-serif text-release-title font-semibold text-foreground">
               Release archive
             </h1>
-            <p className="mt-1 text-sm text-stone-500">
-              Closed releases · locked forecast vs actual week-1 performance
-            </p>
+            <p className="mt-1 text-body-sm text-secondary">{archiveMetaLine}</p>
           </div>
-          <Link
-            href="/new"
-            className="text-sm font-medium text-orange-700 hover:text-orange-800 hover:underline"
-          >
-            Create release
-          </Link>
+          <nav className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium">
+            <Link
+              href="/"
+              className="text-accent-readable hover:text-accent-hover hover:underline"
+            >
+              Active releases
+            </Link>
+            <Link
+              href="/new"
+              className="text-accent-readable hover:text-accent-hover hover:underline"
+            >
+              Create release
+            </Link>
+          </nav>
         </div>
       </header>
 
-      <div className="mt-6 space-y-6">
-        <ArchiveSummaryBar summary={viewModel.summary} />
-        <ArchiveFilters currentGenre={genre} currentSort={sort} />
-        <ArchiveTable viewModel={viewModel} />
+      <div className="mt-6">
+        <RetrainProgress closedReleaseCount={viewModel.summary.totalClosed} />
+
+        <div className="mt-6">
+          <ArchiveSummaryBar summary={viewModel.summary} />
+          <div className="mt-4">
+            <ArchiveFilters currentGenre={genre} currentSort={sort} />
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <ArchiveTable viewModel={viewModel} />
+        </div>
       </div>
     </main>
   );

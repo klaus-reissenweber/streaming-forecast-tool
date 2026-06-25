@@ -39,76 +39,77 @@ function buildQuery(
   return query ? `?${query}` : "";
 }
 
+function filterPillClass(active: boolean): string {
+  return (
+    "rounded-full border px-3 py-1 text-xs font-medium transition " +
+    (active
+      ? "border-accent-border bg-accent-tint text-accent-readable"
+      : "border-transparent bg-canvas text-secondary hover:border-border")
+  );
+}
+
 export function ArchiveFilters({
   currentGenre,
   currentSort,
 }: ArchiveFiltersProps) {
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium uppercase tracking-wide text-stone-500">
-          Genre
+    <section
+      className="motion-fade-up rounded-instrument border border-border bg-surface p-5"
+      aria-label="Archive filters"
+    >
+      <h2 className="font-serif text-section font-semibold text-foreground">
+        <span className="bracket-tag bracket-tag--accent bracket-tag--section instrument-section-title">
+          [FILTERS]
         </span>
-        <Link
-          href={`/archive${buildQuery(undefined, currentSort)}`}
-          className={
-            "rounded-full px-3 py-1 text-xs font-medium " +
-            (currentGenre == null
-              ? "bg-stone-900 text-white"
-              : "bg-stone-100 text-stone-700 hover:bg-stone-200")
-          }
-        >
-          All
-        </Link>
-        {GENRES.map((genre) => (
-          <Link
-            key={genre}
-            href={`/archive${buildQuery(genre, currentSort)}`}
-            className={
-              "rounded-full px-3 py-1 text-xs font-medium " +
-              (currentGenre === genre
-                ? "bg-stone-900 text-white"
-                : "bg-stone-100 text-stone-700 hover:bg-stone-200")
-            }
-          >
-            {genre}
-          </Link>
-        ))}
-      </div>
+      </h2>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium uppercase tracking-wide text-stone-500">
-          Sort
-        </span>
-        {SORT_OPTIONS.map((option) => (
+      <div className="mt-4 space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-label text-muted">Genre</span>
           <Link
-            key={option.value}
-            href={`/archive${buildQuery(currentGenre, option.value)}`}
-            className={
-              "rounded-full px-3 py-1 text-xs font-medium " +
-              (currentSort === option.value
-                ? "bg-orange-100 text-orange-900 ring-1 ring-orange-200"
-                : "bg-stone-100 text-stone-700 hover:bg-stone-200")
-            }
+            href={`/archive${buildQuery(undefined, currentSort)}`}
+            className={filterPillClass(currentGenre == null)}
           >
-            {option.label}
+            All
           </Link>
-        ))}
+          {GENRES.map((genre) => (
+            <Link
+              key={genre}
+              href={`/archive${buildQuery(genre, currentSort)}`}
+              className={filterPillClass(currentGenre === genre)}
+            >
+              {genre}
+            </Link>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-label text-muted">Sort</span>
+          {SORT_OPTIONS.map((option) => (
+            <Link
+              key={option.value}
+              href={`/archive${buildQuery(currentGenre, option.value)}`}
+              className={filterPillClass(currentSort === option.value)}
+            >
+              {option.label}
+            </Link>
+          ))}
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
 
 function deltaToneClass(tone: DeltaTone | null): string {
   switch (tone) {
     case "outperform":
-      return "text-emerald-700";
+      return "text-semantic-positive";
     case "lagging":
-      return "text-red-700";
+      return "text-semantic-negative";
     case "on_track":
-      return "text-stone-700";
+      return "text-secondary";
     default:
-      return "text-stone-500";
+      return "text-muted";
   }
 }
 
@@ -137,13 +138,13 @@ function formatDeltaCell(
   tone: DeltaTone | null,
 ): ReactNode {
   if (delta == null || deltaPct == null) {
-    return <span className="text-stone-400">n/a</span>;
+    return <span className="text-muted">n/a</span>;
   }
 
   return (
-    <span className={deltaToneClass(tone)}>
+    <span className={`font-mono tabular-nums ${deltaToneClass(tone)}`}>
       {formatSignedCompact(delta)}
-      <span className="text-stone-400"> · </span>
+      <span className="text-muted"> · </span>
       {formatSignedPercent(deltaPct)}
     </span>
   );
@@ -155,17 +156,17 @@ function saveRatePill(
   band: { lo: number; hi: number },
 ): ReactNode {
   if (actualSaveRate == null || vsBand == null) {
-    return <span className="text-stone-400">n/a</span>;
+    return <span className="text-muted">n/a</span>;
   }
 
-  let pillClass = "bg-stone-100 text-stone-700";
+  let pillClass = "bg-canvas text-secondary";
   let label = "In band";
 
   if (vsBand === "below") {
-    pillClass = "bg-amber-100 text-amber-900";
+    pillClass = "bg-semantic-warning-bg text-semantic-warning";
     label = "Below band";
   } else if (vsBand === "above") {
-    pillClass = "bg-emerald-100 text-emerald-900";
+    pillClass = "bg-semantic-positive-bg text-semantic-positive";
     label = "Above band";
   }
 
@@ -176,9 +177,9 @@ function saveRatePill(
       >
         {label}
       </span>
-      <span className="tabular-nums text-stone-700">
+      <span className="font-mono tabular-nums text-secondary">
         {formatPercent(actualSaveRate, 1)}
-        <span className="text-stone-400">
+        <span className="text-muted">
           {" "}
           (band {band.lo}–{band.hi}%)
         </span>
@@ -194,103 +195,132 @@ export interface ArchiveTableProps {
 export function ArchiveTable({ viewModel }: ArchiveTableProps) {
   const { rows } = viewModel;
 
-  if (rows.length === 0) {
-    return (
-      <p className="rounded-lg border border-dashed border-stone-200 bg-stone-50 px-4 py-12 text-center text-sm text-stone-500">
-        No closed releases yet. Releases appear here once marked closed in the
-        database (auto-close on D28 arrives in step 8).
-      </p>
-    );
-  }
-
   return (
-    <div className="overflow-x-auto rounded-lg border border-stone-200">
-      <table className="min-w-[960px] w-full text-left text-sm">
-        <thead className="border-b border-stone-200 bg-stone-50 text-xs font-medium uppercase tracking-wide text-stone-500">
-          <tr>
-            <th className="px-4 py-3">Release</th>
-            <th className="px-4 py-3">Genre</th>
-            <th className="px-4 py-3">Released</th>
-            <th className="px-4 py-3">Locked wk1</th>
-            <th className="px-4 py-3">Actual wk1</th>
-            <th className="px-4 py-3">Δ Streams</th>
-            <th className="px-4 py-3">Δ Saves</th>
-            <th className="px-4 py-3">Save rate</th>
-            <th className="px-4 py-3">Closed</th>
-            <th className="px-4 py-3">
-              <span className="sr-only">View</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-stone-100 bg-white">
-          {rows.map((row) => (
-            <tr key={row.id} className="hover:bg-stone-50/80">
-              <td className="px-4 py-3">
-                <Link
-                  href={row.detailHref}
-                  className="font-semibold text-stone-900 hover:text-orange-800 hover:underline"
-                >
-                  {row.trackName}
-                </Link>
-                <p className="text-stone-500">{row.artistName}</p>
-              </td>
-              <td className="px-4 py-3 text-stone-700">{row.genre}</td>
-              <td className="px-4 py-3 tabular-nums text-stone-700">
-                {row.releaseDateDisplay}
-              </td>
-              <td className="px-4 py-3 tabular-nums text-stone-700">
-                {formatForecastCell(row.lockedStreams, row.lockedSaves)}
-              </td>
-              <td className="px-4 py-3 tabular-nums text-stone-700">
-                {row.actualStreams != null && row.actualSaves != null ? (
-                  <>
-                    {formatForecastCell(row.actualStreams, row.actualSaves)}
-                    {!row.wk1Complete ? (
-                      <span className="mt-1 block text-[10px] font-semibold uppercase tracking-wide text-amber-700">
-                        Incomplete wk1
-                      </span>
-                    ) : null}
-                  </>
-                ) : (
-                  <span className="text-stone-400">n/a</span>
-                )}
-              </td>
-              <td className="px-4 py-3 tabular-nums">
-                {formatDeltaCell(
-                  row.streamsDelta,
-                  row.streamsDeltaPct,
-                  row.streamsDeltaTone,
-                )}
-              </td>
-              <td className="px-4 py-3 tabular-nums">
-                {formatDeltaCell(
-                  row.savesDelta,
-                  row.savesDeltaPct,
-                  row.savesDeltaTone,
-                )}
-              </td>
-              <td className="px-4 py-3">
-                {saveRatePill(
-                  row.actualSaveRate,
-                  row.saveRateVsBand,
-                  row.saveRateBand,
-                )}
-              </td>
-              <td className="px-4 py-3 tabular-nums text-stone-600">
-                {row.closedAtDisplay ?? "n/a"}
-              </td>
-              <td className="px-4 py-3 text-right">
-                <Link
-                  href={row.detailHref}
-                  className="text-sm font-medium text-orange-700 hover:text-orange-800 hover:underline"
-                >
-                  View
-                </Link>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <section
+      className="motion-fade-up overflow-hidden rounded-instrument border border-border bg-surface"
+      aria-label="Closed releases"
+    >
+      <div className="p-5">
+        <h2 className="font-serif text-section font-semibold text-foreground">
+          <span className="bracket-tag bracket-tag--accent bracket-tag--section instrument-section-title">
+            [RELEASES]
+          </span>
+        </h2>
+      </div>
+
+      {rows.length === 0 ? (
+        <p className="mx-5 mb-5 border border-dashed border-border bg-canvas px-4 py-12 text-center text-body-sm text-muted">
+          No closed releases yet. Releases appear here once marked closed in the
+          database (auto-close on D28 arrives in step 8).
+        </p>
+      ) : (
+        <div className="overflow-x-auto border-t border-border-subtle">
+          <table className="min-w-[960px] w-full text-left text-body-sm">
+            <thead className="border-b border-border-subtle bg-canvas text-label text-muted">
+              <tr>
+                <th className="px-4 py-3 font-medium uppercase tracking-[0.06em]">
+                  Release
+                </th>
+                <th className="px-4 py-3 font-medium uppercase tracking-[0.06em]">
+                  Genre
+                </th>
+                <th className="px-4 py-3 font-medium uppercase tracking-[0.06em]">
+                  Released
+                </th>
+                <th className="px-4 py-3 font-medium uppercase tracking-[0.06em]">
+                  Locked wk1
+                </th>
+                <th className="px-4 py-3 font-medium uppercase tracking-[0.06em]">
+                  Actual wk1
+                </th>
+                <th className="px-4 py-3 font-medium uppercase tracking-[0.06em]">
+                  Δ Streams
+                </th>
+                <th className="px-4 py-3 font-medium uppercase tracking-[0.06em]">
+                  Δ Saves
+                </th>
+                <th className="px-4 py-3 font-medium uppercase tracking-[0.06em]">
+                  Save rate
+                </th>
+                <th className="px-4 py-3 font-medium uppercase tracking-[0.06em]">
+                  Closed
+                </th>
+                <th className="px-4 py-3 font-medium uppercase tracking-[0.06em]">
+                  <span className="sr-only">View</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border-subtle bg-surface">
+              {rows.map((row) => (
+                <tr key={row.id} className="hover:bg-canvas">
+                  <td className="px-4 py-3">
+                    <Link
+                      href={row.detailHref}
+                      className="font-semibold text-foreground hover:text-accent-readable hover:underline"
+                    >
+                      {row.trackName}
+                    </Link>
+                    <p className="text-secondary">{row.artistName}</p>
+                  </td>
+                  <td className="px-4 py-3 text-secondary">{row.genre}</td>
+                  <td className="px-4 py-3 font-mono tabular-nums text-secondary">
+                    {row.releaseDateDisplay}
+                  </td>
+                  <td className="px-4 py-3 font-mono tabular-nums text-secondary">
+                    {formatForecastCell(row.lockedStreams, row.lockedSaves)}
+                  </td>
+                  <td className="px-4 py-3 font-mono tabular-nums text-secondary">
+                    {row.actualStreams != null && row.actualSaves != null ? (
+                      <>
+                        {formatForecastCell(row.actualStreams, row.actualSaves)}
+                        {!row.wk1Complete ? (
+                          <span className="mt-1 block font-sans text-[10px] font-semibold uppercase tracking-wide text-semantic-warning">
+                            Incomplete wk1
+                          </span>
+                        ) : null}
+                      </>
+                    ) : (
+                      <span className="text-muted">n/a</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatDeltaCell(
+                      row.streamsDelta,
+                      row.streamsDeltaPct,
+                      row.streamsDeltaTone,
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatDeltaCell(
+                      row.savesDelta,
+                      row.savesDeltaPct,
+                      row.savesDeltaTone,
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {saveRatePill(
+                      row.actualSaveRate,
+                      row.saveRateVsBand,
+                      row.saveRateBand,
+                    )}
+                  </td>
+                  <td className="px-4 py-3 font-mono tabular-nums text-muted">
+                    {row.closedAtDisplay ?? "n/a"}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Link
+                      href={row.detailHref}
+                      className="text-sm font-medium text-accent-readable hover:text-accent-hover hover:underline"
+                    >
+                      View
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
   );
 }

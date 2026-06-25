@@ -27,19 +27,19 @@ export interface DailyEntryGridProps {
 
 function cellClassName(status: DaySaveStatus | undefined, readOnly: boolean): string {
   const base =
-    "w-14 rounded border px-1.5 py-1 text-center text-xs tabular-nums " +
+    "w-14 rounded border px-1.5 py-1 text-center font-mono text-xs tabular-nums " +
     (readOnly
-      ? "border-stone-200 bg-stone-50 text-stone-400 placeholder:text-stone-300"
-      : "border-stone-300 bg-white text-stone-900 placeholder:text-stone-300 focus:border-orange-600 focus:outline-none focus:ring-1 focus:ring-orange-600");
+      ? "cursor-default border-border bg-canvas-subtle text-muted placeholder:text-muted/50"
+      : "border-border bg-surface text-foreground placeholder:text-muted/50 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent");
 
   if (status === "error") {
-    return base + " border-red-400 ring-1 ring-red-200";
+    return `${base} border-semantic-negative ring-1 ring-semantic-negative/20`;
   }
   if (status === "saved") {
-    return base + " border-emerald-300";
+    return `${base} border-semantic-positive`;
   }
   if (status === "pending" || status === "saving") {
-    return base + " border-amber-300";
+    return `${base} border-semantic-warning`;
   }
 
   return base;
@@ -53,13 +53,13 @@ export function DailyEntryGrid({
   onDayBlur,
 }: DailyEntryGridProps) {
   return (
-    <div className="mt-5 overflow-x-auto">
+    <div className="overflow-x-auto">
       <table className="min-w-full border-collapse text-sm">
         <thead>
           <tr>
             <th
               scope="col"
-              className="sticky left-0 z-10 border-b border-stone-200 bg-white px-2 py-2 text-left text-xs font-semibold uppercase tracking-wide text-stone-500"
+              className="sticky left-0 z-10 border-b border-border bg-surface px-2 py-2 text-left text-xs font-semibold uppercase tracking-wide text-muted"
             >
               Metric
             </th>
@@ -67,7 +67,7 @@ export function DailyEntryGrid({
               <th
                 key={day}
                 scope="col"
-                className="border-b border-stone-200 px-1 py-2 text-center text-xs font-medium text-stone-500"
+                className="border-b border-border px-1 py-2 text-center font-mono text-[11px] font-medium uppercase tracking-[0.06em] text-muted"
               >
                 D{day}
               </th>
@@ -76,10 +76,10 @@ export function DailyEntryGrid({
         </thead>
         <tbody>
           {ROWS.map((row) => (
-            <tr key={row.key} className="border-b border-stone-100 last:border-b-0">
+            <tr key={row.key} className="border-b border-border-subtle last:border-b-0">
               <th
                 scope="row"
-                className="sticky left-0 z-10 bg-white px-2 py-2 text-left text-xs font-medium text-stone-700"
+                className="sticky left-0 z-10 bg-surface px-2 py-2 text-left text-xs font-medium text-secondary"
               >
                 {row.label}
               </th>

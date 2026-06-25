@@ -4,6 +4,9 @@ export const TIER_ML_THRESHOLDS = {
   established: 2_000_000,
 } as const;
 
+/** Minimum closed releases for retrain guardrail (mirrors retrain/config.py MIN_SAMPLE_SIZE). */
+export const RETRAIN_MIN_SAMPLE_SIZE = 40;
+
 export const GENRES = [
   "dubstep",
   "house",
@@ -100,6 +103,22 @@ export const META_DELIVERY_PER_OBJECTIVE = {
   awareness: { cpm: 4.3, cpr: 6.58, cpc: 2.14 },
   reach: { cpm: 2.09, cpr: 2.18, cpc: 0.89 },
 } as const;
+
+/**
+ * Share of Meta clicks that convert to Spotify streams, by genre.
+ * Not yet calibrated from catalog — update when Meta-to-Spotify attribution
+ * data is available in the retrain pipeline.
+ */
+export const META_CLICK_TO_STREAM_CONVERSION: Record<
+  (typeof GENRES)[number],
+  number
+> = {
+  house: 0.15,
+  dubstep: 0.18,
+  "melodic-bass": 0.17,
+  downtempo: 0.12,
+  "big-room": 0.14,
+};
 
 /** Save-rate health benchmarks (%), used by flags/monitoring, not forecast math. */
 export const SAVE_RATE_BANDS = {

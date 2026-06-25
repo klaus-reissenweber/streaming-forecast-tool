@@ -20,23 +20,28 @@ export function AlgoPositioningModule({
   const active = ALGO_BAND_DISPLAY[band];
 
   return (
-    <section className="rounded-lg border border-stone-200 bg-white p-5">
+    <section
+      className="motion-fade-up rounded-instrument border border-border bg-surface p-5"
+      aria-label="Algorithmic positioning"
+    >
       <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-stone-900">
-            Algorithmic positioning
+          <h2 className="font-serif text-section font-semibold text-foreground">
+            <span className="bracket-tag bracket-tag--accent bracket-tag--section instrument-section-title">
+              [ALGO POSITIONING]
+            </span>
           </h2>
-          <p className="mt-1 text-sm text-stone-500">
+          <p className="mt-1 text-body-sm text-muted">
             Week-1 save count vs {tier} tier benchmarks (locked forecast)
           </p>
         </div>
         <div className="mt-2 sm:mt-0 sm:text-right">
-          <p className="text-xs font-medium uppercase tracking-wide text-stone-500">
-            Current projection
-          </p>
-          <p className="text-2xl font-semibold tabular-nums text-stone-900">
+          <p className="text-label text-muted">Current projection</p>
+          <p className="font-mono text-metric-value tabular-nums text-foreground">
             {formatCompactNumber(saves)}{" "}
-            <span className="text-base font-medium text-stone-500">saves</span>
+            <span className="text-base font-sans font-medium text-muted">
+              saves
+            </span>
           </p>
         </div>
       </div>
@@ -61,42 +66,35 @@ export function AlgoPositioningModule({
             <div
               key={bandKey}
               className={
-                "rounded-lg border p-4 transition " +
+                "rounded-instrument border p-4 transition " +
                 (isActive
-                  ? "border-orange-700 bg-orange-50 ring-1 ring-orange-700/20"
-                  : "border-stone-200 bg-stone-50/50")
+                  ? "border-l-[3px] border-l-accent border-border bg-accent-tint"
+                  : "border-border bg-canvas")
               }
               aria-current={isActive ? "true" : undefined}
             >
               <div className="flex items-center justify-between gap-2">
                 <h3
                   className={
-                    "text-sm font-semibold " +
-                    (isActive ? "text-orange-900" : "text-stone-800")
+                    "text-body-sm font-semibold " +
+                    (isActive ? "text-accent-readable" : "text-foreground")
                   }
                 >
                   {display.label}
                 </h3>
                 {isActive ? (
-                  <span className="rounded-full bg-orange-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
-                    You
-                  </span>
+                  <span className="bracket-tag bracket-tag--accent">[YOU]</span>
                 ) : null}
               </div>
               <p
                 className={
-                  "mt-1 text-xs tabular-nums " +
-                  (isActive ? "text-orange-800/80" : "text-stone-500")
+                  "mt-1 font-mono text-xs tabular-nums " +
+                  (isActive ? "text-accent-readable" : "text-muted")
                 }
               >
                 {rangeLabel} saves
               </p>
-              <p
-                className={
-                  "mt-2 text-xs leading-relaxed " +
-                  (isActive ? "text-orange-950/90" : "text-stone-600")
-                }
-              >
+              <p className="mt-2 text-xs leading-relaxed text-secondary">
                 {display.description}
               </p>
             </div>
@@ -104,9 +102,10 @@ export function AlgoPositioningModule({
         })}
       </div>
 
-      <p className="mt-4 text-sm text-stone-700">
+      <p className="mt-4 text-body-sm text-secondary">
         Locked forecast places this release in the{" "}
-        <span className="font-semibold text-stone-900">{active.label}</span> band.
+        <span className="font-semibold text-foreground">{active.label}</span>{" "}
+        band.
       </p>
     </section>
   );

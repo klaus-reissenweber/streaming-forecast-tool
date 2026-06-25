@@ -30,6 +30,18 @@ export function formatPercent(value: number, decimals = 1): string {
   return `${value.toFixed(decimals)}%`;
 }
 
+export function formatUsd(value: number, decimals = 0): string {
+  if (!Number.isFinite(value)) {
+    return "n/a";
+  }
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(value);
+}
+
 export function formatReleaseDate(isoDate: string): string {
   const date = new Date(`${isoDate}T00:00:00`);
   if (Number.isNaN(date.getTime())) {

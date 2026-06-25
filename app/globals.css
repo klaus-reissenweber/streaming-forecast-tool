@@ -1,26 +1,400 @@
 @import "tailwindcss";
+@config "../tailwind.config.ts";
 
+/* ─── Raw design tokens (charts, overlays, non-utility consumers) ─── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  --color-canvas: #edeef1;
+  --color-canvas-subtle: #f4f5f7;
+  --color-surface: #ffffff;
+  --color-border: #e2e6eb;
+  --color-border-subtle: #eceef2;
+  --color-foreground: #12151a;
+  --color-secondary: #545b66;
+  --color-muted: #868e98;
+  --color-accent: #c8e600;
+  --color-accent-hover: #b3cf00;
+  --color-accent-readable: #5a6600;
+  --color-accent-tint: #f7fce8;
+  --color-accent-border: #dfeba3;
+  --color-chart-locked: #8fa800;
+  --color-chart-projected: #1565a8;
+  --color-chart-actual: #12151a;
+  --color-chart-grid: #eceef2;
+  --color-dot-matrix: #c5cad3;
+  --color-bracket-bg: #f0f2f5;
+  --color-bracket-text: #545b66;
+  --color-scanline: rgba(18, 21, 26, 0.04);
+
+  --motion-duration-count: 300ms;
+  --motion-duration-enter: 250ms;
+  --motion-duration-flash: 400ms;
+  --motion-duration-chart: 600ms;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@media (prefers-reduced-motion: reduce) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --motion-duration-count: 0ms;
+    --motion-duration-enter: 0ms;
+    --motion-duration-flash: 0ms;
+    --motion-duration-chart: 0ms;
   }
 }
 
+/* ─── Tailwind theme (utility class generation) ─── */
+@theme inline {
+  --color-canvas: var(--color-canvas);
+  --color-canvas-subtle: var(--color-canvas-subtle);
+  --color-surface: var(--color-surface);
+  --color-border: var(--color-border);
+  --color-border-subtle: var(--color-border-subtle);
+  --color-foreground: var(--color-foreground);
+  --color-secondary: var(--color-secondary);
+  --color-muted: var(--color-muted);
+  --color-disabled: #555555;
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent-readable: var(--color-accent-readable);
+  --color-accent-tint: var(--color-accent-tint);
+  --color-accent-border: var(--color-accent-border);
+  --color-semantic-positive: #1f6b52;
+  --color-semantic-positive-bg: #ecf5f1;
+  --color-semantic-warning: #8a6400;
+  --color-semantic-warning-bg: #f8f3e4;
+  --color-semantic-negative: #9b2335;
+  --color-semantic-negative-bg: #f9ecee;
+  --color-semantic-info: #1565a8;
+  --color-semantic-info-bg: #ecf2fa;
+  --color-semantic-neutral: #545b66;
+  --color-projected: #1565a8;
+  --color-chart-locked: var(--color-chart-locked);
+  --color-chart-projected: var(--color-chart-projected);
+  --color-chart-actual: var(--color-chart-actual);
+  --color-chart-grid: var(--color-chart-grid);
+  --color-chart-axis: #868e98;
+  --color-dot: var(--color-dot-matrix);
+  --color-bracket-bg: var(--color-bracket-bg);
+  --color-bracket-text: var(--color-bracket-text);
+
+  --font-serif: var(--font-source-serif), ui-serif, Georgia, serif;
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  --radius-instrument: 4px;
+  --radius-tag: 2px;
+
+  --ease-out-expo: var(--ease-out-expo);
+  --ease-out-quart: var(--ease-out-quart);
+  --ease-in-out: var(--ease-in-out);
+}
+
+/* ─── Base ─── */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-canvas);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Instrument utility: bracket prefix tags ─── */
+.bracket-tag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-tag);
+  background-color: var(--color-bracket-bg);
+  padding: 0.125rem 0.375rem;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  color: var(--color-bracket-text);
+  vertical-align: baseline;
+}
+
+.bracket-tag--accent {
+  color: var(--color-accent-readable);
+}
+
+.bracket-tag--positive {
+  color: var(--color-semantic-positive);
+}
+
+.bracket-tag--warning {
+  color: var(--color-semantic-warning);
+}
+
+.bracket-tag--negative {
+  color: var(--color-semantic-negative);
+}
+
+.bracket-tag--info {
+  color: var(--color-semantic-info);
+}
+
+.bracket-tag--neutral {
+  color: var(--color-muted);
+}
+
+.bracket-tag--axis {
+  padding: 0.0625rem 0.25rem;
+  font-size: 0.5625rem;
+  letter-spacing: 0.03em;
+}
+
+/* Bracket as sole section header (no redundant serif title alongside) */
+.bracket-tag--section {
+  padding: 0.1875rem 0.5rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.05em;
+}
+
+/* Page-level identity bracket (e.g. archive h1) */
+.bracket-tag--page {
+  padding: 0.25rem 0.5625rem;
+  font-size: 0.8125rem;
+  letter-spacing: 0.05em;
+}
+
+/* Chart axis bracket labels rendered via foreignObject */
+.chart-axis-bracket {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-tag);
+  background-color: var(--color-bracket-bg);
+  padding: 0.0625rem 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.03em;
+  color: var(--color-chart-axis);
+  white-space: nowrap;
+}
+
+.chart-today-label {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-tag);
+  background-color: var(--color-bracket-bg);
+  padding: 0.0625rem 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.03em;
+  color: var(--color-accent-readable);
+  white-space: nowrap;
+}
+
+/* ─── Instrument utility: dot-matrix column divider ─── */
+.dot-matrix-divider {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  align-self: stretch;
+  padding-inline: 0.5rem;
+}
+
+.dot-matrix-divider::before {
+  content: "";
+  display: block;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background-color: var(--color-dot-matrix);
+  box-shadow:
+    0 6px 0 0 var(--color-dot-matrix),
+    0 12px 0 0 var(--color-dot-matrix),
+    0 18px 0 0 var(--color-dot-matrix),
+    0 24px 0 0 var(--color-dot-matrix),
+    0 30px 0 0 var(--color-dot-matrix),
+    0 36px 0 0 var(--color-dot-matrix),
+    0 42px 0 0 var(--color-dot-matrix);
+}
+
+/* ─── Instrument utility: metric cell dot-matrix foot ─── */
+.instrument-metric-foot {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 0.5rem;
+}
+
+.instrument-metric-foot span {
+  display: block;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background-color: var(--color-dot-matrix);
+}
+
+/* ─── Instrument utility: left accent rule ─── */
+.instrument-accent-rule {
+  position: relative;
+}
+
+.instrument-accent-rule::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  background-color: var(--color-accent);
+  transform-origin: top;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .instrument-accent-rule::before {
+    animation: instrument-rule-grow 200ms var(--ease-out-expo) 100ms both;
+  }
+}
+
+/* ─── Instrument utility: scan-line hover overlay ─── */
+.instrument-scanline {
+  position: relative;
+  overflow: hidden;
+}
+
+.instrument-scanline::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    var(--color-scanline) 2px,
+    var(--color-scanline) 4px
+  );
+  transition: opacity 150ms var(--ease-in-out);
+}
+
+.instrument-scanline:hover::after {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .instrument-scanline:hover::after {
+    animation: instrument-scanline-in 200ms var(--ease-in-out) both;
+  }
+}
+
+/* ─── Instrument utility: section header accent underline ─── */
+.instrument-section-title {
+  display: inline-block;
+  border-bottom: 2px solid color-mix(in srgb, var(--color-accent) 40%, transparent);
+  padding-bottom: 0.125rem;
+}
+
+/* ─── Motion keyframes (respect reduced motion via class gating) ─── */
+@keyframes instrument-rule-grow {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes instrument-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes instrument-scanline-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes instrument-recompute-flash {
+  0% {
+    background-color: var(--color-accent-tint);
+  }
+  100% {
+    background-color: var(--color-surface);
+  }
+}
+
+@keyframes instrument-flag-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes instrument-chart-grid-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes instrument-legend-tag-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .motion-fade-up {
+    animation: instrument-fade-up 250ms var(--ease-out-quart) both;
+  }
+
+  .motion-flag-in {
+    animation: instrument-flag-in 200ms var(--ease-out-quart) both;
+  }
+
+  .motion-recompute-flash {
+    animation: instrument-recompute-flash 400ms var(--ease-out-quart) both;
+  }
+
+  .motion-chart-grid-in {
+    animation: instrument-chart-grid-in 300ms var(--ease-out-expo) both;
+  }
+
+  .motion-legend-tag-in {
+    animation: instrument-legend-tag-in 200ms var(--ease-out-quart) both;
+  }
+}
+
+/* Health banner tone crossfade helper */
+.instrument-health-content {
+  transition:
+    opacity 150ms var(--ease-in-out),
+    color 200ms var(--ease-in-out);
+}
+
+.instrument-health-rule {
+  transition: background-color 200ms var(--ease-in-out);
 }

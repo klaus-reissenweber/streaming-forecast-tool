@@ -1,47 +1,84 @@
-import type { HealthSummary } from "@/lib/monitoring";
+import type { HealthStatus, HealthSummary, HealthTone } from "@/lib/monitoring";
 
 export interface HealthBannerProps {
   health: HealthSummary;
 }
 
-type HealthTone = HealthSummary["tone"];
+const STATUS_CONFIG: Record<
+  HealthStatus,
+  { tag: string; tagClass: string }
+> = {
+  "on-track": {
+    tag: "[ON TRACK]",
+    tagClass: "bracket-tag--neutral",
+  },
+  outperforming: {
+    tag: "[OUTPERFORMING]",
+    tagClass: "bracket-tag--positive",
+  },
+  lagging: {
+    tag: "[LAGGING]",
+    tagClass: "bracket-tag--negative",
+  },
+  awaiting: {
+    tag: "[AWAITING]",
+    tagClass: "bracket-tag--neutral",
+  },
+};
 
 const TONE_STYLES: Record<
   HealthTone,
-  { container: string; title: string; detail: string }
+  { ruleClass: string; titleClass: string }
 > = {
-  neutral: {
-    container: "border-stone-200 bg-stone-50",
-    title: "text-stone-900",
-    detail: "text-stone-600",
-  },
   positive: {
-    container: "border-emerald-200 bg-emerald-50",
-    title: "text-emerald-900",
-    detail: "text-emerald-800",
+    ruleClass: "bg-semantic-positive",
+    titleClass: "text-semantic-positive",
   },
   warning: {
-    container: "border-amber-200 bg-amber-50",
-    title: "text-amber-900",
-    detail: "text-amber-800",
+    ruleClass: "bg-semantic-warning",
+    titleClass: "text-semantic-warning",
   },
   negative: {
-    container: "border-red-200 bg-red-50",
-    title: "text-red-900",
-    detail: "text-red-800",
+    ruleClass: "bg-semantic-negative",
+    titleClass: "text-semantic-negative",
+  },
+  neutral: {
+    ruleClass: "bg-muted",
+    titleClass: "text-muted",
   },
 };
 
 export function HealthBanner({ health }: HealthBannerProps) {
-  const styles = TONE_STYLES[health.tone];
+  const statusConfig = STATUS_CONFIG[health.status];
+  const toneStyles = TONE_STYLES[health.tone];
 
   return (
     <section
-      className={`rounded-lg border p-4 ${styles.container}`}
+      className="motion-fade-up relative overflow-hidden rounded-instrument border border-border bg-surface py-2 pl-3.5 pr-3.5"
       aria-label="Release health"
     >
-      <p className={`text-sm font-semibold ${styles.title}`}>{health.title}</p>
-      <p className={`mt-1 text-sm ${styles.detail}`}>{health.detail}</p>
+      <span
+        className={`instrument-health-rule pointer-events-none absolute inset-y-0 left-0 w-[3px] ${toneStyles.ruleClass}`}
+        aria-hidden="true"
+      />
+
+      <div className="instrument-health-content flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-2">
+        <span className="inline-flex flex-wrap items-baseline gap-x-1.5 text-sm font-semibold leading-snug">
+          <span className={`bracket-tag ${statusConfig.tagClass}`}>
+            {statusConfig.tag}
+          </span>
+          <span className={toneStyles.titleClass}>{health.title}</span>
+        </span>
+        <span
+          className="hidden text-body-sm text-muted sm:inline"
+          aria-hidden="true"
+        >
+          ·
+        </span>
+        <p className="text-body-sm leading-snug text-secondary sm:inline">
+          {health.detail}
+        </p>
+      </div>
     </section>
   );
 }

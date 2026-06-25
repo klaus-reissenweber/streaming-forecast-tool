@@ -20,41 +20,41 @@ function SplitBar({
   if (spotifyPct === 0 && metaPct === 0) {
     return (
       <div>
-        <p className="text-xs font-medium text-stone-600">{label}</p>
-        <p className="mt-1 text-sm text-stone-500">No paid spend planned</p>
+        <p className="text-xs font-medium text-secondary">{label}</p>
+        <p className="mt-1 text-body-sm text-muted">No paid spend planned</p>
       </div>
     );
   }
 
   return (
     <div>
-      <div className="flex items-center justify-between text-xs font-medium text-stone-600">
+      <div className="flex items-center justify-between text-xs font-medium text-secondary">
         <span>{label}</span>
-        <span className="tabular-nums">
+        <span className="font-mono tabular-nums">
           {spotifyPct}% Spotify · {metaPct}% Meta
         </span>
       </div>
       <div
-        className="mt-1.5 flex h-3 overflow-hidden rounded-full bg-stone-100"
+        className="mt-1.5 flex h-3 overflow-hidden rounded-full bg-canvas"
         role="img"
         aria-label={`${label}: ${spotifyPct}% Spotify, ${metaPct}% Meta`}
       >
         <div
-          className="bg-emerald-600 transition-all"
+          className="bg-semantic-positive transition-all"
           style={{ width: `${spotifyPct}%` }}
         />
         <div
-          className="bg-sky-600 transition-all"
+          className="bg-semantic-info transition-all"
           style={{ width: `${metaPct}%` }}
         />
       </div>
-      <div className="mt-1 flex gap-3 text-[11px] text-stone-500">
+      <div className="mt-1 flex gap-3 text-[11px] text-muted">
         <span className="inline-flex items-center gap-1">
-          <span className="inline-block h-2 w-2 rounded-full bg-emerald-600" />
+          <span className="inline-block h-2 w-2 rounded-full bg-semantic-positive" />
           Spotify
         </span>
         <span className="inline-flex items-center gap-1">
-          <span className="inline-block h-2 w-2 rounded-full bg-sky-600" />
+          <span className="inline-block h-2 w-2 rounded-full bg-semantic-info" />
           Meta
         </span>
       </div>
@@ -68,16 +68,31 @@ export function ChannelMixRecommendation({
   const hasSpend = mix.total_spend > 0;
 
   return (
-    <section className="rounded-lg border border-stone-200 bg-white p-5">
-      <h2 className="text-lg font-semibold text-stone-900">
-        Channel mix recommendation
+    <section
+      className="motion-fade-up rounded-instrument border border-border bg-surface p-5"
+      aria-label="Channel mix recommendation"
+    >
+      <h2 className="font-serif text-section font-semibold text-foreground">
+        <span className="bracket-tag bracket-tag--accent mr-2 align-middle">
+          [CHANNEL MIX]
+        </span>
+        <span className="instrument-section-title align-middle">
+          Channel mix recommendation
+        </span>
       </h2>
-      <p className="mt-1 text-sm text-stone-500">
-        Spotify CPS ({formatUsd(mix.spotify_cps)}) vs Meta CPS (
-        {formatUsd(mix.meta_cps)}) for this release
+      <p className="mt-1 text-body-sm text-muted">
+        Spotify CPS (
+        <span className="font-mono tabular-nums text-secondary">
+          {formatUsd(mix.spotify_cps)}
+        </span>
+        ) vs Meta CPS (
+        <span className="font-mono tabular-nums text-secondary">
+          {formatUsd(mix.meta_cps)}
+        </span>
+        ) for this release
       </p>
 
-      <p className="mt-4 text-sm leading-relaxed text-stone-800">
+      <p className="mt-4 text-body-sm leading-relaxed text-secondary">
         {mix.recommendation_text}
       </p>
 
@@ -97,28 +112,28 @@ export function ChannelMixRecommendation({
       </div>
 
       {hasSpend ? (
-        <dl className="mt-5 grid grid-cols-2 gap-4 border-t border-stone-100 pt-4 sm:grid-cols-4">
+        <dl className="mt-5 grid grid-cols-2 gap-4 border-t border-border-subtle pt-4 sm:grid-cols-4">
           <div>
-            <dt className="text-xs text-stone-500">Spotify spend</dt>
-            <dd className="text-sm font-medium tabular-nums text-stone-900">
+            <dt className="text-xs text-muted">Spotify spend</dt>
+            <dd className="font-mono text-body-sm font-medium tabular-nums text-foreground">
               {formatUsd(mix.adImpact.spotify.spend)}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-stone-500">Meta spend</dt>
-            <dd className="text-sm font-medium tabular-nums text-stone-900">
+            <dt className="text-xs text-muted">Meta spend</dt>
+            <dd className="font-mono text-body-sm font-medium tabular-nums text-foreground">
               {formatUsd(mix.adImpact.meta.spend)}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-stone-500">Est. Spotify streams</dt>
-            <dd className="text-sm font-medium tabular-nums text-stone-900">
+            <dt className="text-xs text-muted">Est. Spotify streams</dt>
+            <dd className="font-mono text-body-sm font-medium tabular-nums text-foreground">
               {mix.adImpact.spotify.estimatedStreams.toLocaleString("en-US")}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-stone-500">Est. Meta streams</dt>
-            <dd className="text-sm font-medium tabular-nums text-stone-900">
+            <dt className="text-xs text-muted">Est. Meta streams</dt>
+            <dd className="font-mono text-body-sm font-medium tabular-nums text-foreground">
               {mix.adImpact.meta.estimatedStreams.toLocaleString("en-US")}
             </dd>
           </div>

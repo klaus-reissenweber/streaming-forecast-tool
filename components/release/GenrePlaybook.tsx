@@ -6,33 +6,64 @@ export interface GenrePlaybookProps {
   genre: Genre;
 }
 
-function PlaybookSection({
-  title,
-  children,
-  tone = "neutral",
-}: {
-  title: string;
-  children: ReactNode;
-  tone?: "neutral" | "emerald" | "red";
-}) {
-  const titleClass =
-    tone === "emerald"
-      ? "text-emerald-800"
-      : tone === "red"
-        ? "text-red-800"
-        : "text-stone-700";
+type PlaybookSectionKey =
+  | "optimize_for"
+  | "best_practices"
+  | "creative"
+  | "avoid";
 
-  return (
-    <section className="border-t border-stone-100 pt-5 first:border-t-0 first:pt-0">
-      <h3 className={`text-sm font-semibold ${titleClass}`}>{title}</h3>
-      <div className="mt-2 text-sm leading-relaxed text-stone-700">{children}</div>
-    </section>
-  );
+const PLAYBOOK_SECTIONS: readonly {
+  key: PlaybookSectionKey;
+  tag: string;
+  tagClass: string;
+  ruleClass: string;
+  titleClass: string;
+  title: string;
+}[] = [
+  {
+    key: "optimize_for",
+    tag: "[GOAL]",
+    tagClass: "bracket-tag--accent",
+    ruleClass: "border-l-accent",
+    titleClass: "text-accent-readable",
+    title: "What to optimize for",
+  },
+  {
+    key: "best_practices",
+    tag: "[PLAYS]",
+    tagClass: "bracket-tag--info",
+    ruleClass: "border-l-semantic-info",
+    titleClass: "text-semantic-info",
+    title: "Best practices",
+  },
+  {
+    key: "creative",
+    tag: "[CREATIVE]",
+    tagClass: "bracket-tag--neutral",
+    ruleClass: "border-l-muted",
+    titleClass: "text-muted",
+    title: "Creative direction",
+  },
+  {
+    key: "avoid",
+    tag: "[AVOID]",
+    tagClass: "bracket-tag--warning",
+    ruleClass: "border-l-semantic-warning",
+    titleClass: "text-semantic-warning",
+    title: "Avoid",
+  },
+];
+
+function formatGenreLabel(genre: Genre): string {
+  return genre
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
 function BulletList({ items }: { items: readonly string[] }) {
   return (
-    <ul className="list-disc space-y-2 pl-5">
+    <ul className="list-disc space-y-1.5 pl-5">
       {items.map((item) => (
         <li key={item}>{item}</li>
       ))}
@@ -40,31 +71,87 @@ function BulletList({ items }: { items: readonly string[] }) {
   );
 }
 
+function PlaybookSectionItem({
+  tag,
+  tagClass,
+  ruleClass,
+  titleClass,
+  title,
+  children,
+  isLast,
+}: {
+  tag: string;
+  tagClass: string;
+  ruleClass: string;
+  titleClass: string;
+  title: string;
+  children: ReactNode;
+  isLast: boolean;
+}) {
+  return (
+    <li
+      className={`border-l-[3px] py-3 pl-3.5 pr-3.5 ${ruleClass} ${
+        isLast ? "" : "border-b border-border-subtle"
+      }`}
+    >
+      <h3 className="text-body-sm font-semibold">
+        <span className={`bracket-tag mr-1.5 align-middle ${tagClass}`}>
+          {tag}
+        </span>
+        <span className={`align-middle ${titleClass}`}>{title}</span>
+      </h3>
+      <div className="mt-1.5 text-body-sm leading-relaxed text-secondary">
+        {children}
+      </div>
+    </li>
+  );
+}
+
 export function GenrePlaybook({ genre }: GenrePlaybookProps) {
   const playbook = GENRE_PLAYBOOKS[genre];
+  const genreLabel = formatGenreLabel(genre);
 
   return (
-    <section className="rounded-lg border border-stone-200 bg-white p-5">
-      <h2 className="text-lg font-semibold text-stone-900">Genre playbook</h2>
-      <p className="mt-1 text-sm text-stone-500">{genre}</p>
+    <section className="motion-fade-up" aria-label="Genre playbook">
+      <h2 className="font-serif text-section font-semibold text-foreground">
+        <span className="bracket-tag bracket-tag--accent mr-2 align-middle">
+          [PLAYBOOK]
+        </span>
+        <span className="instrument-section-title align-middle">
+          {genreLabel} operational playbook
+        </span>
+      </h2>
 
-      <div className="mt-5 space-y-0">
-        <PlaybookSection title="What to optimize for">
-          <p>{playbook.optimize_for}</p>
-        </PlaybookSection>
+      <ul className="mt-4 overflow-hidden rounded-instrument border border-border bg-surface">
+        {PLAYBOOK_SECTIONS.map((section, index) => {
+          const isLast = index === PLAYBOOK_SECTIONS.length - 1;
 
-        <PlaybookSection title="Best practices" tone="emerald">
-          <BulletList items={playbook.best_practices} />
-        </PlaybookSection>
-
-        <PlaybookSection title="Creative direction">
-          <p>{playbook.creative}</p>
-        </PlaybookSection>
-
-        <PlaybookSection title="Avoid" tone="red">
-          <BulletList items={playbook.avoid} />
-        </PlaybookSection>
-      </div>
+          return (
+            <PlaybookSectionItem
+              key={section.key}
+              tag={section.tag}
+              tagClass={section.tagClass}
+              ruleClass={section.ruleClass}
+              titleClass={section.titleClass}
+              title={section.title}
+              isLast={isLast}
+            >
+              {section.key === "optimize_for" ? (
+                <p>{playbook.optimize_for}</p>
+              ) : null}
+              {section.key === "best_practices" ? (
+                <BulletList items={playbook.best_practices} />
+              ) : null}
+              {section.key === "creative" ? (
+                <p>{playbook.creative}</p>
+              ) : null}
+              {section.key === "avoid" ? (
+                <BulletList items={playbook.avoid} />
+              ) : null}
+            </PlaybookSectionItem>
+          );
+        })}
+      </ul>
     </section>
   );
 }

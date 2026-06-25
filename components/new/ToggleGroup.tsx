@@ -29,7 +29,7 @@ export function ToggleGroup<T extends string | number>({
 }: ToggleGroupProps<T>) {
   return (
     <fieldset className="flex flex-col gap-1.5" disabled={disabled}>
-      <legend className="text-sm font-medium text-stone-700">{label}</legend>
+      <legend className="text-body-sm font-medium text-foreground">{label}</legend>
 
       <div
         className={
@@ -50,10 +50,10 @@ export function ToggleGroup<T extends string | number>({
               key={id}
               htmlFor={id}
               className={
-                "cursor-pointer rounded border px-3 py-2 text-sm transition " +
+                "cursor-pointer rounded-instrument border px-3 py-2 text-body-sm transition " +
                 (selected
-                  ? "border-orange-700 bg-orange-700 font-medium text-white"
-                  : "border-stone-300 bg-white text-stone-700 hover:border-stone-400 hover:bg-stone-50") +
+                  ? "border-accent-border bg-accent-tint font-medium text-accent-readable"
+                  : "border-border bg-surface text-secondary hover:border-border hover:bg-canvas") +
                 (disabled ? " cursor-not-allowed opacity-50" : "")
               }
             >
@@ -74,7 +74,7 @@ export function ToggleGroup<T extends string | number>({
       </div>
 
       {error ? (
-        <p className="text-xs text-red-600" role="alert">
+        <p className="text-caption text-semantic-negative" role="alert">
           {error}
         </p>
       ) : null}

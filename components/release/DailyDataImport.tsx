@@ -78,23 +78,23 @@ export function DailyDataImport({
   }
 
   return (
-    <div className="mt-6 border-t border-stone-100 pt-5">
+    <div className="mt-6 border-t border-border-subtle pt-5">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="text-sm font-medium text-orange-700 hover:text-orange-800 hover:underline"
+        className="text-sm font-medium text-accent-readable hover:text-accent-hover hover:underline"
       >
         {open ? "Hide import from spreadsheet" : "Import from spreadsheet"}
       </button>
 
       {open ? (
-        <div className="mt-4 space-y-4 rounded-lg border border-stone-200 bg-stone-50/50 p-4">
-          <p className="text-sm text-stone-600">
+        <div className="mt-4 space-y-4 rounded-instrument border border-border bg-canvas p-4">
+          <p className="text-body-sm text-secondary">
             Paste or upload CSV for this release only. Columns: day (optional),
             streams, saves, Other %.
           </p>
 
-          <label className="flex items-center gap-2 text-sm text-stone-700">
+          <label className="flex items-center gap-2 text-body-sm text-secondary">
             <input
               type="checkbox"
               checked={hasDayColumn}
@@ -104,21 +104,19 @@ export function DailyDataImport({
           </label>
 
           <div>
-            <label className="text-xs font-medium uppercase tracking-wide text-stone-500">
-              Upload file
-            </label>
+            <label className="text-label text-muted">Upload file</label>
             <input
               type="file"
               accept=".csv,.txt,text/csv,text/plain"
               onChange={onFileChange}
-              className="mt-1 block w-full text-sm text-stone-600 file:mr-3 file:rounded file:border-0 file:bg-stone-200 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-stone-800"
+              className="mt-1 block w-full text-body-sm text-secondary file:mr-3 file:rounded file:border-0 file:bg-bracket-bg file:px-3 file:py-1.5 file:text-body-sm file:font-medium file:text-foreground"
             />
           </div>
 
           <div>
             <label
               htmlFor="daily-import-paste"
-              className="text-xs font-medium uppercase tracking-wide text-stone-500"
+              className="text-label text-muted"
             >
               Or paste rows
             </label>
@@ -132,12 +130,12 @@ export function DailyDataImport({
               }}
               rows={6}
               placeholder={"1,12000,850,12.5\n2,9800,720,11.0"}
-              className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 font-mono text-xs text-stone-800"
+              className="mt-1 w-full rounded-instrument border border-border bg-surface px-3 py-2 font-mono text-xs text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
             />
           </div>
 
           {parsed.issues.length > 0 ? (
-            <ul className="space-y-1 text-sm text-red-700">
+            <ul className="space-y-1 text-body-sm text-semantic-negative">
               {parsed.issues.map((issue) => (
                 <li key={issue}>{issue}</li>
               ))}
@@ -145,17 +143,17 @@ export function DailyDataImport({
           ) : null}
 
           {raw.trim().length > 0 && parsed.issues.length === 0 ? (
-            <p className="text-sm text-stone-600">
+            <p className="text-body-sm text-secondary">
               {parsed.rows.length} day(s) ready to import.
             </p>
           ) : null}
 
           {error ? (
-            <p className="text-sm text-red-700">{error}</p>
+            <p className="text-body-sm text-semantic-negative">{error}</p>
           ) : null}
 
           {errors.length > 0 ? (
-            <ul className="space-y-1 text-sm text-red-700">
+            <ul className="space-y-1 text-body-sm text-semantic-negative">
               {errors.map((item) => (
                 <li key={item}>{item}</li>
               ))}
@@ -167,10 +165,10 @@ export function DailyDataImport({
             disabled={!canApply}
             onClick={applyImport}
             className={
-              "rounded-lg px-4 py-2 text-sm font-medium " +
+              "rounded-instrument px-4 py-2 text-body-sm font-medium " +
               (canApply
-                ? "bg-orange-700 text-white hover:bg-orange-800"
-                : "cursor-not-allowed bg-stone-200 text-stone-500")
+                ? "bg-foreground text-canvas hover:bg-foreground/90"
+                : "cursor-not-allowed bg-bracket-bg text-muted")
             }
           >
             {saving ? "Importing..." : "Apply to this release"}

@@ -1,9 +1,11 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { createRelease } from "@/app/new/actions";
 import { MonthlyListenersField } from "@/components/new/MonthlyListenersField";
 import { ToggleGroup } from "@/components/new/ToggleGroup";
+import { MetaFunnelForecast } from "@/components/release/MetaFunnelForecast";
 import {
   EDITORIAL_TIER_DEFINITIONS,
   EDITORIAL_TIER_TOGGLE_OPTIONS,
@@ -42,6 +44,28 @@ const SPOTIFY_FORMAT_LABELS: Record<(typeof SPOTIFY_FORMATS)[number], string> = 
   showcase: "Showcase",
 };
 
+const TEXT_INPUT_CLASS =
+  "rounded-instrument border border-border bg-surface px-3 py-2 text-body-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent";
+
+const NUMERIC_INPUT_CLASS = `${TEXT_INPUT_CLASS} font-mono tabular-nums`;
+
+function FormSection({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="border-t border-border pt-6 first:border-t-0 first:pt-0">
+      <h2 className="mb-4 font-mono text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
+        {label}
+      </h2>
+      {children}
+    </section>
+  );
+}
+
 function MessageBox({
   tone,
   title,
@@ -55,13 +79,27 @@ function MessageBox({
     return null;
   }
 
-  const border = tone === "error" ? "border-red-600" : "border-amber-600";
-  const text = tone === "error" ? "text-red-700" : "text-amber-700";
+  if (tone === "error") {
+    return (
+      <div className="rounded-instrument border border-semantic-negative/30 bg-semantic-negative-bg p-3">
+        <div className="text-body-sm font-semibold text-semantic-negative">
+          {title}
+        </div>
+        <ul className="mt-1 list-disc space-y-1 pl-5 text-body-sm text-secondary">
+          {items.map((item, index) => (
+            <li key={`${item}-${index}`}>{item}</li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
 
   return (
-    <div className={`rounded border bg-white p-3 ${border}`}>
-      <div className={`text-sm font-semibold ${text}`}>{title}</div>
-      <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-stone-800">
+    <div className="rounded-instrument border border-semantic-warning/30 bg-semantic-warning-bg p-3">
+      <div className="text-body-sm font-semibold text-semantic-warning">
+        {title}
+      </div>
+      <ul className="mt-1 list-disc space-y-1 pl-5 text-body-sm text-secondary">
         {items.map((item, index) => (
           <li key={`${item}-${index}`}>{item}</li>
         ))}
@@ -127,20 +165,22 @@ export function ReleaseCreationForm() {
   }
 
   const editorialTier = values.editorialTier as EditorialTier;
+  const genre = values.genre as Genre;
+  const metaSpend = validation.values.metaSpendPlanned;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {/* 1 · Release details */}
-      <section className="rounded-lg border border-stone-200 bg-white p-5">
-        <h2 className="mb-4 text-lg font-semibold text-stone-900">
-          1 · Release details
-        </h2>
-
+    <form
+      onSubmit={handleSubmit}
+      className="rounded-instrument border border-border bg-surface p-5 sm:p-6"
+    >
+      <FormSection label="Track data">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-stone-700">Track name</span>
+            <span className="text-body-sm font-medium text-foreground">
+              Track name
+            </span>
             <input
-              className="rounded border border-stone-300 px-3 py-2 text-sm"
+              className={TEXT_INPUT_CLASS}
               value={values.trackName}
               onChange={(event) => setField("trackName", event.target.value)}
               disabled={pending}
@@ -148,9 +188,11 @@ export function ReleaseCreationForm() {
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-stone-700">Artist</span>
+            <span className="text-body-sm font-medium text-foreground">
+              Artist
+            </span>
             <input
-              className="rounded border border-stone-300 px-3 py-2 text-sm"
+              className={TEXT_INPUT_CLASS}
               value={values.artistName}
               onChange={(event) => setField("artistName", event.target.value)}
               disabled={pending}
@@ -199,27 +241,26 @@ export function ReleaseCreationForm() {
             onChange={(tier) => setField("editorialTier", tier)}
             disabled={pending}
           />
-          <p className="mt-2 text-xs leading-relaxed text-stone-500">
+          <p className="mt-2 text-caption leading-relaxed text-muted">
             {EDITORIAL_TIER_DEFINITIONS[editorialTier].description}
           </p>
         </div>
 
         <label className="mt-4 flex flex-col gap-1 sm:max-w-xs">
-          <span className="text-sm font-medium text-stone-700">Release date</span>
+          <span className="text-body-sm font-medium text-foreground">
+            Release date
+          </span>
           <input
             type="date"
-            className="rounded border border-stone-300 px-3 py-2 text-sm"
+            className={TEXT_INPUT_CLASS}
             value={values.releaseDate}
             onChange={(event) => setField("releaseDate", event.target.value)}
             disabled={pending}
           />
         </label>
-      </section>
+      </FormSection>
 
-      {/* 2 · Ad plan */}
-      <section className="rounded-lg border border-stone-200 bg-white p-5">
-        <h2 className="mb-4 text-lg font-semibold text-stone-900">2 · Ad plan</h2>
-
+      <FormSection label="Paid campaign">
         <div className="space-y-4">
           <ToggleGroup
             name="releaseType"
@@ -245,39 +286,42 @@ export function ReleaseCreationForm() {
             disabled={pending}
           />
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-stone-700">
-                Meta spend (USD)
-              </span>
-              <input
-                className="rounded border border-stone-300 px-3 py-2 text-sm"
-                inputMode="decimal"
-                value={values.metaSpendPlanned}
-                onChange={(event) =>
-                  setField("metaSpendPlanned", event.target.value)
-                }
-                disabled={pending}
-                placeholder="0"
-              />
-            </label>
+          <label className="flex flex-col gap-1 sm:max-w-xs">
+            <span className="text-body-sm font-medium text-foreground">
+              Spotify spend (USD)
+            </span>
+            <input
+              className={NUMERIC_INPUT_CLASS}
+              inputMode="decimal"
+              value={values.spotifySpendPlanned}
+              onChange={(event) =>
+                setField("spotifySpendPlanned", event.target.value)
+              }
+              disabled={pending}
+              placeholder="0"
+            />
+          </label>
+        </div>
+      </FormSection>
 
-            <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-stone-700">
-                Spotify spend (USD)
-              </span>
-              <input
-                className="rounded border border-stone-300 px-3 py-2 text-sm"
-                inputMode="decimal"
-                value={values.spotifySpendPlanned}
-                onChange={(event) =>
-                  setField("spotifySpendPlanned", event.target.value)
-                }
-                disabled={pending}
-                placeholder="0"
-              />
-            </label>
-          </div>
+      <FormSection label="Meta campaign">
+        <div className="space-y-4">
+          <label className="flex flex-col gap-1 sm:max-w-xs">
+            <span className="text-body-sm font-medium text-foreground">
+              Meta spend (USD)
+            </span>
+            <input
+              className={NUMERIC_INPUT_CLASS}
+              inputMode="decimal"
+              value={values.metaSpendPlanned}
+              onChange={(event) =>
+                setField("metaSpendPlanned", event.target.value)
+              }
+              disabled={pending}
+              placeholder="0"
+              required
+            />
+          </label>
 
           <ToggleGroup
             name="metaObjective"
@@ -292,15 +336,18 @@ export function ReleaseCreationForm() {
             }
             disabled={pending}
           />
+
+          {values.genre ? (
+            <MetaFunnelForecast
+              spend={metaSpend}
+              objective={values.metaObjective}
+              genre={genre}
+            />
+          ) : null}
         </div>
-      </section>
+      </FormSection>
 
-      {/* Check & submit */}
-      <section className="rounded-lg border border-stone-200 bg-white p-5">
-        <h2 className="mb-4 text-lg font-semibold text-stone-900">
-          3 · Lock forecast
-        </h2>
-
+      <FormSection label="Lock forecast">
         <div className="space-y-4">
           {errorItems.length > 0 ? (
             <MessageBox
@@ -319,10 +366,10 @@ export function ReleaseCreationForm() {
           type="submit"
           disabled={!canSubmit}
           className={
-            "mt-5 w-full rounded-lg px-4 py-3 text-sm font-semibold transition " +
+            "mt-5 w-full rounded-instrument px-4 py-3 text-body-sm font-semibold transition " +
             (canSubmit
-              ? "bg-orange-700 text-white hover:bg-orange-800"
-              : "cursor-not-allowed bg-stone-200 text-stone-400")
+              ? "bg-foreground text-canvas hover:bg-foreground/90"
+              : "cursor-not-allowed bg-bracket-bg text-muted")
           }
         >
           {pending
@@ -331,7 +378,7 @@ export function ReleaseCreationForm() {
               ? "Create release & lock forecast"
               : "Fix the items above to continue"}
         </button>
-      </section>
+      </FormSection>
     </form>
   );
 }

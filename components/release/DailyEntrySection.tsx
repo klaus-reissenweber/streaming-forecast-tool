@@ -148,44 +148,34 @@ export function DailyEntrySection({
   }
 
   return (
-    <section className="rounded-lg border border-stone-200 bg-white p-5">
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-stone-900">Daily entry</h2>
-          <p className="mt-1 text-sm text-stone-500">
-            D1–D28 · streams, saves, and source-of-streams Other %
-          </p>
-        </div>
-        {readOnly ? (
-          <p className="mt-2 text-xs font-medium text-stone-500 sm:mt-0">
-            Closed release · read only
-          </p>
-        ) : (
-          <p className="mt-2 text-xs font-medium text-stone-400 sm:mt-0">
-            Saves on blur
-          </p>
-        )}
-      </div>
+    <section className="motion-fade-up" aria-label="Daily data">
+      <h2 className="font-serif text-section font-semibold text-foreground">
+        <span className="bracket-tag bracket-tag--accent bracket-tag--section instrument-section-title">
+          [DAILY DATA]
+        </span>
+      </h2>
 
-      {sectionError ? (
-        <p className="mt-3 text-sm text-red-700">{sectionError}</p>
-      ) : null}
+      <div className="mt-4 rounded-instrument border border-border bg-surface p-5">
+        {sectionError ? (
+          <p className="mb-3 text-body-sm text-semantic-negative">{sectionError}</p>
+        ) : null}
 
-      <DailyEntryGrid
-        grid={grid}
-        readOnly={readOnly}
-        dayStatus={dayStatus}
-        onCellChange={handleCellChange}
-        onDayBlur={handleDayBlur}
-      />
-
-      {!readOnly ? (
-        <DailyDataImport
-          releaseId={releaseId}
+        <DailyEntryGrid
+          grid={grid}
           readOnly={readOnly}
-          onImportSuccess={refreshPage}
+          dayStatus={dayStatus}
+          onCellChange={handleCellChange}
+          onDayBlur={handleDayBlur}
         />
-      ) : null}
+
+        {!readOnly ? (
+          <DailyDataImport
+            releaseId={releaseId}
+            readOnly={readOnly}
+            onImportSuccess={refreshPage}
+          />
+        ) : null}
+      </div>
     </section>
   );
 }

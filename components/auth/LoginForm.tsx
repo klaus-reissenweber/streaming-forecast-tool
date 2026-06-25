@@ -4,6 +4,9 @@ import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { requestMagicLink } from "@/app/login/actions";
 
+const INPUT_CLASS =
+  "mt-1 w-full rounded-instrument border border-border bg-surface px-3 py-2 text-body-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent";
+
 export function LoginForm() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -36,48 +39,55 @@ export function LoginForm() {
   }
 
   return (
-    <main className="mx-auto flex min-h-full max-w-md flex-col justify-center px-5 py-16">
-      <header className="mb-6 border-b border-stone-200 pb-4">
-        <h1 className="text-2xl font-semibold text-stone-900">Sign in</h1>
-        <p className="mt-1 text-sm text-stone-500">
-          Red Light streaming forecast tool. Magic link only — no password.
-        </p>
-      </header>
-
-      <form onSubmit={onSubmit} className="space-y-4">
-        <label className="block">
-          <span className="text-sm font-medium text-stone-700">Email</span>
-          <input
-            type="email"
-            required
-            autoComplete="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            className="mt-1 w-full rounded border border-stone-300 px-3 py-2 text-stone-900"
-            placeholder="you@redlightcreative.com"
-          />
-        </label>
-
-        {error ? (
-          <p className="rounded border border-red-600 bg-white p-3 text-sm text-red-700">
-            {error}
+    <main className="flex min-h-full flex-col justify-center bg-canvas px-5 py-16">
+      <div className="mx-auto w-full max-w-md rounded-instrument border border-border bg-surface p-6">
+        <header className="mb-6">
+          <h1 className="font-serif text-section font-semibold text-foreground">
+            Sign in
+          </h1>
+          <p className="mt-1 text-body-sm text-secondary">
+            Red Light streaming forecast tool. Magic link only — no password.
           </p>
-        ) : null}
+        </header>
 
-        {message ? (
-          <p className="rounded border border-emerald-600 bg-white p-3 text-sm text-emerald-800">
-            {message}
-          </p>
-        ) : null}
+        <form onSubmit={onSubmit} className="space-y-4">
+          <label className="block">
+            <span className="text-body-sm font-medium text-foreground">
+              Email
+            </span>
+            <input
+              type="email"
+              required
+              autoComplete="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              className={INPUT_CLASS}
+              placeholder="you@redlightcreative.com"
+              disabled={pending}
+            />
+          </label>
 
-        <button
-          type="submit"
-          disabled={pending}
-          className="w-full rounded bg-stone-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
-        >
-          {pending ? "Sending…" : "Send magic link"}
-        </button>
-      </form>
+          {error ? (
+            <p className="rounded-instrument border border-semantic-negative/30 bg-semantic-negative-bg p-3 text-body-sm text-semantic-negative">
+              {error}
+            </p>
+          ) : null}
+
+          {message ? (
+            <p className="rounded-instrument border border-semantic-positive/30 bg-semantic-positive-bg p-3 text-body-sm text-semantic-positive">
+              {message}
+            </p>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={pending}
+            className="w-full rounded-instrument bg-foreground px-4 py-2.5 text-body-sm font-medium text-canvas hover:bg-foreground/90 disabled:opacity-60"
+          >
+            {pending ? "Sending…" : "Send magic link"}
+          </button>
+        </form>
+      </div>
     </main>
   );
 }

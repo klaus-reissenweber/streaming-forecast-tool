@@ -1,4 +1,5 @@
 import {
+  META_CLICK_TO_STREAM_CONVERSION,
   META_DELIVERY_PER_OBJECTIVE,
   META_OBJECTIVE_MULTIPLIERS,
   META_RATES_BY_GENRE,
@@ -635,5 +636,45 @@ export function computeLockedForecast(
     metaDelivery,
     algoPositioning,
     streamCurve,
+  };
+}
+
+export interface MetaFunnelForecast {
+  projectedImpressions: number;
+  projectedClicks: number;
+  projectedStreamConversions: number;
+  cpm: number;
+  cpc: number;
+  ctr: number;
+  clickToStreamRate: number;
+}
+
+/** Meta funnel readout from catalog-calibrated delivery rates + genre click-to-stream. */
+export function computeMetaFunnel(
+  spend: number,
+  objective: MetaObjective,
+  genre: Genre,
+): MetaFunnelForecast {
+  const delivery = META_DELIVERY_PER_OBJECTIVE[objective];
+  const cpm = delivery.cpm;
+  const cpc = delivery.cpc;
+  const ctr = cpm / 1000 / cpc;
+  const clickToStreamRate = META_CLICK_TO_STREAM_CONVERSION[genre];
+
+  const paidDelivery = predictPaidDelivery(spend, objective);
+
+  const projectedStreamConversions =
+    paidDelivery.clicks > 0
+      ? Math.round(paidDelivery.clicks * clickToStreamRate)
+      : 0;
+
+  return {
+    projectedImpressions: paidDelivery.impressions,
+    projectedClicks: paidDelivery.clicks,
+    projectedStreamConversions,
+    cpm,
+    cpc,
+    ctr,
+    clickToStreamRate,
   };
 }

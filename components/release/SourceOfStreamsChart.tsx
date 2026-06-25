@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -19,6 +20,39 @@ export interface SourceOfStreamsChartProps {
   phase: ReleasePhase;
 }
 
+interface ChartPalette {
+  line: string;
+  grid: string;
+  axis: string;
+}
+
+const MONO_TICK = {
+  fontFamily: "var(--font-plex-mono)",
+  fontSize: 11,
+} as const;
+
+const DEFAULT_PALETTE: ChartPalette = {
+  line: "#8FA800",
+  grid: "#ECEEF2",
+  axis: "#868E98",
+};
+
+function readChartPalette(): ChartPalette {
+  if (typeof window === "undefined") {
+    return DEFAULT_PALETTE;
+  }
+
+  const root = document.documentElement;
+  const read = (name: string, fallback: string) =>
+    getComputedStyle(root).getPropertyValue(name).trim() || fallback;
+
+  return {
+    line: read("--color-chart-locked", DEFAULT_PALETTE.line),
+    grid: read("--color-chart-grid", DEFAULT_PALETTE.grid),
+    axis: read("--color-chart-axis", DEFAULT_PALETTE.axis),
+  };
+}
+
 function hasOtherPctData(otherPctByDay: OtherPctDayPoint[]): boolean {
   return otherPctByDay.some((point) => point.otherPct != null);
 }
@@ -27,6 +61,12 @@ export function SourceOfStreamsChart({
   otherPctByDay,
   phase,
 }: SourceOfStreamsChartProps) {
+  const [palette, setPalette] = useState(DEFAULT_PALETTE);
+
+  useEffect(() => {
+    setPalette(readChartPalette());
+  }, []);
+
   const showChart =
     phase !== "pre-release" && hasOtherPctData(otherPctByDay);
 
@@ -36,14 +76,18 @@ export function SourceOfStreamsChart({
   }));
 
   return (
-    <section className="rounded-lg border border-stone-200 bg-white p-5">
-      <h2 className="text-lg font-semibold text-stone-900">
-        Source of streams: Other %
+    <section
+      className="motion-fade-up rounded-instrument border border-border bg-surface p-5"
+      aria-label="Source of streams"
+    >
+      <h2 className="font-serif text-section font-semibold text-foreground">
+        <span className="bracket-tag bracket-tag--accent mr-2 align-middle">
+          [SOURCES]
+        </span>
+        <span className="instrument-section-title align-middle">
+          Source of streams: Other %
+        </span>
       </h2>
-      <p className="mt-1 text-sm text-stone-500">
-        Spotify source-of-streams &quot;Other&quot; share by day (paid conversion
-        signal)
-      </p>
 
       {showChart ? (
         <div className="mt-5 h-72 w-full">
@@ -52,20 +96,37 @@ export function SourceOfStreamsChart({
               data={chartData}
               margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
             >
-              <CartesianGrid stroke="#e7e5e4" strokeDasharray="3 3" />
+              <CartesianGrid
+                stroke={palette.grid}
+                strokeDasharray="3 3"
+              />
               <XAxis
                 dataKey="day"
-                tick={{ fill: "#78716c", fontSize: 11 }}
+                tick={{
+                  fill: palette.axis,
+                  ...MONO_TICK,
+                }}
                 tickFormatter={(day) => `D${day}`}
                 interval={2}
+                axisLine={{ stroke: palette.grid }}
+                tickLine={{ stroke: palette.grid }}
               />
               <YAxis
-                tick={{ fill: "#78716c", fontSize: 11 }}
+                tick={{
+                  fill: palette.axis,
+                  ...MONO_TICK,
+                }}
                 tickFormatter={(value) => `${value}%`}
                 domain={[0, "auto"]}
                 width={40}
+                axisLine={{ stroke: palette.grid }}
+                tickLine={{ stroke: palette.grid }}
               />
               <Tooltip
+                contentStyle={{
+                  fontFamily: "var(--font-plex-mono)",
+                  fontSize: 12,
+                }}
                 formatter={(value) => {
                   if (value == null || typeof value !== "number") {
                     return ["n/a", "Other %"];
@@ -78,16 +139,16 @@ export function SourceOfStreamsChart({
                 type="monotone"
                 dataKey="otherPct"
                 name="Other %"
-                stroke="#0284c7"
+                stroke={palette.line}
                 strokeWidth={2}
-                dot={{ r: 2, fill: "#0284c7" }}
+                dot={{ r: 2, fill: palette.line }}
                 connectNulls={false}
               />
             </LineChart>
           </ResponsiveContainer>
         </div>
       ) : (
-        <p className="mt-5 rounded-lg border border-dashed border-stone-200 bg-stone-50 px-4 py-8 text-center text-sm text-stone-500">
+        <p className="mt-5 border border-dashed border-border bg-canvas px-4 py-8 text-center text-caption text-muted">
           Other % trend appears once daily source-of-streams data is entered
         </p>
       )}

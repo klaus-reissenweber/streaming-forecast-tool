@@ -64,7 +64,10 @@ export function MonthlyListenersField({
 
   return (
     <div className="flex flex-col gap-2">
-      <label htmlFor="monthlyListeners" className="text-sm font-medium text-stone-700">
+      <label
+        htmlFor="monthlyListeners"
+        className="text-body-sm font-medium text-foreground"
+      >
         Monthly listeners
       </label>
 
@@ -78,7 +81,7 @@ export function MonthlyListenersField({
           value={sliderValue}
           disabled={disabled}
           onChange={(event) => onChange(Number(event.target.value))}
-          className="h-2 min-w-[12rem] flex-1 cursor-pointer accent-orange-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-2 min-w-[12rem] flex-1 cursor-pointer accent-accent disabled:cursor-not-allowed disabled:opacity-50"
         />
         <input
           type="text"
@@ -87,28 +90,28 @@ export function MonthlyListenersField({
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder={String(DEFAULT_MONTHLY_LISTENERS)}
-          className="w-32 rounded border border-stone-300 px-3 py-2 font-mono text-sm text-stone-900 disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-32 rounded-instrument border border-border bg-surface px-3 py-2 font-mono text-body-sm tabular-nums text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-50"
           aria-label="Monthly listeners exact value"
         />
       </div>
 
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-stone-500">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-caption text-muted">
         <span>
-          <span className="font-mono text-sm text-stone-800">
+          <span className="font-mono text-body-sm tabular-nums text-foreground">
             {formatListeners(displayValue)}
           </span>{" "}
           monthly listeners
         </span>
-        <span className="text-stone-400">·</span>
+        <span>·</span>
         <span>
           Artist tier:{" "}
-          <span className="font-medium text-orange-700">
+          <span className="font-medium text-accent-readable">
             {ARTIST_TIER_LABELS[artistTier]}
           </span>
         </span>
       </div>
 
-      <p className="text-xs text-stone-400">
+      <p className="text-caption text-muted">
         Developing &lt; {formatListeners(TIER_ML_THRESHOLDS.mid)} · Mid{" "}
         {formatListeners(TIER_ML_THRESHOLDS.mid)}–
         {formatListeners(TIER_ML_THRESHOLDS.established - 1)} · Established ≥{" "}
@@ -116,7 +119,7 @@ export function MonthlyListenersField({
       </p>
 
       {error ? (
-        <p className="text-xs text-red-600" role="alert">
+        <p className="text-caption text-semantic-negative" role="alert">
           {error}
         </p>
       ) : null}

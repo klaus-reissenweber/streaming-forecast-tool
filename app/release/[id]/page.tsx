@@ -7,6 +7,7 @@ import { FlagsPanel } from "@/components/release/FlagsPanel";
 import { GenrePlaybook } from "@/components/release/GenrePlaybook";
 import { HealthBanner } from "@/components/release/HealthBanner";
 import { LockedForecastBanner } from "@/components/release/LockedForecastBanner";
+import { MetaFunnelForecast } from "@/components/release/MetaFunnelForecast";
 import { MetricCards } from "@/components/release/MetricCards";
 import { ReleasePageHeader } from "@/components/release/ReleasePageHeader";
 import { SourceOfStreamsChart } from "@/components/release/SourceOfStreamsChart";
@@ -63,8 +64,8 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
   const projectedWk1Sublabel =
     health.streamDaysEntered > 0
       ? health.streamDaysEntered === 1
-        ? "From D1 pace"
-        : `From D1–D${health.streamDaysEntered} pace`
+        ? "D1 pace"
+        : `D1–D${health.streamDaysEntered} pace`
       : "Locked forecast";
 
   const algoBandSublabel = liveAlgoPositioning
@@ -82,7 +83,7 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
         status={viewModel.header.status}
       />
 
-      <div className="mt-6 space-y-6">
+      <div className="mt-6">
         <LockedForecastBanner
           streams={viewModel.locked.streams}
           saves={viewModel.locked.saves}
@@ -90,45 +91,58 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
           lockedAtDisplay={viewModel.locked.lockedAtDisplay}
         />
 
-        <section className="space-y-6" aria-label="Monitoring summary">
+        <section className="mt-6" aria-label="Monitoring summary">
           <HealthBanner health={viewModel.monitoring.health} />
 
-          <MetricCards
-            projectedWk1Streams={health.projectedWk1}
-            projectedWk1Sublabel={projectedWk1Sublabel}
-            saveVelocity={saveVelocity.display}
-            algoBandLabel={liveAlgoBandLabel}
-            algoBandSublabel={algoBandSublabel}
-            modelConfidenceR2={viewModel.modelConfidenceR2}
-          />
-
-          <FlagsPanel phase={viewModel.phase} flags={viewModel.flags} />
+          <div className="mt-4">
+            <MetricCards
+              projectedWk1Streams={health.projectedWk1}
+              projectedWk1Sublabel={projectedWk1Sublabel}
+              saveVelocity={saveVelocity.display}
+              algoBandLabel={liveAlgoBandLabel}
+              algoBandSublabel={algoBandSublabel}
+              modelConfidenceR2={viewModel.modelConfidenceR2}
+            />
+          </div>
         </section>
 
-        <DailyEntrySection
-          releaseId={id}
-          initialDailyData={viewModel.dailyData}
-          status={viewModel.header.status}
-        />
+        <div className="mt-8">
+          <FlagsPanel phase={viewModel.phase} flags={viewModel.flags} />
+        </div>
 
-        <section className="space-y-6" aria-label="Charts">
+        <div className="mt-8">
+          <DailyEntrySection
+            releaseId={id}
+            initialDailyData={viewModel.dailyData}
+            status={viewModel.header.status}
+          />
+        </div>
+
+        <div className="mt-8">
           <StreamCurveChart
             lockedStreamCurve={viewModel.streamCurve}
             projectedStreamCurve={viewModel.monitoring.projectedStreamCurve}
             actualStreamsByDay={viewModel.actualStreamsByDay}
             phase={viewModel.phase}
+            releaseDate={viewModel.header.releaseDate}
+          />
+        </div>
+
+        <section className="mt-8 space-y-8" aria-label="Reference modules">
+          <AlgoPositioningModule positioning={viewModel.algoPositioning} />
+
+          <ChannelMixRecommendation mix={viewModel.channelMix} />
+
+          <MetaFunnelForecast
+            spend={release.meta_spend_planned}
+            objective={release.meta_objective}
+            genre={release.genre}
           />
 
           <SourceOfStreamsChart
             otherPctByDay={viewModel.otherPctByDay}
             phase={viewModel.phase}
           />
-        </section>
-
-        <section className="space-y-6" aria-label="Reference modules">
-          <AlgoPositioningModule positioning={viewModel.algoPositioning} />
-
-          <ChannelMixRecommendation mix={viewModel.channelMix} />
 
           <GenrePlaybook genre={viewModel.header.genre} />
         </section>

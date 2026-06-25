@@ -12,6 +12,30 @@ export interface ReleasePageHeaderProps {
   status: ReleaseStatus;
 }
 
+function formatGenreLabel(genre: Genre): string {
+  return genre
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function statusBadge(status: ReleaseStatus): {
+  tag: string;
+  tagClass: string;
+} {
+  if (status === "closed") {
+    return {
+      tag: "[CLOSED · READ-ONLY]",
+      tagClass: "bracket-tag--neutral",
+    };
+  }
+
+  return {
+    tag: "[ACTIVE]",
+    tagClass: "bracket-tag--positive",
+  };
+}
+
 export function ReleasePageHeader({
   trackName,
   artistName,
@@ -21,46 +45,45 @@ export function ReleasePageHeader({
   status,
 }: ReleasePageHeaderProps) {
   const tierLabel = EDITORIAL_TIER_DEFINITIONS[editorialTier].label;
-  const isClosed = status === "closed";
+  const badge = statusBadge(status);
+  const genreLabel = formatGenreLabel(genre);
 
   return (
-    <header className="border-b border-stone-200 pb-4">
+    <header className="border-b border-border pb-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-stone-900">
+        <div className="min-w-0">
+          <h1 className="font-serif text-release-title text-foreground">
             {trackName}
-            <span className="font-normal text-stone-500"> · {artistName}</span>
+            <span className="font-normal text-secondary"> · {artistName}</span>
           </h1>
-          <p className="mt-1 text-sm text-stone-500">
-            {genre} · Release {releaseDateDisplay} · Editorial tier {editorialTier}{" "}
-            ({tierLabel})
+          <p className="mt-1 text-body-sm text-secondary">
+            {genreLabel} · Release {releaseDateDisplay} · Editorial tier{" "}
+            {editorialTier} ({tierLabel})
           </p>
         </div>
 
         <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
-          {isClosed ? (
-            <span className="inline-flex rounded-full bg-stone-200 px-2.5 py-0.5 text-xs font-medium text-stone-800">
-              Closed release · read-only
-            </span>
-          ) : (
-            <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800">
-              Active
-            </span>
-          )}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+          <span className={`bracket-tag ${badge.tagClass}`}>{badge.tag}</span>
+          <nav className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium">
+            <Link
+              href="/"
+              className="text-accent-readable hover:text-accent-hover hover:underline"
+            >
+              Active releases
+            </Link>
             <Link
               href="/archive"
-              className="font-medium text-orange-700 hover:text-orange-800 hover:underline"
+              className="text-accent-readable hover:text-accent-hover hover:underline"
             >
               Archive
             </Link>
             <Link
               href="/new"
-              className="font-medium text-orange-700 hover:text-orange-800 hover:underline"
+              className="text-accent-readable hover:text-accent-hover hover:underline"
             >
               Create another release
             </Link>
-          </div>
+          </nav>
         </div>
       </div>
     </header>
