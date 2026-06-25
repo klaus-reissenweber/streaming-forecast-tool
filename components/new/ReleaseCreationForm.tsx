@@ -171,7 +171,7 @@ export function ReleaseCreationForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-instrument border border-border bg-surface p-5 sm:p-6"
+      className="w-full rounded-instrument border border-border bg-surface p-5 sm:p-6"
     >
       <FormSection label="Track data">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -232,7 +232,7 @@ export function ReleaseCreationForm() {
           />
         </div>
 
-        <div className="mt-4">
+        <div className="mt-4 w-[560px] max-w-full shrink-0">
           <ToggleGroup
             name="editorialTier"
             label="Editorial tier"
