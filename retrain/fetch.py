@@ -24,7 +24,7 @@ RELEASE_SELECT_COLUMNS = (
 )
 
 DAILY_DATA_SELECT_COLUMNS = (
-    "id, release_id, day_number, streams, saves, other_pct, recorded_at"
+    "id, release_id, day_number, streams, saves, recorded_at"
 )
 
 
@@ -131,20 +131,12 @@ def _parse_daily_data_row(row: dict[str, Any]) -> DailyDataPoint:
             f"{config.STREAM_CURVE_DAY_END}, got {day_number}."
         )
 
-    other_pct_raw = row.get("other_pct")
-    other_pct: float | None
-    if other_pct_raw is None:
-        other_pct = None
-    else:
-        other_pct = _parse_number(other_pct_raw, "other_pct")
-
     return DailyDataPoint(
         id=_parse_required_string(row.get("id"), "id"),
         release_id=release_id,
         day_number=day_number,
         streams=_parse_integer(row.get("streams"), "streams", minimum=0),
         saves=_parse_integer(row.get("saves"), "saves", minimum=0),
-        other_pct=other_pct,
         recorded_at=_parse_required_string(row.get("recorded_at"), "recorded_at"),
     )
 

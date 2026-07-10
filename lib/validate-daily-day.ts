@@ -2,19 +2,16 @@ export interface DailyDayInput {
   day_number: number;
   streams: number;
   saves: number;
-  other_pct: number | null;
 }
 
 export interface DailyDayFieldInput {
   streams?: string | number | null;
   saves?: string | number | null;
-  other_pct?: string | number | null;
 }
 
 export interface DailyDayFieldErrors {
   streams?: string;
   saves?: string;
-  other_pct?: string;
   day_number?: string;
 }
 
@@ -58,26 +55,6 @@ function parseNonNegativeInteger(
     return {
       ok: false,
       message: `${fieldLabel} must be a whole number ≥ 0.`,
-    };
-  }
-
-  return { ok: true, value: parsed };
-}
-
-function parseOptionalOtherPct(
-  value: string | number | null | undefined,
-): { ok: true; value: number | null } | { ok: false; message: string } {
-  if (isBlank(value)) {
-    return { ok: true, value: null };
-  }
-
-  const trimmed = typeof value === "string" ? value.trim() : String(value);
-  const parsed = Number(trimmed);
-
-  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100) {
-    return {
-      ok: false,
-      message: "Other % must be between 0 and 100 (or blank).",
     };
   }
 
@@ -138,17 +115,7 @@ export function validateDailyDay(
     errors.push(savesParsed.message);
   }
 
-  const otherParsed = parseOptionalOtherPct(fields.other_pct);
-  if (!otherParsed.ok) {
-    fieldErrors.other_pct = otherParsed.message;
-    errors.push(otherParsed.message);
-  }
-
-  if (
-    !streamsParsed.ok ||
-    !savesParsed.ok ||
-    !otherParsed.ok
-  ) {
+  if (!streamsParsed.ok || !savesParsed.ok) {
     return { action: "invalid", errors, fieldErrors };
   }
 
@@ -158,7 +125,6 @@ export function validateDailyDay(
       day_number: dayNumber,
       streams: streamsParsed.value,
       saves: savesParsed.value,
-      other_pct: otherParsed.value,
     },
   };
 }
@@ -178,7 +144,6 @@ export function validateBulkDailyRows(
     const result = validateDailyDay(row.day_number, {
       streams: row.streams,
       saves: row.saves,
-      other_pct: row.other_pct,
     });
 
     if (result.action === "invalid") {

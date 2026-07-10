@@ -7,7 +7,6 @@ const DAYS = Array.from({ length: 28 }, (_, index) => index + 1);
 const ROWS: { key: DayFieldKey; label: string }[] = [
   { key: "streams", label: "Streams" },
   { key: "saves", label: "Saves" },
-  { key: "other_pct", label: "Other %" },
 ];
 
 export type DaySaveStatus = "idle" | "pending" | "saving" | "saved" | "error";
@@ -91,7 +90,7 @@ export function DailyEntryGrid({
                   <td key={day} className="px-1 py-1.5">
                     <input
                       type="text"
-                      inputMode={row.key === "other_pct" ? "decimal" : "numeric"}
+                      inputMode="numeric"
                       disabled={readOnly}
                       readOnly={readOnly}
                       value={value}

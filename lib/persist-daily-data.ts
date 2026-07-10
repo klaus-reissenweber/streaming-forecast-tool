@@ -31,7 +31,6 @@ export async function upsertDailyDayRow(
       day_number: row.day_number,
       streams: row.streams,
       saves: row.saves,
-      other_pct: row.other_pct,
       recorded_at: new Date().toISOString(),
     },
     { onConflict: "release_id,day_number" },
@@ -59,7 +58,6 @@ export async function bulkUpsertDailyRows(
     day_number: row.day_number,
     streams: row.streams,
     saves: row.saves,
-    other_pct: row.other_pct,
     // Same per-row semantics as upsertDailyDayRow; bulk does not set one release-wide time.
     recorded_at: new Date().toISOString(),
   }));

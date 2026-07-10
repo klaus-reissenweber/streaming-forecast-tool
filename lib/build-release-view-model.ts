@@ -30,11 +30,6 @@ import {
 
 export type ReleasePhase = "pre-release" | "monitoring";
 
-export interface OtherPctDayPoint {
-  day: number;
-  otherPct: number | null;
-}
-
 export interface LockedForecastSummary {
   streams: number;
   saves: number;
@@ -64,32 +59,24 @@ export interface ReleaseViewModel {
   modelConfidenceR2: number;
   streamCurve: StreamCurveForecast;
   actualStreamsByDay: (number | null)[];
-  otherPctByDay: OtherPctDayPoint[];
   monitoring: MonitoringSummary;
   flags: readonly ReleaseFlag[];
 }
 
 function chartSeriesFromDailyData(dailyData: DailyDataPoint[]): {
   actualStreamsByDay: (number | null)[];
-  otherPctByDay: OtherPctDayPoint[];
 } {
   const streamsByDay = new Map<number, number>();
-  const otherByDay = new Map<number, number | null>();
 
   for (const row of dailyData) {
     streamsByDay.set(row.day_number, row.streams);
-    otherByDay.set(row.day_number, row.other_pct);
   }
 
   const actualStreamsByDay = Array.from({ length: 28 }, (_, index) =>
     streamsByDay.get(index + 1) ?? null,
   );
-  const otherPctByDay = Array.from({ length: 28 }, (_, index) => ({
-    day: index + 1,
-    otherPct: otherByDay.get(index + 1) ?? null,
-  }));
 
-  return { actualStreamsByDay, otherPctByDay };
+  return { actualStreamsByDay };
 }
 
 function computeImpliedSaveRate(streams: number, saves: number): number {
@@ -125,8 +112,7 @@ export function buildReleaseViewModel(
   const algoPositioning = algoPositioningBand(release.locked_forecast_saves, tier);
   const channelMix = recommendChannelMix(inputs, adRates);
   const streamCurve = buildStreamCurve(release.locked_forecast_streams);
-  const { actualStreamsByDay, otherPctByDay } =
-    chartSeriesFromDailyData(dailyData);
+  const { actualStreamsByDay } = chartSeriesFromDailyData(dailyData);
 
   const monitoring =
     phase === "monitoring"
@@ -159,7 +145,6 @@ export function buildReleaseViewModel(
     modelConfidenceR2: streamsD0R2,
     streamCurve,
     actualStreamsByDay,
-    otherPctByDay,
     monitoring,
     flags,
   };

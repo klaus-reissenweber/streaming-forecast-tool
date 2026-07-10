@@ -4,7 +4,6 @@ export interface DailyRow {
   day_number: number;
   streams: number;
   saves: number;
-  other_pct: number | null;
 }
 
 export interface ParseDailyDataResult {
@@ -37,20 +36,17 @@ export function parseDailyData(
     let day: string;
     let streams: string;
     let saves: string;
-    let other: string | undefined;
     if (hasDayColumn) {
-      [day, streams, saves, other] = cells;
+      [day, streams, saves] = cells;
     } else {
       day = String(autoDay);
-      [streams, saves, other] = cells;
+      [streams, saves] = cells;
     }
 
     const rowNo = idx + 1;
     const dayNumber = Number(day);
     const streamsValue = Number(streams);
     const savesValue = Number(saves);
-    const otherPct =
-      other === undefined || other === "" ? null : Number(other);
 
     if (!Number.isInteger(dayNumber) || dayNumber < 1 || dayNumber > 28) {
       issues.push(`Line ${rowNo}: day "${day}" must be a whole number 1–28.`);
@@ -73,20 +69,11 @@ export function parseDailyData(
         `Line ${rowNo}: saves "${saves}" must be a whole number ≥ 0.`,
       );
     }
-    if (
-      otherPct !== null &&
-      (!Number.isFinite(otherPct) || otherPct < 0 || otherPct > 100)
-    ) {
-      issues.push(
-        `Line ${rowNo}: Other% "${other}" must be between 0 and 100 (or blank).`,
-      );
-    }
 
     rows.push({
       day_number: dayNumber,
       streams: streamsValue,
       saves: savesValue,
-      other_pct: otherPct,
     });
   });
 

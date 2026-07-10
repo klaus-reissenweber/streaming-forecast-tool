@@ -69,7 +69,6 @@ export interface DailyDataRow {
   day_number: number;
   streams: number;
   saves: number;
-  other_pct: number | null;
   recorded_at: string;
 }
 
@@ -126,7 +125,6 @@ const DAILY_DATA_SELECT_COLUMNS = [
   "day_number",
   "streams",
   "saves",
-  "other_pct",
   "recorded_at",
 ].join(", ");
 
@@ -280,21 +278,12 @@ export function parseDailyDataRow(row: DailyDataRow): DailyDataPoint {
       throw new Error("day_number must be 1–28.");
     }
 
-    let otherPct: number | null = null;
-    if (row.other_pct !== null && row.other_pct !== undefined) {
-      otherPct = parseNumeric(row.other_pct, "other_pct", { min: 0 });
-      if (otherPct > 100) {
-        throw new Error("other_pct must be between 0 and 100.");
-      }
-    }
-
     return {
       id: parseRequiredString(row.id, "id"),
       release_id: parseRequiredString(row.release_id, "release_id"),
       day_number: dayNumber,
       streams: parseInteger(row.streams, "streams", { min: 0 }),
       saves: parseInteger(row.saves, "saves", { min: 0 }),
-      other_pct: otherPct,
       recorded_at: parseRequiredString(row.recorded_at, "recorded_at"),
     };
   } catch (err) {

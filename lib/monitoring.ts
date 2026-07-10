@@ -38,7 +38,6 @@ export interface MonitoringLockedForecast {
 export interface DailyActuals {
   streamsByDay: Partial<Record<ForecastDay, number>>;
   savesByDay: Partial<Record<ForecastDay, number>>;
-  otherPctByDay: Partial<Record<number, number | null>>;
 }
 
 export interface HealthSummary {
@@ -147,7 +146,6 @@ function healthCopy(
 export function dailyDataToActuals(dailyData: DailyDataPoint[]): DailyActuals {
   const streamsByDay: Partial<Record<ForecastDay, number>> = {};
   const savesByDay: Partial<Record<ForecastDay, number>> = {};
-  const otherPctByDay: Partial<Record<number, number | null>> = {};
 
   for (const row of dailyData) {
     if (row.day_number >= 1 && row.day_number <= 7) {
@@ -158,12 +156,9 @@ export function dailyDataToActuals(dailyData: DailyDataPoint[]): DailyActuals {
         savesByDay[row.day_number as ForecastDay] = row.saves;
       }
     }
-    if (row.day_number >= 1 && row.day_number <= 28) {
-      otherPctByDay[row.day_number] = row.other_pct;
-    }
   }
 
-  return { streamsByDay, savesByDay, otherPctByDay };
+  return { streamsByDay, savesByDay };
 }
 
 /** Stream pace health vs locked forecast via cumulative curve projection. */
@@ -338,7 +333,7 @@ export function emptyMonitoringSummary(
   return {
     health,
     saveVelocity: computeSaveVelocitySummary(
-      { streamsByDay: {}, savesByDay: {}, otherPctByDay: {} },
+      { streamsByDay: {}, savesByDay: {} },
       tier,
       0,
       0,

@@ -27,7 +27,6 @@ export type DailyEntryActionResult =
       fieldErrors?: {
         streams?: string;
         saves?: string;
-        other_pct?: string;
         day_number?: string;
       };
       errors?: string[];

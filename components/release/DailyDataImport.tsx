@@ -91,7 +91,7 @@ export function DailyDataImport({
         <div className="mt-4 space-y-4 rounded-instrument border border-border bg-canvas p-4">
           <p className="text-body-sm text-secondary">
             Paste or upload CSV for this release only. Columns: day (optional),
-            streams, saves, Other %.
+            streams, saves.
           </p>
 
           <label className="flex items-center gap-2 text-body-sm text-secondary">
@@ -129,7 +129,7 @@ export function DailyDataImport({
                 setErrors([]);
               }}
               rows={6}
-              placeholder={"1,12000,850,12.5\n2,9800,720,11.0"}
+              placeholder={"1,12000,850\n2,9800,720"}
               className="mt-1 w-full rounded-instrument border border-border bg-surface px-3 py-2 font-mono text-xs text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
             />
           </div>

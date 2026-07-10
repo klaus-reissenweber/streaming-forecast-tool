@@ -10,7 +10,6 @@ import { LockedForecastBanner } from "@/components/release/LockedForecastBanner"
 import { MetaFunnelForecast } from "@/components/release/MetaFunnelForecast";
 import { MetricCards } from "@/components/release/MetricCards";
 import { ReleasePageHeader } from "@/components/release/ReleasePageHeader";
-import { SourceOfStreamsChart } from "@/components/release/SourceOfStreamsChart";
 import { StreamCurveChart } from "@/components/release/StreamCurveChart";
 import { ALGO_BAND_DISPLAY } from "@/lib/algo-positioning-display";
 import { buildReleaseViewModel } from "@/lib/build-release-view-model";
@@ -137,11 +136,6 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
             spend={release.meta_spend_planned}
             objective={release.meta_objective}
             genre={release.genre}
-          />
-
-          <SourceOfStreamsChart
-            otherPctByDay={viewModel.otherPctByDay}
-            phase={viewModel.phase}
           />
 
           <GenrePlaybook genre={viewModel.header.genre} />

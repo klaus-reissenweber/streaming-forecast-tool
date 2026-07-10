@@ -71,19 +71,6 @@ function saveRateForDays(
   return (saves / streams) * 100;
 }
 
-function otherPctSeries(
-  otherPctByDay: Partial<Record<number, number | null>>,
-): { day: number; value: number }[] {
-  const series: { day: number; value: number }[] = [];
-  for (let day = 1; day <= 28; day++) {
-    const value = otherPctByDay[day];
-    if (value != null) {
-      series.push({ day, value });
-    }
-  }
-  return series;
-}
-
 /** Pure deviation detection from daily actuals vs forecast benchmarks. */
 export function computeFlags(ctx: FlagDetectionContext): ReleaseFlag[] {
   if (ctx.monitoring.health.streamDaysEntered === 0) {
@@ -93,7 +80,7 @@ export function computeFlags(ctx: FlagDetectionContext): ReleaseFlag[] {
   const flags: ReleaseFlag[] = [];
   const actuals = dailyDataToActuals(ctx.dailyData);
   const { health, saveVelocity } = ctx.monitoring;
-  const { streamsByDay, savesByDay, otherPctByDay } = actuals;
+  const { streamsByDay, savesByDay } = actuals;
   const tierBands = SAVE_COUNT_BANDS[ctx.tier];
   const genreBand = SAVE_RATE_BANDS[ctx.release.genre];
 
@@ -189,31 +176,6 @@ export function computeFlags(ctx: FlagDetectionContext): ReleaseFlag[] {
         type: "info",
         title: "Save rate above genre band",
         detail: `Actual save rate (${formatPercent(actualSaveRate, 1)}) exceeds the ${ctx.release.genre} ceiling (${genreBand.lo}–${genreBand.hi}%). Strong engagement signal.`,
-      });
-    }
-  }
-
-  const otherSeries = otherPctSeries(otherPctByDay);
-  if (otherSeries.length >= 2) {
-    const window = otherSeries.slice(-3);
-    const delta = window[window.length - 1]!.value - window[0]!.value;
-    const maxInWindow = Math.max(...window.map((point) => point.value));
-
-    if (delta > 10) {
-      flags.push({
-        id: "other-rising",
-        type: "info",
-        title: '"Other" share trending up',
-        detail: `"Other" source-of-streams share rose ${delta.toFixed(1)} pts over the last ${window.length} entered days. Paid or algorithmic conversion may be kicking in.`,
-      });
-    }
-
-    if (maxInWindow > 10 && delta < -3) {
-      flags.push({
-        id: "other-falling",
-        type: "warning",
-        title: '"Other" share trending down',
-        detail: `"Other" source-of-streams share fell ${Math.abs(delta).toFixed(1)} pts over the last ${window.length} entered days after starting above 10%. Paid traffic may be stalling.`,
       });
     }
   }
