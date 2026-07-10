@@ -74,6 +74,7 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
   return (
     <main className="mx-auto max-w-6xl px-5 py-8">
       <ReleasePageHeader
+        releaseId={id}
         trackName={viewModel.header.trackName}
         artistName={viewModel.header.artistName}
         genre={viewModel.header.genre}

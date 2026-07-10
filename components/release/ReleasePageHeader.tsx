@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { CloseReleaseButton } from "@/components/release/CloseReleaseButton";
 import { EDITORIAL_TIER_DEFINITIONS } from "@/lib/constants";
 import type { EditorialTier, Genre } from "@/lib/forecast";
 import type { ReleaseStatus } from "@/lib/map-release-row";
 
 export interface ReleasePageHeaderProps {
+  releaseId: string;
   trackName: string;
   artistName: string;
   genre: Genre;
@@ -37,6 +39,7 @@ function statusBadge(status: ReleaseStatus): {
 }
 
 export function ReleasePageHeader({
+  releaseId,
   trackName,
   artistName,
   genre,
@@ -64,6 +67,9 @@ export function ReleasePageHeader({
 
         <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
           <span className={`bracket-tag ${badge.tagClass}`}>{badge.tag}</span>
+          {status === "active" ? (
+            <CloseReleaseButton releaseId={releaseId} />
+          ) : null}
           <nav className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium">
             <Link
               href="/"

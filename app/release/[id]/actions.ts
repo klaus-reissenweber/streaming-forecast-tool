@@ -1,5 +1,7 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+import { requireAllowedUser } from "@/lib/auth/require-allowed-user";
 import {
   bulkUpsertDailyRows,
   deleteDailyDayRow,
@@ -32,6 +34,10 @@ export type DailyEntryActionResult =
       errors?: string[];
     };
 
+export type CloseReleaseResult =
+  | { success: true; action: "closed" | "already_closed" }
+  | { success: false; error: string };
+
 const RELEASE_NOT_FOUND = "Release not found.";
 const RELEASE_CLOSED =
   "This release is closed. Daily data cannot be edited here.";
@@ -63,6 +69,62 @@ function failure(
 
 function mapPersistError(error: { message: string; code?: string | null }) {
   return releaseSaveErrorMessage(error);
+}
+
+/**
+ * Closes a release: status='closed', closed_at=now().
+ * Matches a manual Supabase Table Editor close so archive + retrain see the same shape.
+ * Idempotent if already closed. Auth + allowlist asserted here (not via page alone).
+ */
+export async function closeRelease(
+  releaseId: string,
+): Promise<CloseReleaseResult> {
+  const auth = await requireAllowedUser();
+  if (!auth.ok) {
+    return { success: false, error: auth.error };
+  }
+
+  if (!isValidReleaseId(releaseId)) {
+    return { success: false, error: INVALID_RELEASE_ID };
+  }
+
+  const release = await loadRelease(releaseId);
+  if (!release) {
+    return { success: false, error: RELEASE_NOT_FOUND };
+  }
+
+  if (release.status === "closed") {
+    return { success: true, action: "already_closed" };
+  }
+
+  const closedAt = new Date().toISOString();
+  const { error } = await auth.supabase
+    .from("releases")
+    .update({
+      status: "closed",
+      closed_at: closedAt,
+    })
+    .eq("id", releaseId)
+    .eq("status", "active");
+
+  if (error) {
+    return { success: false, error: releaseSaveErrorMessage(error) };
+  }
+
+  // Race: another closer may have won; treat current closed row as success.
+  const refreshed = await loadRelease(releaseId);
+  if (!refreshed || refreshed.status !== "closed") {
+    return {
+      success: false,
+      error: "Could not close this release. Try again.",
+    };
+  }
+
+  revalidatePath(`/release/${releaseId}`);
+  revalidatePath("/");
+  revalidatePath("/archive");
+
+  return { success: true, action: "closed" };
 }
 
 export async function upsertDailyDay(
