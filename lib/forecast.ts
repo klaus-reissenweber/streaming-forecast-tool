@@ -5,6 +5,8 @@ import {
   META_RATES_BY_GENRE,
   SAVE_COUNT_BANDS,
   STREAM_CURVE_BASELINE,
+  STREAM_CURVE_TREND,
+  STREAM_DOW_MULTIPLIER_BY_ISO,
   STREAM_EDITORIAL_KERNEL,
   TIER_ML_THRESHOLDS,
   type CurvePercentile,
@@ -25,7 +27,19 @@ export type EditorialTier = 0 | 1 | 2 | 3;
 
 export type MetaObjective = "traffic" | "awareness" | "reach";
 
-export type ReleaseType = "single" | "ep" | "album";
+/** Catalog release role on `releases.release_type` (multipliers TBD). */
+export type ReleaseType =
+  | "single"
+  | "lead_single"
+  | "focus_track"
+  | "album_track"
+  | "alternate_version";
+
+/**
+ * Keys in ad_rates.spotify_rates (legacy product types).
+ * Catalog ReleaseType is not used for CPS until rates are recalibrated.
+ */
+export type SpotifyCpsReleaseType = "single" | "ep" | "album";
 
 export type SpotifyFormat = "marquee" | "showcase";
 
@@ -104,9 +118,9 @@ export interface ForecastCoefficients {
   saves: SavesModel;
 }
 
-/** Spotify CPS: release_type → format → tier. Null cells use fallback logic at lookup. */
+/** Spotify CPS: product type → format → tier. Null cells use fallback logic at lookup. */
 export type SpotifyRateMatrix = Record<
-  ReleaseType,
+  SpotifyCpsReleaseType,
   Record<SpotifyFormat, Record<ArtistTier, number | null | undefined>>
 >;
 
@@ -207,10 +221,19 @@ const LOG_DAY_COEFFICIENT_KEYS: Record<ForecastDay, `log_d${ForecastDay}`> = {
   7: "log_d7",
 };
 
-const SPOTIFY_RATE_FALLBACK_MULTIPLIER: Partial<Record<ReleaseType, number>> = {
+const SPOTIFY_RATE_FALLBACK_MULTIPLIER: Partial<
+  Record<SpotifyCpsReleaseType, number>
+> = {
   ep: 0.5,
   album: 0.25,
 };
+
+/** Catalog release_type does not drive CPS yet — always use single rates. */
+function spotifyCpsReleaseType(
+  _releaseType: ReleaseType,
+): SpotifyCpsReleaseType {
+  return "single";
+}
 
 // --- Helpers ---
 
@@ -296,22 +319,23 @@ function lookupSpotifyCps(
   format: SpotifyFormat,
   tier: ArtistTier,
 ): number {
-  const direct = adRates.spotify_rates[releaseType][format][tier];
+  const cpsType = spotifyCpsReleaseType(releaseType);
+  const direct = adRates.spotify_rates[cpsType][format][tier];
   if (isValidSpotifyRate(direct)) {
     return direct;
   }
 
-  const fallbackMultiplier = SPOTIFY_RATE_FALLBACK_MULTIPLIER[releaseType];
+  const fallbackMultiplier = SPOTIFY_RATE_FALLBACK_MULTIPLIER[cpsType];
   if (fallbackMultiplier === undefined) {
     throw new Error(
-      `No Spotify CPS rate for ${releaseType}/${format}/${tier} and no fallback is defined for this release type.`,
+      `No Spotify CPS rate for ${cpsType}/${format}/${tier} and no fallback is defined for this release type.`,
     );
   }
 
   const singleRate = adRates.spotify_rates.single[format][tier];
   if (!isValidSpotifyRate(singleRate)) {
     throw new Error(
-      `No Spotify CPS rate for ${releaseType}/${format}/${tier} and single/${format}/${tier} fallback is also missing.`,
+      `No Spotify CPS rate for ${cpsType}/${format}/${tier} and single/${format}/${tier} fallback is also missing.`,
     );
   }
 
@@ -585,6 +609,40 @@ export function editorialDayNumber(releaseDate: string | Date): number {
   return 1 + ((5 - isoWeekday + 7) % 7);
 }
 
+/** ISO weekday Mon=1 … Sun=7 of a calendar release date (UTC). */
+function releaseIsoWeekdayFromDate(releaseDate: string | Date): number {
+  const date =
+    typeof releaseDate === "string"
+      ? new Date(`${releaseDate}T00:00:00Z`)
+      : new Date(releaseDate);
+  if (Number.isNaN(date.getTime())) {
+    throw new RangeError(`Invalid releaseDate: ${String(releaseDate)}`);
+  }
+  const jsDay = date.getUTCDay();
+  return jsDay === 0 ? 7 : jsDay;
+}
+
+/**
+ * ISO weekday of campaign day `dayNumber` (1-based) given release ISO weekday.
+ * releaseIso=4 (Thu), day 1 → Thu; day 2 → Fri; …
+ */
+export function isoWeekdayOnCampaignDay(
+  releaseIsoWeekday: number,
+  dayNumber: number,
+): number {
+  return ((releaseIsoWeekday - 1 + dayNumber - 1) % 7) + 1;
+}
+
+/**
+ * Infer release ISO weekday from editorial offset when no releaseDate is passed.
+ * offset 1 → Fri … offset 2 → Thu (calibration default).
+ */
+function releaseIsoFromEditorialOffset(offset: number): number {
+  let iso = 5 - (offset - 1);
+  if (iso < 1) iso += 7;
+  return iso;
+}
+
 export interface BuildStreamCurveOptions {
   percentile?: CurvePercentile;
   /** Release calendar date — preferred way to place the editorial kernel. */
@@ -594,8 +652,8 @@ export interface BuildStreamCurveOptions {
 }
 
 /**
- * Compose baseline + editorial kernel, then rescale days 1–7 to sum to 100%
- * so dailyStreams preserve the locked week-1 total.
+ * Compose seasonless trend × DOW multiplier + editorial kernel, then rescale
+ * days 1–7 to sum to 100% so dailyStreams preserve the locked week-1 total.
  *
  * TODO: weekend-release normalization — Sat/Sun place part of the editorial
  * bump at/beyond the wk1 boundary; kernel is clamped to the available window.
@@ -604,21 +662,27 @@ export function composeStreamCurvePct(
   options?: BuildStreamCurveOptions,
 ): number[] {
   const percentile = options?.percentile ?? "median";
-  const baseline = STREAM_CURVE_BASELINE[percentile];
+  const trend = STREAM_CURVE_TREND[percentile];
   const offset =
     options?.editorialDayNumber ??
     (options?.releaseDate != null
       ? editorialDayNumber(options.releaseDate)
       : 2); // Thursday calibration default when callers omit date
+  const releaseIso =
+    options?.releaseDate != null
+      ? releaseIsoWeekdayFromDate(options.releaseDate)
+      : releaseIsoFromEditorialOffset(offset);
 
-  const composed = baseline.map((basePct, index) => {
+  const composed = trend.map((trendPct, index) => {
     const dayNumber = index + 1;
+    const iso = isoWeekdayOnCampaignDay(releaseIso, dayNumber);
+    const dow = STREAM_DOW_MULTIPLIER_BY_ISO[iso]!;
     const kernelIndex = dayNumber - offset;
     const editorial =
       kernelIndex >= 0 && kernelIndex < STREAM_EDITORIAL_KERNEL.length
         ? STREAM_EDITORIAL_KERNEL[kernelIndex]!
         : 0;
-    return basePct + editorial;
+    return trendPct * dow + editorial;
   });
 
   const week1Sum = composed.slice(0, 7).reduce((sum, pct) => sum + pct, 0);

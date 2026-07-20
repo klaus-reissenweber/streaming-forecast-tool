@@ -11,6 +11,7 @@ import {
   EDITORIAL_TIER_TOGGLE_OPTIONS,
   GENRES,
   META_OBJECTIVES,
+  RELEASE_TYPE_LABELS,
   RELEASE_TYPES,
   SPOTIFY_FORMATS,
 } from "@/lib/constants";
@@ -31,12 +32,6 @@ const META_OBJECTIVE_LABELS: Record<(typeof META_OBJECTIVES)[number], string> = 
   traffic: "Traffic",
   awareness: "Awareness",
   reach: "Reach",
-};
-
-const RELEASE_TYPE_LABELS: Record<(typeof RELEASE_TYPES)[number], string> = {
-  single: "Single",
-  ep: "EP",
-  album: "Album",
 };
 
 const SPOTIFY_FORMAT_LABELS: Record<(typeof SPOTIFY_FORMATS)[number], string> = {

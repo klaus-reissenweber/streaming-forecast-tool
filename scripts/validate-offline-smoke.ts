@@ -70,12 +70,37 @@ assert(
     editorialDayNumber(new Date("2026-07-01")),
   "string and Date agree",
 );
+
+// (a) Thursday release reproduces Elderbrook curve within ±0.1pp; wk1 = 100%
 const thu = composeStreamCurvePct({ releaseDate: "2026-05-28" });
-const target = [6.37, 28.54, 13.54, 8.9, 13.58, 14.89, 14.19];
+const elderbrookTarget = [6.37, 28.54, 13.54, 8.9, 13.58, 14.89, 14.19];
 for (let i = 0; i < 7; i++) {
-  assert(Math.abs(thu[i]! - target[i]!) <= 1.0, `d${i + 1} off`);
+  const diff = Math.abs(thu[i]! - elderbrookTarget[i]!);
+  assert(diff <= 0.1, `Thu d${i + 1} off by ${diff.toFixed(3)}pp (limit ±0.1)`);
 }
-console.log("PASS: Thu compose within ±1pp");
+const thuWk1 = thu.slice(0, 7).reduce((s, p) => s + p, 0);
+assert(Math.abs(thuWk1 - 100) < 1e-6, `Thu wk1 sum ${thuWk1} ≠ 100`);
+console.log("PASS: Thu compose within ±0.1pp (Elderbrook); wk1=100");
+
+// (b) Friday: d1 editorial peak; Fridays high / Sundays low in the tail; wk1=100
+const fri = composeStreamCurvePct({ releaseDate: "2026-05-29" });
+const friMax = Math.max(...fri);
+assert(fri.indexOf(friMax) === 0, `Fri peak should be d1, got d${fri.indexOf(friMax) + 1}`);
+assert(fri[0]! > fri[1]!, "Fri d1 editorial peak > d2");
+// Calendar Fridays d8/d15/d22 vs Sundays d10/d17/d24 in the same week
+for (const [friDay, sunDay] of [
+  [8, 10],
+  [15, 17],
+  [22, 24],
+] as const) {
+  assert(
+    fri[friDay - 1]! > fri[sunDay - 1]!,
+    `Fri d${friDay} (${fri[friDay - 1]!.toFixed(2)}) should exceed Sun d${sunDay} (${fri[sunDay - 1]!.toFixed(2)})`,
+  );
+}
+const friWk1 = fri.slice(0, 7).reduce((s, p) => s + p, 0);
+assert(Math.abs(friWk1 - 100) < 1e-6, `Fri wk1 sum ${friWk1} ≠ 100`);
+console.log("PASS: Fri d1 peak + elevated Fridays / depressed Sundays; wk1=100");
 
 console.log("\n=== day-0 import rejection ===");
 const parsed = parseDailyData("0,100,10\n1,200,20", true);

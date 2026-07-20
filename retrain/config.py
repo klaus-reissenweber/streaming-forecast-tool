@@ -77,7 +77,15 @@ def artist_tier_from_monthly_listeners(monthly_listeners: float) -> str:
 
 # --- Release / ad dimensions (must match lib/constants.ts) ---
 
-RELEASE_TYPES: tuple[str, ...] = ("single", "ep", "album")
+RELEASE_TYPES: tuple[str, ...] = (
+    "single",
+    "lead_single",
+    "focus_track",
+    "album_track",
+    "alternate_version",
+)
+# Legacy keys in ad_rates.spotify_rates until CPS is recalibrated on catalog roles.
+SPOTIFY_CPS_RELEASE_TYPES: tuple[str, ...] = ("single", "ep", "album")
 SPOTIFY_FORMATS: tuple[str, ...] = ("marquee", "showcase")
 META_OBJECTIVES: tuple[str, ...] = ("traffic", "awareness", "reach")
 

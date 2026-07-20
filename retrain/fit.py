@@ -503,10 +503,11 @@ def derive_spotify_rates(rows: list[TrainingRow]) -> dict[str, Any]:
             continue
         tier = config.artist_tier_from_monthly_listeners(row.monthly_listeners)
         cps = row.spotify_spend_planned / row.wk1_streams
-        cells[(row.release_type, row.spotify_format, tier)].append(cps)
+        # Catalog release_type does not drive CPS yet — always bucket as single.
+        cells[("single", row.spotify_format, tier)].append(cps)
 
     matrix: dict[str, Any] = {}
-    for release_type in config.RELEASE_TYPES:
+    for release_type in config.SPOTIFY_CPS_RELEASE_TYPES:
         matrix[release_type] = {}
         for spotify_format in config.SPOTIFY_FORMATS:
             matrix[release_type][spotify_format] = {}

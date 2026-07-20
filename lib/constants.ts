@@ -21,11 +21,22 @@ export const META_OBJECTIVES = [
   "reach",
 ] as const;
 
+/** Catalog release role (forecast multipliers TBD — storage + form only for now). */
 export const RELEASE_TYPES = [
   "single",
-  "ep",
-  "album",
+  "lead_single",
+  "focus_track",
+  "album_track",
+  "alternate_version",
 ] as const;
+
+export const RELEASE_TYPE_LABELS: Record<(typeof RELEASE_TYPES)[number], string> = {
+  single: "Standalone single",
+  lead_single: "Lead single (pre-album)",
+  focus_track: "Focus track (album lead)",
+  album_track: "Album track",
+  alternate_version: "Alternate version (remix/reimagining)",
+};
 
 export const SPOTIFY_FORMATS = [
   "marquee",
@@ -87,6 +98,67 @@ export const STREAM_CURVE_BASELINE = {
     6.74, 6.45, 5.6, 6.07, 4.92, 3.68, 4.47, 4.89, 4.63, 4.71, 5.81, 4.12, 2.83,
     3.29, 3.62, 3.62,
   ],
+} as const;
+
+/**
+ * Calendar day-of-week multipliers (mean=1 over a week). Applied on top of
+ * STREAM_CURVE_TREND so non-Thursday releases get the right Fri/Sun shape.
+ */
+export const STREAM_DOW_MULTIPLIER = {
+  Mon: 0.912,
+  Tue: 0.971,
+  Wed: 0.982,
+  Thu: 1.099,
+  Fri: 1.262,
+  Sat: 0.983,
+  Sun: 0.814,
+} as const;
+
+/** ISO weekday Mon=1 … Sun=7 → STREAM_DOW_MULTIPLIER value. */
+export const STREAM_DOW_MULTIPLIER_BY_ISO: readonly number[] = [
+  Number.NaN, // unused (1-based)
+  STREAM_DOW_MULTIPLIER.Mon,
+  STREAM_DOW_MULTIPLIER.Tue,
+  STREAM_DOW_MULTIPLIER.Wed,
+  STREAM_DOW_MULTIPLIER.Thu,
+  STREAM_DOW_MULTIPLIER.Fri,
+  STREAM_DOW_MULTIPLIER.Sat,
+  STREAM_DOW_MULTIPLIER.Sun,
+] as const;
+
+/** Elderbrook calibration release weekday (Thursday). */
+const ELDERBROOK_RELEASE_ISO_WEEKDAY = 4;
+
+function deseasonalizeBaseline(
+  baseline: readonly number[],
+  releaseIsoWeekday: number,
+): number[] {
+  return baseline.map((pct, index) => {
+    const dayNumber = index + 1;
+    const iso =
+      ((releaseIsoWeekday - 1 + dayNumber - 1) % 7) + 1;
+    const mult = STREAM_DOW_MULTIPLIER_BY_ISO[iso]!;
+    return pct / mult;
+  });
+}
+
+/**
+ * Seasonless trend (% of wk1): STREAM_CURVE_BASELINE ÷ Elderbrook-Thursday DOW.
+ * Recompose as trend[d] × dow(release, d) + editorialKernel.
+ */
+export const STREAM_CURVE_TREND = {
+  median: deseasonalizeBaseline(
+    STREAM_CURVE_BASELINE.median,
+    ELDERBROOK_RELEASE_ISO_WEEKDAY,
+  ),
+  p25: deseasonalizeBaseline(
+    STREAM_CURVE_BASELINE.p25,
+    ELDERBROOK_RELEASE_ISO_WEEKDAY,
+  ),
+  p75: deseasonalizeBaseline(
+    STREAM_CURVE_BASELINE.p75,
+    ELDERBROOK_RELEASE_ISO_WEEKDAY,
+  ),
 } as const;
 
 /** New Music Friday bump (% of wk1). Index 0 = editorial Friday. */
