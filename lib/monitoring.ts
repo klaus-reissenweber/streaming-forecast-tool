@@ -165,8 +165,13 @@ export function dailyDataToActuals(dailyData: DailyDataPoint[]): DailyActuals {
 export function computeHealthSummary(
   streamsActuals: StreamsRefinementActuals,
   lockedStreams: number,
+  curve?: readonly number[],
 ): HealthSummary {
-  const pace = projectFromCumulativePace(streamsActuals, lockedStreams);
+  const pace = projectFromCumulativePace(
+    streamsActuals,
+    lockedStreams,
+    curve,
+  );
 
   const deltaPct =
     lockedStreams > 0
@@ -290,10 +295,14 @@ export function computeMonitoringSummary(
 ): MonitoringSummary {
   const actuals = dailyDataToActuals(dailyData);
   const tier = artistTierFromMonthlyListeners(release.monthly_listeners);
+  const curveOptions = { releaseDate: release.release_date };
+  const lockedStreamCurve = buildStreamCurve(locked.streams, curveOptions);
+  const paceCurve = lockedStreamCurve.dailyPct;
 
   const health = computeHealthSummary(
     { streamsByDay: actuals.streamsByDay },
     locked.streams,
+    paceCurve,
   );
 
   const saveVelocity = computeSaveVelocitySummary(
@@ -303,10 +312,9 @@ export function computeMonitoringSummary(
     health.cumActual,
   );
 
-  const lockedStreamCurve = buildStreamCurve(locked.streams);
   const projectedStreamCurve =
     health.streamDaysEntered > 0
-      ? buildStreamCurve(health.projectedWk1)
+      ? buildStreamCurve(health.projectedWk1, curveOptions)
       : null;
 
   const liveAlgoPositioning =
@@ -326,8 +334,14 @@ export function computeMonitoringSummary(
 /** Pre-release placeholder before daily stream data exists. */
 export function emptyMonitoringSummary(
   locked: MonitoringLockedForecast,
+  releaseDate: string,
 ): MonitoringSummary {
-  const health = computeHealthSummary({ streamsByDay: {} }, locked.streams);
+  const lockedStreamCurve = buildStreamCurve(locked.streams, { releaseDate });
+  const health = computeHealthSummary(
+    { streamsByDay: {} },
+    locked.streams,
+    lockedStreamCurve.dailyPct,
+  );
   const tier = "developing" as ArtistTier;
 
   return {
@@ -338,7 +352,7 @@ export function emptyMonitoringSummary(
       0,
       0,
     ),
-    lockedStreamCurve: buildStreamCurve(locked.streams),
+    lockedStreamCurve,
     projectedStreamCurve: null,
     liveAlgoPositioning: null,
   };

@@ -5,10 +5,11 @@ import {
   ELDERBROOK_LOCKED_SAVES,
   ELDERBROOK_LOCKED_STREAMS,
   ELDERBROOK_MONTHLY_LISTENERS,
+  ELDERBROOK_RELEASE_ID,
+  ELDERBROOK_WK1_SAVES,
+  ELDERBROOK_WK1_STREAMS,
 } from "@/lib/fixtures/elderbrook-monitoring";
 import type { ReleaseRecord } from "@/lib/map-release-row";
-
-const ELDERBROOK_RELEASE_ID = "ae749c93-fa94-4bb5-b6d9-1845e961b8cd";
 
 const ELDERBROOK_CLOSED: ReleaseRecord = {
   id: ELDERBROOK_RELEASE_ID,
@@ -18,7 +19,7 @@ const ELDERBROOK_CLOSED: ReleaseRecord = {
   monthly_listeners: ELDERBROOK_MONTHLY_LISTENERS,
   is_feature: false,
   editorial_tier: 2,
-  release_date: "2026-01-01",
+  release_date: "2026-05-28",
   release_type: "single",
   spotify_format: "marquee",
   meta_spend_planned: 0,
@@ -28,7 +29,7 @@ const ELDERBROOK_CLOSED: ReleaseRecord = {
   locked_forecast_saves: ELDERBROOK_LOCKED_SAVES,
   model_version_used: "fixture",
   status: "closed",
-  created_at: "2026-01-01T00:00:00.000Z",
+  created_at: "2026-05-28T00:00:00.000Z",
   closed_at: "2026-06-23T12:00:00.000Z",
 };
 
@@ -36,11 +37,15 @@ console.log("=== computeWeek1Actuals (Elderbrook D1–D7) ===");
 const wk1 = computeWeek1Actuals(ELDERBROOK_D1_D7);
 console.log(JSON.stringify(wk1, null, 2));
 
-if (wk1.streams !== 452_848) {
-  throw new Error(`Expected wk1 streams 452,848, got ${wk1.streams}`);
+if (wk1.streams !== ELDERBROOK_WK1_STREAMS) {
+  throw new Error(
+    `Expected wk1 streams ${ELDERBROOK_WK1_STREAMS}, got ${wk1.streams}`,
+  );
 }
-if (wk1.saves !== 19_954) {
-  throw new Error(`Expected wk1 saves 19,954, got ${wk1.saves}`);
+if (wk1.saves !== ELDERBROOK_WK1_SAVES) {
+  throw new Error(
+    `Expected wk1 saves ${ELDERBROOK_WK1_SAVES}, got ${wk1.saves}`,
+  );
 }
 if (!wk1.isComplete) {
   throw new Error("Expected complete wk1 (7 stream days)");
@@ -79,17 +84,20 @@ console.log(
   ),
 );
 
-if (row.actualStreams !== 452_848) {
-  throw new Error(`Expected actualStreams 452,848, got ${row.actualStreams}`);
+if (row.actualStreams !== ELDERBROOK_WK1_STREAMS) {
+  throw new Error(
+    `Expected actualStreams ${ELDERBROOK_WK1_STREAMS}, got ${row.actualStreams}`,
+  );
 }
 if (row.lockedStreams !== 450_251) {
   throw new Error(`Expected lockedStreams 450,251, got ${row.lockedStreams}`);
 }
 
 const deltaPct = row.streamsDeltaPct ?? 0;
-if (deltaPct < 0.3 || deltaPct > 0.8) {
+// Folded wk1 453,483 vs locked 450,251 ≈ +0.72%
+if (deltaPct < 0.5 || deltaPct > 1.0) {
   throw new Error(
-    `Expected streamsDeltaPct ~+0.5% (0.3–0.8), got ${deltaPct.toFixed(2)}%`,
+    `Expected streamsDeltaPct ~+0.7% (0.5–1.0), got ${deltaPct.toFixed(2)}%`,
   );
 }
 if (row.streamsDeltaTone !== "on_track") {

@@ -4,7 +4,8 @@ import {
   META_OBJECTIVE_MULTIPLIERS,
   META_RATES_BY_GENRE,
   SAVE_COUNT_BANDS,
-  STREAM_CURVE_TEMPLATE,
+  STREAM_CURVE_BASELINE,
+  STREAM_EDITORIAL_KERNEL,
   TIER_ML_THRESHOLDS,
   type CurvePercentile,
 } from "./constants";
@@ -373,7 +374,7 @@ export function predictStreams(
 export function projectFromCumulativePace(
   actuals: StreamsRefinementActuals,
   lockedForecast: number,
-  curve: readonly number[] = STREAM_CURVE_TEMPLATE.median,
+  curve: readonly number[] = STREAM_CURVE_BASELINE.median,
 ): CumulativePaceProjection {
   let cumActual = 0;
   let cumExpectedPct = 0;
@@ -563,12 +564,79 @@ export function algoPositioningBand(
   };
 }
 
+/**
+ * Day-number (1-based from release_date) of the first Friday on-or-after release.
+ * isoWeekday: Mon=1 … Sun=7, Friday=5.
+ * UTC-based so `'YYYY-MM-DD'` and `new Date('YYYY-MM-DD')` agree across timezones.
+ */
+export function editorialDayNumber(releaseDate: string | Date): number {
+  const date =
+    typeof releaseDate === "string"
+      ? new Date(`${releaseDate}T00:00:00Z`)
+      : new Date(releaseDate);
+
+  if (Number.isNaN(date.getTime())) {
+    throw new RangeError(`Invalid releaseDate: ${String(releaseDate)}`);
+  }
+
+  // JS: Sun=0 … Sat=6 → ISO: Mon=1 … Sun=7 (UTC calendar day)
+  const jsDay = date.getUTCDay();
+  const isoWeekday = jsDay === 0 ? 7 : jsDay;
+  return 1 + ((5 - isoWeekday + 7) % 7);
+}
+
+export interface BuildStreamCurveOptions {
+  percentile?: CurvePercentile;
+  /** Release calendar date — preferred way to place the editorial kernel. */
+  releaseDate?: string | Date;
+  /** Precomputed editorial day-number; overrides releaseDate when set. */
+  editorialDayNumber?: number;
+}
+
+/**
+ * Compose baseline + editorial kernel, then rescale days 1–7 to sum to 100%
+ * so dailyStreams preserve the locked week-1 total.
+ *
+ * TODO: weekend-release normalization — Sat/Sun place part of the editorial
+ * bump at/beyond the wk1 boundary; kernel is clamped to the available window.
+ */
+export function composeStreamCurvePct(
+  options?: BuildStreamCurveOptions,
+): number[] {
+  const percentile = options?.percentile ?? "median";
+  const baseline = STREAM_CURVE_BASELINE[percentile];
+  const offset =
+    options?.editorialDayNumber ??
+    (options?.releaseDate != null
+      ? editorialDayNumber(options.releaseDate)
+      : 2); // Thursday calibration default when callers omit date
+
+  const composed = baseline.map((basePct, index) => {
+    const dayNumber = index + 1;
+    const kernelIndex = dayNumber - offset;
+    const editorial =
+      kernelIndex >= 0 && kernelIndex < STREAM_EDITORIAL_KERNEL.length
+        ? STREAM_EDITORIAL_KERNEL[kernelIndex]!
+        : 0;
+    return basePct + editorial;
+  });
+
+  const week1Sum = composed.slice(0, 7).reduce((sum, pct) => sum + pct, 0);
+  if (week1Sum <= 0) {
+    return composed;
+  }
+
+  const scale = 100 / week1Sum;
+  return composed.map((pct, index) =>
+    index < 7 ? pct * scale : pct,
+  );
+}
+
 export function buildStreamCurve(
   week1Streams: number,
-  options?: { percentile?: CurvePercentile },
+  options?: BuildStreamCurveOptions,
 ): StreamCurveForecast {
-  const percentile = options?.percentile ?? "median";
-  const dailyPct = [...STREAM_CURVE_TEMPLATE[percentile]];
+  const dailyPct = composeStreamCurvePct(options);
 
   const dailyStreams = dailyPct.map((pct) =>
     Math.round((week1Streams * pct) / 100),
@@ -592,14 +660,13 @@ export function buildStreamCurve(
 export function expectedStreamsOnDay(
   week1Streams: number,
   dayNumber: number,
-  options?: { percentile?: CurvePercentile },
+  options?: BuildStreamCurveOptions,
 ): number {
   if (dayNumber < 1 || dayNumber > 28) {
     throw new RangeError(`dayNumber must be 1–28, got ${dayNumber}`);
   }
 
-  const percentile = options?.percentile ?? "median";
-  const dailyPct = STREAM_CURVE_TEMPLATE[percentile][dayNumber - 1];
+  const dailyPct = composeStreamCurvePct(options)[dayNumber - 1]!;
   return Math.round((week1Streams * dailyPct) / 100);
 }
 
@@ -607,6 +674,7 @@ export function computeLockedForecast(
   inputs: ReleaseForecastInputs,
   coefficients: ForecastCoefficients,
   adRates: AdRates,
+  options: { releaseDate: string | Date },
 ): {
   streams: StreamsForecast;
   saves: SavesForecast;
@@ -627,7 +695,9 @@ export function computeLockedForecast(
   );
   const tier = artistTierFromMonthlyListeners(inputs.monthlyListeners);
   const algoPositioning = algoPositioningBand(saves.week1Saves, tier);
-  const streamCurve = buildStreamCurve(streams.week1Streams);
+  const streamCurve = buildStreamCurve(streams.week1Streams, {
+    releaseDate: options.releaseDate,
+  });
 
   return {
     streams,

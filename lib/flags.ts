@@ -96,7 +96,9 @@ export function computeFlags(ctx: FlagDetectionContext): ReleaseFlag[] {
 
   const d1Streams = streamsByDay[1];
   if (isValidStreamDay(d1Streams)) {
-    const expectedD1 = expectedStreamsOnDay(ctx.locked.streams, 1);
+    const expectedD1 = expectedStreamsOnDay(ctx.locked.streams, 1, {
+      releaseDate: ctx.release.release_date,
+    });
     if (d1Streams > expectedD1 * 5) {
       const multiplier = (d1Streams / expectedD1).toFixed(1);
       if (ctx.release.editorial_tier >= 2) {

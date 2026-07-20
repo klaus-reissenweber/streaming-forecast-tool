@@ -93,6 +93,11 @@ export function DailyDataImport({
             Paste or upload CSV for this release only. Columns: day (optional),
             streams, saves.
           </p>
+          <p className="text-body-sm text-secondary">
+            <span className="font-medium text-foreground">Day 1 = release date.</span>{" "}
+            Fold any day-before timezone sliver into day 1 — there is no day 0.
+            Days run 1–28 from the release date.
+          </p>
 
           <label className="flex items-center gap-2 text-body-sm text-secondary">
             <input
@@ -129,7 +134,7 @@ export function DailyDataImport({
                 setErrors([]);
               }}
               rows={6}
-              placeholder={"1,12000,850\n2,9800,720"}
+              placeholder={"1,28871,4379\n2,129399,6300\n3,61424,2504"}
               className="mt-1 w-full rounded-instrument border border-border bg-surface px-3 py-2 font-mono text-xs text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
             />
           </div>

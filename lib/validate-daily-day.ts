@@ -1,3 +1,8 @@
+import {
+  DAILY_DATA_DAY0_REJECTED,
+  DAILY_DATA_DAY1_CONVENTION,
+} from "@/lib/daily-data-convention";
+
 export interface DailyDayInput {
   day_number: number;
   streams: number;
@@ -62,8 +67,11 @@ function parseNonNegativeInteger(
 }
 
 function validateDayNumber(dayNumber: number): string | null {
+  if (dayNumber === 0) {
+    return DAILY_DATA_DAY0_REJECTED;
+  }
   if (!Number.isInteger(dayNumber) || dayNumber < 1 || dayNumber > 28) {
-    return "Day must be a whole number from 1 to 28.";
+    return `Day must be a whole number from 1 to 28. ${DAILY_DATA_DAY1_CONVENTION}`;
   }
   return null;
 }

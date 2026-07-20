@@ -1,5 +1,10 @@
 /** Parsed daily_data row from CSV / spreadsheet paste (no DB access). */
 
+import {
+  DAILY_DATA_DAY0_REJECTED,
+  DAILY_DATA_DAY1_CONVENTION,
+} from "@/lib/daily-data-convention";
+
 export interface DailyRow {
   day_number: number;
   streams: number;
@@ -14,6 +19,10 @@ export interface ParseDailyDataResult {
 /** @deprecated Use ParseDailyDataResult */
 export type ParseResult = ParseDailyDataResult;
 
+/**
+ * Parse CSV / paste for daily_data import.
+ * Convention: day 1 = release_date; timezone sliver folded into day 1 (no day 0).
+ */
 export function parseDailyData(
   text: string,
   hasDayColumn: boolean,
@@ -48,8 +57,12 @@ export function parseDailyData(
     const streamsValue = Number(streams);
     const savesValue = Number(saves);
 
-    if (!Number.isInteger(dayNumber) || dayNumber < 1 || dayNumber > 28) {
-      issues.push(`Line ${rowNo}: day "${day}" must be a whole number 1–28.`);
+    if (dayNumber === 0) {
+      issues.push(`Line ${rowNo}: ${DAILY_DATA_DAY0_REJECTED}`);
+    } else if (!Number.isInteger(dayNumber) || dayNumber < 1 || dayNumber > 28) {
+      issues.push(
+        `Line ${rowNo}: day "${day}" must be a whole number 1–28. ${DAILY_DATA_DAY1_CONVENTION}`,
+      );
     }
     if (
       !Number.isFinite(streamsValue) ||

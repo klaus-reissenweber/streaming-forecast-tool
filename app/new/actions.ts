@@ -53,7 +53,9 @@ export async function createRelease(
   try {
     const { coefficients, adRates, modelVersionId } = await loadForecastData();
     const inputs = toReleaseForecastInputs(parsed.values);
-    const forecast = computeLockedForecast(inputs, coefficients, adRates);
+    const forecast = computeLockedForecast(inputs, coefficients, adRates, {
+      releaseDate: parsed.values.releaseDate,
+    });
 
     const row = toNewReleaseInsertRow(parsed.values, {
       lockedForecastStreams: forecast.streams.week1Streams,

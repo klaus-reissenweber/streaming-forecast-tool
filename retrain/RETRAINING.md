@@ -70,10 +70,10 @@ Before trusting production output, `dataset.py` must reproduce TypeScript aggreg
 
 | Metric | Expected |
 |---|---|
-| Wk1 streams (sum D1–D7) | **452,848** |
-| Wk1 saves (sum D1–D7) | **19,954** |
+| Wk1 streams (sum D1–D7) | **453,483** |
+| Wk1 saves (sum D1–D7) | **20,138** |
 
-Source: `lib/fixtures/elderbrook-monitoring.ts`, validated by `scripts/validate-archive-elderbrook.ts`.
+Source: `lib/fixtures/elderbrook-monitoring.ts` (offline synthetic UUID — not a DB row), validated by `scripts/validate-archive-elderbrook.ts`.
 
 ---
 
@@ -353,7 +353,7 @@ Confirm key is in `retrain/.env.local`, not the project root `.env.local` only. 
 
 ### Elderbrook parity test fails
 
-Python `dataset.py` aggregation diverges from `lib/compute-week1-actuals.ts`. Fix before any production retrain — the script must sum days 1–7 identically (452,848 streams / 19,954 saves on the fixture).
+Python `dataset.py` aggregation diverges from `lib/compute-week1-actuals.ts`. Fix before any production retrain — the script must sum days 1–7 identically (453,483 streams / 20,138 saves on the fixture).
 
 ---
 

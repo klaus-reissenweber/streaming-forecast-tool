@@ -111,13 +111,15 @@ export function buildReleaseViewModel(
   const tier = artistTierFromMonthlyListeners(release.monthly_listeners);
   const algoPositioning = algoPositioningBand(release.locked_forecast_saves, tier);
   const channelMix = recommendChannelMix(inputs, adRates);
-  const streamCurve = buildStreamCurve(release.locked_forecast_streams);
+  const streamCurve = buildStreamCurve(release.locked_forecast_streams, {
+    releaseDate: release.release_date,
+  });
   const { actualStreamsByDay } = chartSeriesFromDailyData(dailyData);
 
   const monitoring =
     phase === "monitoring"
       ? computeMonitoringSummary(release, inputs, dailyData, locked)
-      : emptyMonitoringSummary(locked);
+      : emptyMonitoringSummary(locked, release.release_date);
 
   const flags =
     phase === "monitoring"

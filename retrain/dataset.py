@@ -188,15 +188,16 @@ def group_daily_data_by_release_id(
     return grouped
 
 
-# Verified Elderbrook D1–D7 from lib/fixtures/elderbrook-monitoring.ts
+# Offline Elderbrook D1–D7 golden fixture (lib/fixtures/elderbrook-monitoring.ts).
+# Synthetic UUID — not a live DB row. Asserts d1–d7 only.
 ELDERBROOK_D1_D7: tuple[DailyDataPoint, ...] = (
     DailyDataPoint(
         id="fixture-d1",
         release_id=config.ELDERBROOK_RELEASE_ID,
         day_number=1,
-        streams=28_221,
-        saves=4_192,
-        recorded_at="2026-01-01T00:00:00.000Z",
+        streams=28_871,
+        saves=4_379,
+        recorded_at="2026-05-28T00:00:00.000Z",
     ),
     DailyDataPoint(
         id="fixture-d2",
@@ -204,15 +205,15 @@ ELDERBROOK_D1_D7: tuple[DailyDataPoint, ...] = (
         day_number=2,
         streams=129_399,
         saves=6_300,
-        recorded_at="2026-01-02T00:00:00.000Z",
+        recorded_at="2026-05-29T00:00:00.000Z",
     ),
     DailyDataPoint(
         id="fixture-d3",
         release_id=config.ELDERBROOK_RELEASE_ID,
         day_number=3,
-        streams=61_439,
-        saves=2_507,
-        recorded_at="2026-01-03T00:00:00.000Z",
+        streams=61_424,
+        saves=2_504,
+        recorded_at="2026-05-30T00:00:00.000Z",
     ),
     DailyDataPoint(
         id="fixture-d4",
@@ -220,7 +221,7 @@ ELDERBROOK_D1_D7: tuple[DailyDataPoint, ...] = (
         day_number=4,
         streams=40_339,
         saves=1_660,
-        recorded_at="2026-01-04T00:00:00.000Z",
+        recorded_at="2026-05-31T00:00:00.000Z",
     ),
     DailyDataPoint(
         id="fixture-d5",
@@ -228,7 +229,7 @@ ELDERBROOK_D1_D7: tuple[DailyDataPoint, ...] = (
         day_number=5,
         streams=61_571,
         saves=1_931,
-        recorded_at="2026-01-05T00:00:00.000Z",
+        recorded_at="2026-06-01T00:00:00.000Z",
     ),
     DailyDataPoint(
         id="fixture-d6",
@@ -236,7 +237,7 @@ ELDERBROOK_D1_D7: tuple[DailyDataPoint, ...] = (
         day_number=6,
         streams=67_520,
         saves=1_752,
-        recorded_at="2026-01-06T00:00:00.000Z",
+        recorded_at="2026-06-02T00:00:00.000Z",
     ),
     DailyDataPoint(
         id="fixture-d7",
@@ -244,6 +245,6 @@ ELDERBROOK_D1_D7: tuple[DailyDataPoint, ...] = (
         day_number=7,
         streams=64_359,
         saves=1_612,
-        recorded_at="2026-01-07T00:00:00.000Z",
+        recorded_at="2026-06-03T00:00:00.000Z",
     ),
 )

@@ -148,7 +148,7 @@ function buildMonitoringForRelease(
   };
 
   if (dailyData.length === 0) {
-    return emptyMonitoringSummary(locked);
+    return emptyMonitoringSummary(locked, release.release_date);
   }
 
   const inputs = releaseRowToForecastInputs(release);
