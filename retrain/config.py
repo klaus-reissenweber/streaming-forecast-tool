@@ -84,6 +84,10 @@ RELEASE_TYPES: tuple[str, ...] = (
     "album_track",
     "alternate_version",
 )
+# Reference pool for RELEASE_TYPE_MAGNITUDE_MULTIPLIER ratios.
+RELEASE_TYPE_MAGNITUDE_REFERENCE_TYPES: tuple[str, ...] = ("single", "lead_single")
+# Empirical Bayes shrinkage toward 1.0: (n * raw + k * 1) / (n + k).
+RELEASE_TYPE_MAGNITUDE_SHRINKAGE_K = 5
 # Legacy keys in ad_rates.spotify_rates until CPS is recalibrated on catalog roles.
 SPOTIFY_CPS_RELEASE_TYPES: tuple[str, ...] = ("single", "ep", "album")
 SPOTIFY_FORMATS: tuple[str, ...] = ("marquee", "showcase")
@@ -140,6 +144,10 @@ CONSTANTS_MARKERS: dict[str, tuple[str, str]] = {
     "STREAM_CURVE_TEMPLATE": (
         "// RETRAIN:STREAM_CURVE_TEMPLATE:START",
         "// RETRAIN:STREAM_CURVE_TEMPLATE:END",
+    ),
+    "RELEASE_TYPE_MAGNITUDE_MULTIPLIER": (
+        "// RETRAIN:RELEASE_TYPE_MAGNITUDE_MULTIPLIER:START",
+        "// RETRAIN:RELEASE_TYPE_MAGNITUDE_MULTIPLIER:END",
     ),
 }
 

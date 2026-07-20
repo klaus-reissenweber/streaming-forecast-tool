@@ -3,6 +3,7 @@ import {
   META_DELIVERY_PER_OBJECTIVE,
   META_OBJECTIVE_MULTIPLIERS,
   META_RATES_BY_GENRE,
+  RELEASE_TYPE_MAGNITUDE_MULTIPLIER,
   SAVE_COUNT_BANDS,
   STREAM_CURVE_BASELINE,
   STREAM_CURVE_TREND,
@@ -747,10 +748,27 @@ export function computeLockedForecast(
   algoPositioning: AlgoPositioningResult;
   streamCurve: StreamCurveForecast;
 } {
-  const streams = predictStreams(inputs, coefficients);
-  const saves = predictSaves(inputs, coefficients, {
-    week1Streams: streams.week1Streams,
+  const magnitude = RELEASE_TYPE_MAGNITUDE_MULTIPLIER[inputs.releaseType];
+
+  const rawStreams = predictStreams(inputs, coefficients);
+  const rawSaves = predictSaves(inputs, coefficients, {
+    week1Streams: rawStreams.week1Streams,
   });
+
+  // Scale locked wk1 totals only — curve dailyPct shape is unchanged.
+  const week1Streams = Math.round(rawStreams.week1Streams * magnitude);
+  const week1Saves = Math.round(rawSaves.week1Saves * magnitude);
+  const streams: StreamsForecast = {
+    ...rawStreams,
+    week1Streams,
+  };
+  const saves: SavesForecast = {
+    ...rawSaves,
+    week1Saves,
+    impliedSaveRate:
+      week1Streams > 0 ? (week1Saves / week1Streams) * 100 : rawSaves.impliedSaveRate,
+  };
+
   const adImpact = predictAdImpact(inputs, adRates);
   const metaDelivery = predictPaidDelivery(
     inputs.metaSpendPlanned,

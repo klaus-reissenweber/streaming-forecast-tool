@@ -131,6 +131,25 @@ class StreamCurveFit:
 
 
 @dataclass(frozen=True)
+class ReleaseTypeMagnitudeFit:
+    """Per release_type magnitude vs single/lead reference (k-shrunk toward 1.0)."""
+
+    sample_size: int
+    multipliers: dict[str, float]
+    raw_ratios: dict[str, float]
+    counts: dict[str, int]
+    shrinkage_k: int
+
+    def to_coefficients_json(self) -> dict[str, Any]:
+        return {
+            "multipliers": dict(self.multipliers),
+            "raw_ratios": dict(self.raw_ratios),
+            "counts": dict(self.counts),
+            "shrinkage_k": self.shrinkage_k,
+        }
+
+
+@dataclass(frozen=True)
 class AdRatesFit:
     spotify_rates: dict[str, Any]
     meta_rates_by_genre: dict[str, float]
@@ -491,6 +510,85 @@ def derive_stream_curve(rows: list[TrainingRow]) -> StreamCurveFit:
     )
 
 
+def _shrink_toward_one(raw: float, n: int, k: int) -> float:
+    """Empirical Bayes: (n * raw + k * 1.0) / (n + k)."""
+    return (n * raw + k * 1.0) / (n + k)
+
+
+def derive_release_type_magnitude_multipliers(
+    rows: list[TrainingRow],
+    *,
+    shrinkage_k: int = config.RELEASE_TYPE_MAGNITUDE_SHRINKAGE_K,
+) -> ReleaseTypeMagnitudeFit:
+    """
+    Per-type median of (actual_wk1 / locked_forecast_streams), relative to the
+    single∪lead_single reference median, then k-shrink toward 1.0.
+
+    Reference types are pinned to 1.0. Types with no rows shrink fully to 1.0.
+    Sync target: lib/constants.ts RELEASE_TYPE_MAGNITUDE_MULTIPLIER.
+    """
+    by_type: dict[str, list[float]] = {rt: [] for rt in config.RELEASE_TYPES}
+    for row in rows:
+        if row.wk1_streams <= 0 or row.locked_forecast_streams <= 0:
+            continue
+        if row.release_type not in by_type:
+            continue
+        # Forecast-normalized residual: actual wk1 / locked forecast.
+        by_type[row.release_type].append(
+            float(row.wk1_streams) / float(row.locked_forecast_streams)
+        )
+
+    reference_values: list[float] = []
+    for rt in config.RELEASE_TYPE_MAGNITUDE_REFERENCE_TYPES:
+        reference_values.extend(by_type[rt])
+
+    if not reference_values:
+        # No reference yet — emit identity multipliers (seed / cold start).
+        multipliers = {rt: 1.0 for rt in config.RELEASE_TYPES}
+        return ReleaseTypeMagnitudeFit(
+            sample_size=0,
+            multipliers=multipliers,
+            raw_ratios={rt: 1.0 for rt in config.RELEASE_TYPES},
+            counts={rt: len(by_type[rt]) for rt in config.RELEASE_TYPES},
+            shrinkage_k=shrinkage_k,
+        )
+
+    ref_median = float(np.median(reference_values))
+    if ref_median <= 0:
+        raise ValueError("release_type magnitude reference median must be > 0")
+
+    raw_ratios: dict[str, float] = {}
+    multipliers: dict[str, float] = {}
+    counts: dict[str, int] = {}
+    used = 0
+
+    for rt in config.RELEASE_TYPES:
+        values = by_type[rt]
+        n = len(values)
+        counts[rt] = n
+        used += n
+
+        if rt in config.RELEASE_TYPE_MAGNITUDE_REFERENCE_TYPES:
+            raw_ratios[rt] = 1.0
+            multipliers[rt] = 1.0
+            continue
+
+        if n == 0 or ref_median <= 0:
+            raw = 1.0
+        else:
+            raw = float(np.median(values)) / ref_median
+        raw_ratios[rt] = raw
+        multipliers[rt] = round(_shrink_toward_one(raw, n, shrinkage_k), 2)
+
+    return ReleaseTypeMagnitudeFit(
+        sample_size=used,
+        multipliers=multipliers,
+        raw_ratios=raw_ratios,
+        counts=counts,
+        shrinkage_k=shrinkage_k,
+    )
+
+
 def derive_spotify_rates(rows: list[TrainingRow]) -> dict[str, Any]:
     """
     CPS = spotify_spend_planned / wk1_streams, median by
@@ -573,4 +671,6 @@ def fit_all_derived_models(
         "save_rate_bands": derive_save_rate_bands(rows),
         "stream_curve": derive_stream_curve(rows),
         "ad_rates": build_ad_rates(rows, active_ad_rates),
+        # Sync-only (not promoted to model_coefficients): see constants_sync.py.
+        "release_type_magnitude": derive_release_type_magnitude_multipliers(rows),
     }

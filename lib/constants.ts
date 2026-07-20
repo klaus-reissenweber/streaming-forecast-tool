@@ -21,7 +21,7 @@ export const META_OBJECTIVES = [
   "reach",
 ] as const;
 
-/** Catalog release role (forecast multipliers TBD — storage + form only for now). */
+/** Catalog release role (form + magnitude at lock; curve shape unchanged). */
 export const RELEASE_TYPES = [
   "single",
   "lead_single",
@@ -37,6 +37,24 @@ export const RELEASE_TYPE_LABELS: Record<(typeof RELEASE_TYPES)[number], string>
   album_track: "Album track",
   alternate_version: "Alternate version (remix/reimagining)",
 };
+
+/**
+ * Scales locked wk1 streams + saves at create time (save-rate unchanged).
+ * Does not alter curve shape. Existing locked rows are not retroactively updated.
+ *
+ * Retrain-owned: median (actual_wk1 / locked_forecast_streams) vs single/lead
+ * reference, then k=5 shrinkage toward 1.0
+ * (see retrain/fit.py derive_release_type_magnitude_multipliers).
+ */
+// RETRAIN:RELEASE_TYPE_MAGNITUDE_MULTIPLIER:START
+export const RELEASE_TYPE_MAGNITUDE_MULTIPLIER = {
+  single: 1.0,
+  lead_single: 1.0,
+  focus_track: 1.03,
+  album_track: 1.0,
+  alternate_version: 0.87,
+} as const;
+// RETRAIN:RELEASE_TYPE_MAGNITUDE_MULTIPLIER:END
 
 export const SPOTIFY_FORMATS = [
   "marquee",

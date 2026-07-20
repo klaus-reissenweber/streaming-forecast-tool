@@ -20,7 +20,7 @@ DAILY_DATA_TABLE = "daily_data"
 RELEASE_SELECT_COLUMNS = (
     "id, track_name, artist_name, genre, monthly_listeners, is_feature, "
     "editorial_tier, release_type, spotify_format, meta_spend_planned, "
-    "spotify_spend_planned, status"
+    "spotify_spend_planned, locked_forecast_streams, status"
 )
 
 DAILY_DATA_SELECT_COLUMNS = (
@@ -117,6 +117,11 @@ def _parse_release_row(row: dict[str, Any]) -> ReleaseRecord:
         spotify_spend_planned=_parse_number(
             row.get("spotify_spend_planned"),
             "spotify_spend_planned",
+        ),
+        locked_forecast_streams=_parse_integer(
+            row.get("locked_forecast_streams"),
+            "locked_forecast_streams",
+            minimum=1,
         ),
         status=status,
     )

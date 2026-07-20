@@ -12,6 +12,7 @@ from dataset import TrainingRow
 from fit import (
     build_ad_rates,
     derive_algo_bands,
+    derive_release_type_magnitude_multipliers,
     derive_save_rate_bands,
     derive_stream_curve,
     fit_all_streams_models,
@@ -146,6 +147,7 @@ def make_derivation_training_rows(
                 release_type=release_type,
                 spotify_format=spotify_format,
                 spotify_spend_planned=float(spotify_spend),
+                locked_forecast_streams=wk1_streams,
                 wk1_streams=wk1_streams,
                 wk1_saves=wk1_saves,
                 streams_by_day=streams_by_day,
@@ -189,6 +191,55 @@ def test_streams_refinement_and_derivations_bounds() -> None:
     single_marquee_mid = ad_rates.spotify_rates["single"]["marquee"]["mid"]
     assert single_marquee_mid is not None
     assert 0.15 < single_marquee_mid < 0.30
+
+
+def test_release_type_magnitude_shrinkage_toward_one() -> None:
+    from dataclasses import replace
+
+    base = make_derivation_training_rows(n=40, seed=3)[0]
+    locked = 100_000
+    rows: list[TrainingRow] = []
+    for i in range(20):
+        rows.append(
+            replace(
+                base,
+                release_id=f"s-{i}",
+                release_type="single",
+                locked_forecast_streams=locked,
+                wk1_streams=100_000,
+            )
+        )
+    for i in range(10):
+        rows.append(
+            replace(
+                base,
+                release_id=f"f-{i}",
+                release_type="focus_track",
+                locked_forecast_streams=locked,
+                wk1_streams=120_000,
+            )
+        )
+    for i in range(10):
+        rows.append(
+            replace(
+                base,
+                release_id=f"a-{i}",
+                release_type="alternate_version",
+                locked_forecast_streams=locked,
+                wk1_streams=55_000,
+            )
+        )
+
+    fit = derive_release_type_magnitude_multipliers(rows)
+    assert fit.multipliers["single"] == 1.0
+    assert fit.multipliers["lead_single"] == 1.0
+    # Per-release ratios: 120k/100k=1.2, 55k/100k=0.55 (forecast-normalized)
+    assert fit.raw_ratios["focus_track"] == pytest.approx(1.2)
+    assert fit.raw_ratios["alternate_version"] == pytest.approx(0.55)
+    # (10*1.2 + 5*1) / 15 = 1.133… → 1.13; (10*0.55 + 5) / 15 = 0.7
+    assert fit.multipliers["focus_track"] == 1.13
+    assert fit.multipliers["alternate_version"] == 0.7
+    assert fit.multipliers["album_track"] == 1.0
 
 
 def test_streams_refinement_and_derivations_report(

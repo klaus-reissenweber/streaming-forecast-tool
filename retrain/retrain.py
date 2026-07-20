@@ -273,6 +273,7 @@ def run(flags: config.RetrainFlags) -> int:
                 algo_bands=derived_models["algo_bands"],
                 save_rate_bands=derived_models["save_rate_bands"],
                 stream_curve=derived_models["stream_curve"],
+                release_type_magnitude=derived_models["release_type_magnitude"],
                 dry_run=False,
             )
             files_written.append(str(config.CONSTANTS_TS_PATH))

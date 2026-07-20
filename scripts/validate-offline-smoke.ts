@@ -13,7 +13,12 @@ import {
 } from "@/lib/fixtures/elderbrook-monitoring";
 import {
   composeStreamCurvePct,
+  computeLockedForecast,
   editorialDayNumber,
+  type AdRates,
+  type ForecastCoefficients,
+  type ReleaseForecastInputs,
+  type RegressionModel,
 } from "@/lib/forecast";
 import { parseDailyData } from "@/lib/parse-daily-data";
 import { validateDailyDay } from "@/lib/validate-daily-day";
@@ -22,6 +27,85 @@ function assert(condition: boolean, message: string): void {
   if (!condition) {
     throw new Error(message);
   }
+}
+
+function stubRegression(interceptLog: number): RegressionModel {
+  return {
+    intercept: interceptLog,
+    rmse: 0.1,
+    r2: 0.9,
+    log_ml: 0,
+    feat: 0,
+    ed_tier: 0,
+    log_d1: 0,
+    log_d2: 0,
+    log_d3: 0,
+    log_d4: 0,
+    log_d5: 0,
+    log_d6: 0,
+    log_d7: 0,
+  };
+}
+
+const STUB_COEFFICIENTS: ForecastCoefficients = {
+  streams: {
+    streams_d0: stubRegression(Math.log(100_000)),
+    streams_d1: stubRegression(Math.log(100_000)),
+    streams_d2: stubRegression(Math.log(100_000)),
+    streams_d3: stubRegression(Math.log(100_000)),
+    streams_d4: stubRegression(Math.log(100_000)),
+    streams_d5: stubRegression(Math.log(100_000)),
+    streams_d6: stubRegression(Math.log(100_000)),
+    streams_d7: stubRegression(Math.log(100_000)),
+  },
+  saves: {
+    intercept: Math.log(5_000),
+    log_ml: 0,
+    feat: 0,
+    ed_tier: 0,
+    rmse: 0.1,
+    r2: 0.9,
+    genre_offset: {
+      dubstep: 0,
+      house: 0,
+      "melodic-bass": 0,
+      downtempo: 0,
+      "big-room": 0,
+    },
+  },
+};
+
+const STUB_AD_RATES: AdRates = {
+  spotify_rates: {
+    single: {
+      marquee: { developing: 0.1, mid: 0.1, established: 0.1 },
+      showcase: { developing: 0.1, mid: 0.1, established: 0.1 },
+    },
+    ep: {
+      marquee: { developing: null, mid: null, established: null },
+      showcase: { developing: null, mid: null, established: null },
+    },
+    album: {
+      marquee: { developing: null, mid: null, established: null },
+      showcase: { developing: null, mid: null, established: null },
+    },
+  },
+};
+
+function baseInputs(
+  releaseType: ReleaseForecastInputs["releaseType"],
+): ReleaseForecastInputs {
+  return {
+    monthlyListeners: 500_000,
+    isFeature: false,
+    editorialTier: 0,
+    genre: "house",
+    releaseType,
+    spotifyFormat: "marquee",
+    metaSpendPlanned: 0,
+    metaObjective: "traffic",
+    spotifySpendPlanned: 0,
+  };
 }
 
 console.log("=== empty dashboard / archive ===");
@@ -101,6 +185,68 @@ for (const [friDay, sunDay] of [
 const friWk1 = fri.slice(0, 7).reduce((s, p) => s + p, 0);
 assert(Math.abs(friWk1 - 100) < 1e-6, `Fri wk1 sum ${friWk1} ≠ 100`);
 console.log("PASS: Fri d1 peak + elevated Fridays / depressed Sundays; wk1=100");
+
+console.log("\n=== release_type magnitude multiplier ===");
+const lockOpts = { releaseDate: "2026-05-28" as const };
+const focus = computeLockedForecast(
+  baseInputs("focus_track"),
+  STUB_COEFFICIENTS,
+  STUB_AD_RATES,
+  lockOpts,
+);
+const alternate = computeLockedForecast(
+  baseInputs("alternate_version"),
+  STUB_COEFFICIENTS,
+  STUB_AD_RATES,
+  lockOpts,
+);
+const single = computeLockedForecast(
+  baseInputs("single"),
+  STUB_COEFFICIENTS,
+  STUB_AD_RATES,
+  lockOpts,
+);
+const albumTrack = computeLockedForecast(
+  baseInputs("album_track"),
+  STUB_COEFFICIENTS,
+  STUB_AD_RATES,
+  lockOpts,
+);
+
+const expectedRatio = 1.03 / 0.87;
+const streamsRatio =
+  focus.streams.week1Streams / alternate.streams.week1Streams;
+const savesRatio = focus.saves.week1Saves / alternate.saves.week1Saves;
+assert(
+  Math.abs(streamsRatio - expectedRatio) < 0.01,
+  `focus:alt streams ratio ${streamsRatio} ≠ ${expectedRatio}`,
+);
+assert(
+  Math.abs(savesRatio - expectedRatio) < 0.01,
+  `focus:alt saves ratio ${savesRatio} ≠ ${expectedRatio}`,
+);
+assert(
+  single.streams.week1Streams === albumTrack.streams.week1Streams,
+  "single and album_track streams should match (both 1.0×)",
+);
+assert(
+  single.saves.week1Saves === albumTrack.saves.week1Saves,
+  "single and album_track saves should match (both 1.0×)",
+);
+assert(
+  Math.abs(
+    (focus.saves.impliedSaveRate ?? 0) - (alternate.saves.impliedSaveRate ?? 0),
+  ) < 0.05,
+  "save-rate should stay ~constant across magnitude",
+);
+assert(
+  JSON.stringify(focus.streamCurve.dailyPct) ===
+    JSON.stringify(alternate.streamCurve.dailyPct),
+  "curve shape (dailyPct) must be unchanged by magnitude",
+);
+console.log(
+  `PASS: focus/alt streams ${focus.streams.week1Streams}/${alternate.streams.week1Streams} ≈ 1.03:0.87; single=album_track=${single.streams.week1Streams}`,
+);
 
 console.log("\n=== day-0 import rejection ===");
 const parsed = parseDailyData("0,100,10\n1,200,20", true);

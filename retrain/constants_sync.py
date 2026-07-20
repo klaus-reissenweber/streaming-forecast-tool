@@ -11,7 +11,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import config
-from fit import AlgoBandsFit, SaveRateBandsFit, StreamCurveFit
+from fit import (
+    AlgoBandsFit,
+    ReleaseTypeMagnitudeFit,
+    SaveRateBandsFit,
+    StreamCurveFit,
+)
 
 DEFAULT_CONSTANTS_PATH = config.CONSTANTS_TS_PATH
 
@@ -202,16 +207,39 @@ def format_stream_curve_template(stream_curve: StreamCurveFit) -> str:
     return "\n".join(lines)
 
 
+def _format_magnitude(value: float) -> str:
+    rounded = round(value, 2)
+    if rounded == int(rounded):
+        return f"{int(rounded)}.0"
+    return f"{rounded:.2f}"
+
+
+def format_release_type_magnitude_multiplier(
+    magnitude: ReleaseTypeMagnitudeFit,
+) -> str:
+    lines = ["export const RELEASE_TYPE_MAGNITUDE_MULTIPLIER = {"]
+    for release_type in config.RELEASE_TYPES:
+        value = magnitude.multipliers[release_type]
+        lines.append(f"  {release_type}: {_format_magnitude(value)},")
+    lines[-1] = lines[-1][:-1]
+    lines.append("} as const;")
+    return "\n".join(lines)
+
+
 def build_marker_replacements(
     *,
     algo_bands: AlgoBandsFit,
     save_rate_bands: SaveRateBandsFit,
     stream_curve: StreamCurveFit,
+    release_type_magnitude: ReleaseTypeMagnitudeFit,
 ) -> dict[str, str]:
     return {
         "SAVE_COUNT_BANDS": format_save_count_bands(algo_bands),
         "SAVE_RATE_BANDS": format_save_rate_bands(save_rate_bands),
         "STREAM_CURVE_TEMPLATE": format_stream_curve_template(stream_curve),
+        "RELEASE_TYPE_MAGNITUDE_MULTIPLIER": format_release_type_magnitude_multiplier(
+            release_type_magnitude
+        ),
     }
 
 
@@ -254,6 +282,7 @@ def sync_constants(
     algo_bands: AlgoBandsFit,
     save_rate_bands: SaveRateBandsFit,
     stream_curve: StreamCurveFit,
+    release_type_magnitude: ReleaseTypeMagnitudeFit,
     path: Path | None = None,
     dry_run: bool = False,
 ) -> str:
@@ -263,6 +292,7 @@ def sync_constants(
         algo_bands=algo_bands,
         save_rate_bands=save_rate_bands,
         stream_curve=stream_curve,
+        release_type_magnitude=release_type_magnitude,
     )
     updated = apply_marker_replacements(original, replacements)
     if not dry_run and updated != original:

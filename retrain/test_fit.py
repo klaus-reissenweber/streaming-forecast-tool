@@ -89,6 +89,7 @@ def make_synthetic_training_rows(
                 release_type=release_types[i % len(release_types)],
                 spotify_format=formats[i % len(formats)],
                 spotify_spend_planned=0.0,
+                locked_forecast_streams=wk1_streams,
                 wk1_streams=wk1_streams,
                 wk1_saves=wk1_saves,
                 streams_by_day=streams_by_day,

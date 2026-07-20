@@ -18,7 +18,7 @@ from constants_sync import (
     format_stream_curve_template,
     sync_constants,
 )
-from fit import AlgoBandsFit, SaveRateBandsFit, StreamCurveFit
+from fit import AlgoBandsFit, ReleaseTypeMagnitudeFit, SaveRateBandsFit, StreamCurveFit
 
 
 def _sample_algo_bands() -> AlgoBandsFit:
@@ -54,6 +54,43 @@ def _sample_stream_curve() -> StreamCurveFit:
     )
 
 
+def _sample_release_type_magnitude() -> ReleaseTypeMagnitudeFit:
+    return ReleaseTypeMagnitudeFit(
+        sample_size=40,
+        multipliers={
+            "single": 1.0,
+            "lead_single": 1.0,
+            "focus_track": 1.03,
+            "album_track": 1.0,
+            "alternate_version": 0.87,
+        },
+        raw_ratios={
+            "single": 1.0,
+            "lead_single": 1.0,
+            "focus_track": 1.2,
+            "album_track": 1.0,
+            "alternate_version": 0.55,
+        },
+        counts={
+            "single": 20,
+            "lead_single": 5,
+            "focus_track": 5,
+            "album_track": 5,
+            "alternate_version": 5,
+        },
+        shrinkage_k=5,
+    )
+
+
+def _marker_kwargs() -> dict:
+    return {
+        "algo_bands": _sample_algo_bands(),
+        "save_rate_bands": _sample_save_rate_bands(),
+        "stream_curve": _sample_stream_curve(),
+        "release_type_magnitude": _sample_release_type_magnitude(),
+    }
+
+
 def _marker_block(name: str, body: str) -> str:
     start_marker, end_marker = config.CONSTANTS_MARKERS[name]
     return f"{start_marker}\n{body}\n{end_marker}"
@@ -82,6 +119,12 @@ def _fixture_constants_with_markers() -> str:
             _marker_block(
                 "SAVE_COUNT_BANDS",
                 "export const SAVE_COUNT_BANDS = {\n  mid: { p25: 1, p50: 2, p75: 3, p90: 4 },\n} as const;",
+            ),
+            "",
+            "/** Retrain-owned release_type magnitude multipliers. */",
+            _marker_block(
+                "RELEASE_TYPE_MAGNITUDE_MULTIPLIER",
+                "export const RELEASE_TYPE_MAGNITUDE_MULTIPLIER = {\n  single: 1.0,\n} as const;",
             ),
             "",
             'export { GENRE_PLAYBOOKS } from "@/lib/constants/playbooks";',
@@ -141,6 +184,7 @@ def test_find_marker_regions_failure_without_markers() -> None:
     assert "SAVE_COUNT_BANDS (MISSING)" in message
     assert "SAVE_RATE_BANDS (MISSING)" in message
     assert "STREAM_CURVE_TEMPLATE (MISSING)" in message
+    assert "RELEASE_TYPE_MAGNITUDE_MULTIPLIER (MISSING)" in message
     assert "// RETRAIN:SAVE_COUNT_BANDS:START" in message
     assert str(config.CONSTANTS_TS_PATH) in message
 
@@ -165,11 +209,7 @@ def test_find_marker_regions_failure_on_duplicate_start_marker() -> None:
 
 
 def test_build_marker_replacements_formats_expected_blocks() -> None:
-    replacements = build_marker_replacements(
-        algo_bands=_sample_algo_bands(),
-        save_rate_bands=_sample_save_rate_bands(),
-        stream_curve=_sample_stream_curve(),
-    )
+    replacements = build_marker_replacements(**_marker_kwargs())
 
     assert set(replacements) == set(config.CONSTANTS_MARKERS)
     assert "export const SAVE_COUNT_BANDS = {" in replacements["SAVE_COUNT_BANDS"]
@@ -180,16 +220,14 @@ def test_build_marker_replacements_formats_expected_blocks() -> None:
     assert "median: [" in replacements["STREAM_CURVE_TEMPLATE"]
     assert "p75: [" in replacements["STREAM_CURVE_TEMPLATE"]
     assert "} as const;" in replacements["STREAM_CURVE_TEMPLATE"]
+    assert "focus_track: 1.03" in replacements["RELEASE_TYPE_MAGNITUDE_MULTIPLIER"]
+    assert "alternate_version: 0.87" in replacements["RELEASE_TYPE_MAGNITUDE_MULTIPLIER"]
 
 
 def test_apply_marker_replacements_updates_inner_content_only() -> None:
     original = _fixture_constants_with_markers()
     outside_before = _lines_outside_markers(original)
-    replacements = build_marker_replacements(
-        algo_bands=_sample_algo_bands(),
-        save_rate_bands=_sample_save_rate_bands(),
-        stream_curve=_sample_stream_curve(),
-    )
+    replacements = build_marker_replacements(**_marker_kwargs())
 
     updated = apply_marker_replacements(original, replacements)
     outside_after = _lines_outside_markers(updated)
@@ -203,11 +241,7 @@ def test_apply_marker_replacements_updates_inner_content_only() -> None:
 
 def test_apply_marker_replacements_is_deterministic() -> None:
     original = _fixture_constants_with_markers()
-    replacements = build_marker_replacements(
-        algo_bands=_sample_algo_bands(),
-        save_rate_bands=_sample_save_rate_bands(),
-        stream_curve=_sample_stream_curve(),
-    )
+    replacements = build_marker_replacements(**_marker_kwargs())
 
     first = apply_marker_replacements(original, replacements)
     second = apply_marker_replacements(original, replacements)
@@ -217,11 +251,7 @@ def test_apply_marker_replacements_is_deterministic() -> None:
 
 def test_apply_marker_replacements_preserves_crlf_line_endings() -> None:
     original = _fixture_constants_with_markers().replace("\n", "\r\n")
-    replacements = build_marker_replacements(
-        algo_bands=_sample_algo_bands(),
-        save_rate_bands=_sample_save_rate_bands(),
-        stream_curve=_sample_stream_curve(),
-    )
+    replacements = build_marker_replacements(**_marker_kwargs())
 
     updated = apply_marker_replacements(original, replacements)
 
@@ -235,9 +265,7 @@ def test_sync_constants_dry_run_does_not_write(tmp_path: Path) -> None:
     constants_path.write_text(original, encoding="utf-8")
 
     result = sync_constants(
-        algo_bands=_sample_algo_bands(),
-        save_rate_bands=_sample_save_rate_bands(),
-        stream_curve=_sample_stream_curve(),
+        **_marker_kwargs(),
         path=constants_path,
         dry_run=True,
     )
@@ -252,15 +280,14 @@ def test_sync_constants_writes_updated_file(tmp_path: Path) -> None:
     constants_path.write_text(original, encoding="utf-8")
 
     updated = sync_constants(
-        algo_bands=_sample_algo_bands(),
-        save_rate_bands=_sample_save_rate_bands(),
-        stream_curve=_sample_stream_curve(),
+        **_marker_kwargs(),
         path=constants_path,
         dry_run=False,
     )
 
     assert constants_path.read_text(encoding="utf-8") == updated
     assert "p25: 1000, p50: 2000, p75: 3000, p90: 4000" in updated
+    assert "focus_track: 1.03" in updated
 
 
 def test_format_helpers_match_typescript_conventions() -> None:
@@ -276,11 +303,7 @@ def test_format_helpers_match_typescript_conventions() -> None:
 
 def test_constants_sync_report(capsys: pytest.CaptureFixture[str]) -> None:
     original = _fixture_constants_with_markers()
-    replacements = build_marker_replacements(
-        algo_bands=_sample_algo_bands(),
-        save_rate_bands=_sample_save_rate_bands(),
-        stream_curve=_sample_stream_curve(),
-    )
+    replacements = build_marker_replacements(**_marker_kwargs())
     updated = apply_marker_replacements(original, replacements)
 
     summary = {

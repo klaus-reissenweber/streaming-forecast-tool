@@ -52,6 +52,7 @@ class ReleaseRecord:
     spotify_format: str
     meta_spend_planned: float
     spotify_spend_planned: float
+    locked_forecast_streams: int
     status: str
 
 
@@ -69,6 +70,7 @@ class TrainingRow:
     release_type: str
     spotify_format: str
     spotify_spend_planned: float
+    locked_forecast_streams: int
     wk1_streams: int
     wk1_saves: int
     streams_by_day: dict[int, int]
@@ -111,6 +113,7 @@ def build_training_row(
         release_type=release.release_type,
         spotify_format=release.spotify_format,
         spotify_spend_planned=release.spotify_spend_planned,
+        locked_forecast_streams=release.locked_forecast_streams,
         wk1_streams=wk1.streams,
         wk1_saves=wk1_saves,
         streams_by_day=_streams_by_day_from_daily_data(daily_data),
