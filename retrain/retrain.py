@@ -23,6 +23,7 @@ from db import (
     load_active_ad_rates,
     load_active_r2,
     load_active_snapshot,
+    stamp_active_fitted_at,
     utc_now_iso,
 )
 from fetch import ClosedReleasesBundle, FetchError, fetch_closed_releases_with_daily_data
@@ -65,12 +66,23 @@ def parse_args(argv: list[str] | None = None) -> config.RetrainFlags:
             "Does not commit or deploy — review the constants diff first."
         ),
     )
+    parser.add_argument(
+        "--stamp-last-retrain",
+        action="store_true",
+        help=(
+            "Stamp fitted_at on all active model_coefficients rows to "
+            f"RETRAIN_LAST_AT ({config.RETRAIN_LAST_AT}), then exit. "
+            "Seeds the archive retrain-progress cutoff after a hold-the-commit "
+            "ship; future live promotes stamp fitted_at automatically."
+        ),
+    )
     args = parser.parse_args(argv)
     return config.RetrainFlags(
         dry_run=args.dry_run,
         force=args.force,
         skip_constants_sync=args.skip_constants_sync,
         hold_the_commit=args.hold_the_commit,
+        stamp_last_retrain=args.stamp_last_retrain,
     )
 
 
@@ -164,7 +176,26 @@ def _active_band_payloads(snapshot: Any) -> tuple[
         return None, None, None
 
 
+def run_stamp_last_retrain() -> int:
+    """Stamp active fitted_at = RETRAIN_LAST_AT (baseline progress-bar seed)."""
+    try:
+        client = get_db_client()
+        ids = stamp_active_fitted_at(client, config.RETRAIN_LAST_AT)
+    except DbError as error:
+        print(f"FAIL: stamp-last-retrain: {error}", file=sys.stderr)
+        return 1
+
+    print(
+        f"OK: stamped fitted_at={config.RETRAIN_LAST_AT} on "
+        f"{len(ids)} active model_coefficients row(s)."
+    )
+    return 0
+
+
 def run(flags: config.RetrainFlags) -> int:
+    if flags.stamp_last_retrain:
+        return run_stamp_last_retrain()
+
     files_written: list[str] = []
     fitted_at: str | None = None
     promotion_status = "not attempted"

@@ -466,10 +466,11 @@ def demote_active_for_type(client: Client, model_type: str) -> None:
         raise DbError(f"Demote for '{model_type}' returned no data payload")
 
 
-def promote_row(client: Client, row_id: str) -> None:
+def promote_row(client: Client, row_id: str, *, fitted_at: str) -> None:
+    """Activate a row and stamp fitted_at = promote time (progress-bar cutoff)."""
     response = (
         client.table(MODEL_COEFFICIENTS_TABLE)
-        .update({"is_active": True})
+        .update({"is_active": True, "fitted_at": fitted_at})
         .eq("id", row_id)
         .execute()
     )
@@ -488,7 +489,7 @@ def promote_batch(client: Client, inserted: InsertedModelBatch) -> None:
 
         try:
             demote_active_for_type(client, model_type)
-            promote_row(client, new_id)
+            promote_row(client, new_id, fitted_at=inserted.fitted_at)
             verify_type_active(client, model_type, expected_id=new_id)
         except DbError as error:
             raise PromotionError(
@@ -505,6 +506,29 @@ def promote_batch(client: Client, inserted: InsertedModelBatch) -> None:
     verify_promotion_result(client, inserted.ids_by_type)
 
 
+def stamp_active_fitted_at(client: Client, fitted_at: str) -> list[str]:
+    """
+    Set fitted_at on every currently active model_coefficients row.
+
+    Used to seed the archive retrain-progress cutoff after a constants-only
+    (hold-the-commit) ship that did not promote. Future live promotes stamp
+    fitted_at via promote_row; this is the one-time baseline backfill.
+    """
+    response = (
+        client.table(MODEL_COEFFICIENTS_TABLE)
+        .update({"fitted_at": fitted_at})
+        .eq("is_active", True)
+        .execute()
+    )
+    if response.data is None:
+        raise DbError("stamp_active_fitted_at returned no data payload")
+
+    ids = [str(row["id"]) for row in response.data]
+    if not ids:
+        raise DbError("stamp_active_fitted_at matched no active rows")
+    return ids
+
+
 def insert_and_promote(
     client: Client,
     *,
@@ -512,11 +536,17 @@ def insert_and_promote(
     derived_models: dict[str, DerivedModel],
     fitted_at: str | None = None,
 ) -> InsertedModelBatch:
-    """Insert inactive batch then promote sequentially (see RETRAINING.md)."""
+    """Insert inactive batch then promote sequentially (see RETRAINING.md).
+
+    ``fitted_at`` defaults to promote time (utc now). Inserts and the promote
+    flip both write that timestamp so max(active fitted_at) advances the
+    archive retrain-progress cutoff automatically.
+    """
+    promote_at = fitted_at or utc_now_iso()
     records = build_insert_records(
         regression_models=regression_models,
         derived_models=derived_models,
-        fitted_at=fitted_at,
+        fitted_at=promote_at,
     )
     inserted = insert_inactive_batch(client, records)
     promote_batch(client, inserted)

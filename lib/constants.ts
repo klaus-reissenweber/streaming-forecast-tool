@@ -7,6 +7,20 @@ export const TIER_ML_THRESHOLDS = {
 /** Minimum closed releases for retrain guardrail (mirrors retrain/config.py MIN_SAMPLE_SIZE). */
 export const RETRAIN_MIN_SAMPLE_SIZE = 40;
 
+/**
+ * Archive progress-card denominator: new eligible closes since last retrain
+ * before the UI shows [ELIGIBLE]. Soft threshold (RETRAINING.md rule of thumb).
+ */
+export const RETRAIN_THRESHOLD = 10;
+
+/**
+ * Initial seed for the archive retrain-progress cutoff (ISO).
+ * Runtime cutoff = max(this, max active model_coefficients.fitted_at).
+ * Live promotes stamp fitted_at = promote time; do not bump this for future
+ * retrains — only keep as fallback if active fitted_at is missing/older.
+ */
+export const RETRAIN_LAST_AT = "2026-07-27T05:20:00.000Z";
+
 export const GENRES = [
   "dubstep",
   "house",

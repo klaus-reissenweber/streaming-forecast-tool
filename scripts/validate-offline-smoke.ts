@@ -2,7 +2,10 @@
  * Offline smoke: empty active + archive dashboards, Elderbrook fixture parity,
  * weekday curve compose, day-0 import rejection. No live DB.
  */
-import { buildArchiveViewModel } from "@/lib/build-archive-view-model";
+import {
+  buildArchiveViewModel,
+  isRetrainProgressEligible,
+} from "@/lib/build-archive-view-model";
 import { buildDashboardViewModel } from "@/lib/build-dashboard-view-model";
 import { computeWeek1Actuals } from "@/lib/compute-week1-actuals";
 import {
@@ -13,6 +16,8 @@ import {
 } from "@/lib/fixtures/elderbrook-monitoring";
 import {
   RELEASE_TYPE_MAGNITUDE_MULTIPLIER,
+  RETRAIN_LAST_AT,
+  RETRAIN_THRESHOLD,
   STREAM_CURVE_BASELINE,
   STREAM_CURVE_TREND,
   STREAM_EDITORIAL_KERNEL,
@@ -26,6 +31,7 @@ import {
   type ReleaseForecastInputs,
   type RegressionModel,
 } from "@/lib/forecast";
+import { resolveLastRetrainAt } from "@/lib/load-last-retrain-at";
 import { parseDailyData } from "@/lib/parse-daily-data";
 import { validateDailyDay } from "@/lib/validate-daily-day";
 
@@ -132,6 +138,72 @@ assert(
   emptyArchive.summary.retrainEligible === 0,
   "retrainEligible should be 0",
 );
+assert(
+  emptyArchive.summary.retrainProgressCount === 0,
+  "retrainProgressCount should be 0",
+);
+
+console.log("\n=== retrain progress cutoff ===");
+assert(RETRAIN_THRESHOLD === 10, "RETRAIN_THRESHOLD default");
+assert(
+  resolveLastRetrainAt(null) === RETRAIN_LAST_AT,
+  "null fitted_at → marker",
+);
+assert(
+  resolveLastRetrainAt("2020-01-01T00:00:00.000Z") === RETRAIN_LAST_AT,
+  "older fitted_at → marker wins",
+);
+assert(
+  resolveLastRetrainAt("2099-01-01T00:00:00.000Z") ===
+    "2099-01-01T00:00:00.000Z",
+  "newer fitted_at wins",
+);
+assert(
+  isRetrainProgressEligible(
+    { wk1Complete: true, closedAt: "2026-08-01T00:00:00.000Z" },
+    RETRAIN_LAST_AT,
+  ),
+  "post-cutoff complete close counts",
+);
+assert(
+  !isRetrainProgressEligible(
+    { wk1Complete: true, closedAt: "2026-01-01T00:00:00.000Z" },
+    RETRAIN_LAST_AT,
+  ),
+  "pre-cutoff close excluded",
+);
+// View model passes closed_at through parseNullableTimestamp unchanged — Supabase
+// timestamptz often looks like "YYYY-MM-DD HH:MM:SS+00", not ISO with T/Z.
+const postgresSameDayAfter =
+  "2026-07-27 21:54:04+00"; /* after RETRAIN_LAST_AT same calendar day */
+const postgresSameDayBefore = "2026-07-27 01:00:00+00";
+assert(
+  Number.isFinite(new Date(postgresSameDayAfter).getTime()),
+  "Postgres closedAt shape must parse",
+);
+assert(
+  !(postgresSameDayAfter > RETRAIN_LAST_AT),
+  "sanity: string compare wrongly excludes same-day Postgres close",
+);
+assert(
+  isRetrainProgressEligible(
+    { wk1Complete: true, closedAt: postgresSameDayAfter },
+    RETRAIN_LAST_AT,
+  ),
+  "same-day Postgres close after cutoff counts",
+);
+assert(
+  !isRetrainProgressEligible(
+    { wk1Complete: true, closedAt: postgresSameDayBefore },
+    RETRAIN_LAST_AT,
+  ),
+  "same-day Postgres close before cutoff excluded",
+);
+assert(
+  resolveLastRetrainAt("2026-07-27 21:54:04+00") === "2026-07-27 21:54:04+00",
+  "Postgres fitted_at after marker wins via timestamp compare",
+);
+console.log("PASS: last-retrain resolve + progress eligibility");
 console.log("PASS: empty archive view model");
 
 console.log("\n=== offline Elderbrook fixture (no live UUID) ===");

@@ -2,6 +2,7 @@ import { SAVE_RATE_BANDS } from "@/lib/constants";
 import { computeWeek1Actuals } from "@/lib/compute-week1-actuals";
 import { formatLockTimestamp, formatReleaseDate } from "@/lib/format";
 import type { Genre } from "@/lib/forecast";
+import { isTimestampAfter } from "@/lib/is-timestamp-after";
 import {
   HEALTH_LAGGING_THRESHOLD_PCT,
   HEALTH_OUTPERFORM_THRESHOLD_PCT,
@@ -55,12 +56,33 @@ export interface ArchiveRow {
 
 export interface ArchiveSummary {
   totalClosed: number;
+  /** Closed + complete wk1 (all time). */
   retrainEligible: number;
+  /**
+   * Closed + complete wk1 with closed_at after last retrain.
+   * Feeds the archive retrain progress card numerator.
+   */
+  retrainProgressCount: number;
+  /** ISO cutoff used for retrainProgressCount (max fitted_at / RETRAIN_LAST_AT). */
+  lastRetrainAt: string | null;
 }
 
 export interface ArchiveViewModel {
   rows: ArchiveRow[];
   summary: ArchiveSummary;
+}
+
+/** Eligible for progress: complete wk1 and closed_at strictly after last retrain. */
+export function isRetrainProgressEligible(
+  row: Pick<ArchiveRow, "wk1Complete" | "closedAt">,
+  lastRetrainAt: string,
+): boolean {
+  if (!row.wk1Complete || row.closedAt == null) {
+    return false;
+  }
+  // closedAt arrives as Postgres timestamptz text (e.g. "2026-07-27 21:54:04+00");
+  // lastRetrainAt may be ISO (RETRAIN_LAST_AT) — compare as instants, not strings.
+  return isTimestampAfter(row.closedAt, lastRetrainAt);
 }
 
 function computeSaveRate(streams: number, saves: number): number {
@@ -253,7 +275,7 @@ export function sortArchiveRows(
 export function buildArchiveViewModel(
   releases: ReleaseRecord[],
   dailyDataByReleaseId: Map<string, DailyDataPoint[]>,
-  options?: { sort?: ArchiveSortOption },
+  options?: { sort?: ArchiveSortOption; lastRetrainAt?: string | null },
 ): ArchiveViewModel {
   const rows = releases.map((release) =>
     buildArchiveRow(
@@ -264,12 +286,21 @@ export function buildArchiveViewModel(
 
   const sortedRows = sortArchiveRows(rows, options?.sort ?? "closed_at_desc");
   const retrainEligible = sortedRows.filter((row) => row.wk1Complete).length;
+  const lastRetrainAt = options?.lastRetrainAt ?? null;
+  const retrainProgressCount =
+    lastRetrainAt == null
+      ? 0
+      : sortedRows.filter((row) =>
+          isRetrainProgressEligible(row, lastRetrainAt),
+        ).length;
 
   return {
     rows: sortedRows,
     summary: {
       totalClosed: sortedRows.length,
       retrainEligible,
+      retrainProgressCount,
+      lastRetrainAt,
     },
   };
 }

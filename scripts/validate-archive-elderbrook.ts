@@ -106,12 +106,28 @@ if (row.streamsDeltaTone !== "on_track") {
     `Expected streamsDeltaTone on_track at +${deltaPct.toFixed(1)}%, got ${row.streamsDeltaTone}`,
   );
 }
-if (row.saveRateVsBand !== "below") {
-  throw new Error(`Expected saveRateVsBand below, got ${row.saveRateVsBand}`);
+if (row.saveRateVsBand !== "within") {
+  throw new Error(`Expected saveRateVsBand within, got ${row.saveRateVsBand}`);
 }
 if (archive.summary.retrainEligible !== 1) {
   throw new Error(
     `Expected retrainEligible 1, got ${archive.summary.retrainEligible}`,
+  );
+}
+// Without lastRetrainAt, progress numerator stays 0 (fresh baseline).
+if (archive.summary.retrainProgressCount !== 0) {
+  throw new Error(
+    `Expected retrainProgressCount 0 without cutoff, got ${archive.summary.retrainProgressCount}`,
+  );
+}
+const afterBaseline = buildArchiveViewModel(
+  [ELDERBROOK_CLOSED],
+  new Map([[ELDERBROOK_CLOSED.id, [...ELDERBROOK_D1_D7]]]),
+  { lastRetrainAt: "2020-01-01T00:00:00.000Z" },
+);
+if (afterBaseline.summary.retrainProgressCount !== 1) {
+  throw new Error(
+    `Expected retrainProgressCount 1 after old cutoff, got ${afterBaseline.summary.retrainProgressCount}`,
   );
 }
 

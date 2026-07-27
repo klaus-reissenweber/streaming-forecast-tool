@@ -118,6 +118,12 @@ COOKS_D_THRESHOLD_FACTOR = 4.0  # flag when D > COOKS_D_THRESHOLD_FACTOR / n
 REPRODUCIBILITY_ATOL = 1e-10
 REPRODUCIBILITY_RTOL = 1e-10
 
+# Seed fallback for archive retrain-progress cutoff (mirrors lib/constants.ts
+# RETRAIN_LAST_AT). Live cutoff = max(this, max active model_coefficients.fitted_at).
+# After the baseline stamp / any promote, prefer DB fitted_at; do not bump this
+# for future retrains — promote stamps fitted_at instead.
+RETRAIN_LAST_AT = "2026-07-27T05:20:00.000Z"
+
 # SAVE_RATE_BANDS: Empirical Bayes toward catalog-wide p10/p90.
 # Genres with n < MIN shrink fully toward the prior; all genres get k-shrinkage.
 SAVE_RATE_BANDS_MIN_SAMPLE = 5
@@ -195,3 +201,5 @@ class RetrainFlags:
     skip_constants_sync: bool = False
     # Fit + write constants.ts; skip DB promote (operator reviews diff before commit).
     hold_the_commit: bool = False
+    # One-shot: stamp active model_coefficients.fitted_at = RETRAIN_LAST_AT, then exit.
+    stamp_last_retrain: bool = False

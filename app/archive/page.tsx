@@ -12,6 +12,7 @@ import { GENRES } from "@/lib/constants";
 import { formatReleaseDate } from "@/lib/format";
 import type { Genre } from "@/lib/forecast";
 import { loadClosedReleasesWithDailyData } from "@/lib/load-closed-releases";
+import { loadLastRetrainAt } from "@/lib/load-last-retrain-at";
 
 export const metadata: Metadata = {
   title: "Release archive",
@@ -70,11 +71,14 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
   const genre = parseGenreFilter(params.genre);
   const sort = parseSortOption(params.sort);
 
-  const { releases, dailyDataByReleaseId } =
-    await loadClosedReleasesWithDailyData({ genre });
+  const [{ releases, dailyDataByReleaseId }, lastRetrainAt] = await Promise.all([
+    loadClosedReleasesWithDailyData({ genre }),
+    loadLastRetrainAt(),
+  ]);
 
   const viewModel = buildArchiveViewModel(releases, dailyDataByReleaseId, {
     sort,
+    lastRetrainAt,
   });
 
   const closedReleaseCount = viewModel.summary.totalClosed;
@@ -112,7 +116,10 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
       </header>
 
       <div className="mt-6">
-        <RetrainProgress closedReleaseCount={viewModel.summary.totalClosed} />
+        <RetrainProgress
+          progressCount={viewModel.summary.retrainProgressCount}
+          lastRetrainAt={viewModel.summary.lastRetrainAt}
+        />
 
         <div className="mt-6">
           <ArchiveSummaryBar summary={viewModel.summary} />

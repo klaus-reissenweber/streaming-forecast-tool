@@ -19,6 +19,8 @@ from db import (
     load_active_r2,
     load_active_snapshot,
     promote_batch,
+    promote_row,
+    stamp_active_fitted_at,
     verify_single_active_per_model_type,
     verify_type_active,
 )
@@ -253,13 +255,19 @@ class MockSupabaseClient:
             matched = self._filter_rows(filters)
             for row in matched:
                 row.update(payload)
-            op = "demote" if payload.get("is_active") is False else "promote"
+            if "is_active" not in payload:
+                op = "stamp_fitted_at"
+            elif payload.get("is_active") is False:
+                op = "demote"
+            else:
+                op = "promote"
             self.calls.append(
                 (
                     op,
                     {
                         "filters": filters,
                         "matched_ids": [row["id"] for row in matched],
+                        "payload": dict(payload),
                     },
                 )
             )
@@ -412,6 +420,29 @@ def test_promote_batch_demotes_before_promotes_per_type() -> None:
         ]
         assert len(active) == 1
         assert active[0]["id"] == f"new-{model_type}"
+        assert active[0]["fitted_at"] == "2026-06-23T12:00:00.000Z"
+
+
+def test_promote_row_stamps_fitted_at() -> None:
+    client = MockSupabaseClient([_inactive_row("saves", "row-1")])
+    promote_row(client, "row-1", fitted_at="2026-07-27T05:20:00.000Z")
+
+    row = next(r for r in client.rows if r["id"] == "row-1")
+    assert row["is_active"] is True
+    assert row["fitted_at"] == "2026-07-27T05:20:00.000Z"
+    promote_calls = [c for c in client.calls if c[0] == "promote"]
+    assert promote_calls[0][1]["payload"]["fitted_at"] == "2026-07-27T05:20:00.000Z"
+
+
+def test_stamp_active_fitted_at_updates_all_active() -> None:
+    client = MockSupabaseClient(_full_active_fixture())
+    ids = stamp_active_fitted_at(client, "2026-07-27T05:20:00.000Z")
+
+    assert len(ids) == len(config.ALL_MODEL_TYPES)
+    for row in client.rows:
+        if row["is_active"]:
+            assert row["fitted_at"] == "2026-07-27T05:20:00.000Z"
+    assert any(call[0] == "stamp_fitted_at" for call in client.calls)
 
 
 @patch("db.verify_promotion_result")

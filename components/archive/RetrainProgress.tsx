@@ -1,11 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { RETRAIN_MIN_SAMPLE_SIZE } from "@/lib/constants";
+import { RETRAIN_THRESHOLD } from "@/lib/constants";
 import { useCountUp } from "@/lib/hooks/use-count-up";
 
 export interface RetrainProgressProps {
-  closedReleaseCount: number;
+  /** Eligible releases closed after last retrain (numerator). */
+  progressCount: number;
+  /** Configurable denominator (defaults to RETRAIN_THRESHOLD). */
+  threshold?: number;
+  /** ISO last-retrain cutoff shown for operator context. */
+  lastRetrainAt?: string | null;
 }
 
 function easeOutExpo(progress: number): number {
@@ -25,13 +30,28 @@ function getMotionDurationChartMs(): number {
   return Number.isFinite(parsed) ? parsed : 600;
 }
 
-export function RetrainProgress({ closedReleaseCount }: RetrainProgressProps) {
-  const threshold = RETRAIN_MIN_SAMPLE_SIZE;
-  const progress = Math.min(closedReleaseCount / threshold, 1);
-  const remaining = Math.max(0, threshold - closedReleaseCount);
-  const isEligible = closedReleaseCount >= threshold;
+function formatCutoff(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    return iso;
+  }
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
 
-  const animatedCount = useCountUp(closedReleaseCount);
+export function RetrainProgress({
+  progressCount,
+  threshold = RETRAIN_THRESHOLD,
+  lastRetrainAt = null,
+}: RetrainProgressProps) {
+  const progress = Math.min(progressCount / threshold, 1);
+  const remaining = Math.max(0, threshold - progressCount);
+  const isEligible = progressCount >= threshold;
+
+  const animatedCount = useCountUp(progressCount);
   const [barProgress, setBarProgress] = useState(0);
 
   useEffect(() => {
@@ -84,8 +104,8 @@ export function RetrainProgress({ closedReleaseCount }: RetrainProgressProps) {
           role="progressbar"
           aria-valuemin={0}
           aria-valuemax={threshold}
-          aria-valuenow={closedReleaseCount}
-          aria-label="Closed releases toward retrain threshold"
+          aria-valuenow={progressCount}
+          aria-label="Eligible releases closed since last retrain"
         >
           <div
             className={
@@ -111,8 +131,9 @@ export function RetrainProgress({ closedReleaseCount }: RetrainProgressProps) {
         </p>
       ) : (
         <p className="mt-2 text-body-sm text-secondary">
-          {remaining} more closed release{remaining === 1 ? "" : "s"} needed for
-          next retrain
+          {remaining} more eligible release{remaining === 1 ? "" : "s"} closed
+          since last retrain
+          {lastRetrainAt ? ` (${formatCutoff(lastRetrainAt)})` : ""}
         </p>
       )}
     </section>
