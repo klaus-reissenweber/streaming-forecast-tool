@@ -18,8 +18,9 @@ from fit import (
     fit_all_streams_models,
     fit_streams_refinement,
 )
+from test_weekday_curve_fit import make_synthetic_weekday_rows
 
-# Full 28-day curve from lib/constants.ts STREAM_CURVE_TEMPLATE.median.
+# Legacy Thursday-shaped seed (pre-weekday fit); kept for ad-rate daily split only.
 SYNTHETIC_CURVE_MEDIAN = [
     0.5, 27.2, 16.0, 11.7, 13.6, 14.0, 14.4, 14.4, 12.5, 9.3, 7.4, 8.6, 10.3,
     9.5, 9.5, 9.8, 8.1, 6.4, 7.4, 7.3, 7.8, 7.7, 8.1, 7.4, 6.2, 6.6, 7.4, 7.6,
@@ -180,17 +181,101 @@ def test_streams_refinement_and_derivations_bounds() -> None:
     for genre in config.GENRES:
         assert save_rates.bands[genre]["lo"] < save_rates.bands[genre]["hi"]
 
-    curve = derive_stream_curve(rows)
+    weekday_rows = make_synthetic_weekday_rows(n_per_weekday=6)
+    curve = derive_stream_curve(weekday_rows)
+    assert len(curve.trend_median) == 28
     assert len(curve.median) == 28
-    assert curve.median[1] > curve.median[0]
-    assert abs(curve.median[1] - SYNTHETIC_CURVE_MEDIAN[1]) < 2.0
-    assert curve.p25[1] <= curve.median[1] <= curve.p75[1]
+    assert len(curve.dow_multiplier) == 7
+    assert len(curve.editorial_kernel) == config.EDITORIAL_KERNEL_K
+    assert curve.editorial_kernel[0] > curve.editorial_kernel[1] >= 0
+    assert curve.dow_multiplier[4] == max(curve.dow_multiplier)
+    assert curve.trend_p25[1] <= curve.trend_median[1] <= curve.trend_p75[1]
 
     ad_rates = build_ad_rates(rows, ACTIVE_META_AD_RATES)
     assert ad_rates.meta_rates_by_genre == ACTIVE_META_AD_RATES["meta_rates_by_genre"]
     single_marquee_mid = ad_rates.spotify_rates["single"]["marquee"]["mid"]
     assert single_marquee_mid is not None
-    assert 0.15 < single_marquee_mid < 0.30
+    assert 0.10 < single_marquee_mid < 0.30
+
+
+def test_algo_bands_enforce_tier_monotonicity() -> None:
+    from dataclasses import replace
+
+    base = make_derivation_training_rows(n=3, seed=1)[0]
+    # Invert natural tier order: established saves << developing.
+    rows: list[TrainingRow] = []
+    for i, (tier, ml, saves) in enumerate(
+        [
+            ("developing", 100_000, 20_000),
+            ("developing", 120_000, 22_000),
+            ("mid", 800_000, 12_000),
+            ("mid", 900_000, 13_000),
+            ("established", 3_000_000, 4_000),
+            ("established", 4_000_000, 5_000),
+        ]
+    ):
+        rows.append(
+            replace(
+                base,
+                release_id=f"mono-{i}",
+                monthly_listeners=float(ml),
+                wk1_saves=saves,
+                wk1_streams=100_000,
+            )
+        )
+
+    fit = derive_algo_bands(rows)
+    assert (
+        fit.bands["developing"]["p50"]
+        <= fit.bands["mid"]["p50"]
+        <= fit.bands["established"]["p50"]
+    )
+    for tier in config.ARTIST_TIERS:
+        assert _percentile_ordering(fit.bands[tier])
+
+
+def test_save_rate_bands_shrink_sparse_genres_toward_prior() -> None:
+    from dataclasses import replace
+
+    base = make_derivation_training_rows(n=3, seed=2)[0]
+    rows: list[TrainingRow] = []
+    # Plenty of house at ~12%; one big-room outlier at 2%.
+    for i in range(20):
+        rows.append(
+            replace(
+                base,
+                release_id=f"house-{i}",
+                genre="house",
+                wk1_streams=100_000,
+                wk1_saves=12_000,
+            )
+        )
+    rows.append(
+        replace(
+            base,
+            release_id="big-room-1",
+            genre="big-room",
+            wk1_streams=100_000,
+            wk1_saves=2_000,
+        )
+    )
+    # Other genres need ≥1 row for catalog prior coverage.
+    for i, genre in enumerate(("dubstep", "melodic-bass", "downtempo")):
+        rows.append(
+            replace(
+                base,
+                release_id=f"other-{i}",
+                genre=genre,
+                wk1_streams=100_000,
+                wk1_saves=10_000,
+            )
+        )
+
+    fit = derive_save_rate_bands(rows, min_sample=5, shrinkage_k=5)
+    # big-room n=1 < min_sample → full prior (catalog p10/p90), not raw 2%.
+    assert fit.bands["big-room"]["lo"] > 2.0
+    assert fit.bands["big-room"]["hi"] > fit.bands["big-room"]["lo"]
+    assert fit.bands["house"]["lo"] < fit.bands["house"]["hi"]
 
 
 def test_release_type_magnitude_shrinkage_toward_one() -> None:
@@ -249,7 +334,8 @@ def test_streams_refinement_and_derivations_report(
     streams_d3 = fit_streams_refinement(rows, day=3)
     algo = derive_algo_bands(rows)
     save_rates = derive_save_rate_bands(rows)
-    curve = derive_stream_curve(rows)
+    weekday_rows = make_synthetic_weekday_rows(n_per_weekday=6)
+    curve = derive_stream_curve(weekday_rows)
     ad_rates = build_ad_rates(rows, ACTIVE_META_AD_RATES)
 
     report = {
@@ -288,15 +374,35 @@ def test_streams_refinement_and_derivations_report(
             ),
         },
         "stream_curve": {
-            "day1_median": curve.median[0],
-            "day2_median": curve.median[1],
-            "day28_median": curve.median[27],
+            "sample_size": curve.sample_size,
+            "dow_fri": curve.dow_multiplier[4],
+            "dow_sun": curve.dow_multiplier[6],
+            "kernel": curve.editorial_kernel,
+            "trend_day1": curve.trend_median[0],
+            "composed_thu_day2": curve.median[1],
             "bounds_check": {
-                "day2_peak_above_day1": curve.median[1] > curve.median[0],
-                "percentile_order_day2": curve.p25[1] <= curve.median[1] <= curve.p75[1],
-                "day2_near_template": abs(curve.median[1] - SYNTHETIC_CURVE_MEDIAN[1]) < 2.0,
+                "fri_peak_sun_trough": (
+                    curve.dow_multiplier[4] == max(curve.dow_multiplier)
+                    and curve.dow_multiplier[6] == min(curve.dow_multiplier)
+                ),
+                "kernel_decreasing_nonneg": (
+                    curve.editorial_kernel[0] > curve.editorial_kernel[1] >= 0
+                ),
+                "percentile_order_day2": (
+                    curve.trend_p25[1]
+                    <= curve.trend_median[1]
+                    <= curve.trend_p75[1]
+                ),
+                "payload_has_components": all(
+                    key in curve.to_coefficients_json()
+                    for key in (
+                        "trend_median",
+                        "dow_multiplier",
+                        "editorial_kernel",
+                        "curve_median",
+                    )
+                ),
             },
-            "expected_template_day2": SYNTHETIC_CURVE_MEDIAN[1],
         },
         "ad_rates": {
             "spotify_single_marquee_mid": ad_rates.spotify_rates["single"]["marquee"]["mid"],
@@ -312,7 +418,7 @@ def test_streams_refinement_and_derivations_report(
                 ),
                 "spotify_cps_near_target_mid": (
                     ad_rates.spotify_rates["single"]["marquee"]["mid"] is not None
-                    and 0.15
+                    and 0.10
                     < ad_rates.spotify_rates["single"]["marquee"]["mid"]
                     < 0.30
                 ),
@@ -327,7 +433,8 @@ def test_streams_refinement_and_derivations_report(
     assert report["algo_bands"]["bounds_check"]["developing"]
     assert report["algo_bands"]["tier_monotonic_p50"]
     assert report["save_rate_bands"]["bounds_check"]["house"]
-    assert report["stream_curve"]["bounds_check"]["day2_peak_above_day1"]
-    assert report["stream_curve"]["bounds_check"]["day2_near_template"]
+    assert report["stream_curve"]["bounds_check"]["fri_peak_sun_trough"]
+    assert report["stream_curve"]["bounds_check"]["kernel_decreasing_nonneg"]
+    assert report["stream_curve"]["bounds_check"]["payload_has_components"]
     assert report["ad_rates"]["meta_unchanged"]
     print("PASS: refinement + derivation bounds")

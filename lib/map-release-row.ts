@@ -22,6 +22,7 @@ export interface ReleaseRow {
   artist_name: string;
   genre: string;
   monthly_listeners: number | string;
+  monthly_listeners_at_release?: number | string | null;
   is_feature: boolean;
   editorial_tier: number;
   release_date: string;
@@ -48,6 +49,7 @@ export type ReleaseRecord = Omit<
   | "meta_objective"
   | "status"
   | "monthly_listeners"
+  | "monthly_listeners_at_release"
   | "meta_spend_planned"
   | "spotify_spend_planned"
 > & {
@@ -58,6 +60,8 @@ export type ReleaseRecord = Omit<
   meta_objective: MetaObjective;
   status: ReleaseStatus;
   monthly_listeners: number;
+  /** Creation-time ML snapshot used by forecast + retrain. */
+  monthly_listeners_at_release: number;
   meta_spend_planned: number;
   spotify_spend_planned: number;
 };
@@ -103,6 +107,7 @@ const RELEASE_SELECT_COLUMNS = [
   "artist_name",
   "genre",
   "monthly_listeners",
+  "monthly_listeners_at_release",
   "is_feature",
   "editorial_tier",
   "release_date",
@@ -228,6 +233,11 @@ export function parseReleaseRow(row: ReleaseRow): ReleaseRecord {
       monthly_listeners: parseInteger(row.monthly_listeners, "monthly_listeners", {
         min: 1,
       }),
+      monthly_listeners_at_release: parseInteger(
+        row.monthly_listeners_at_release ?? row.monthly_listeners,
+        "monthly_listeners_at_release",
+        { min: 1 },
+      ),
       is_feature: Boolean(row.is_feature),
       editorial_tier: parseEditorialTier(row.editorial_tier),
       release_date: parseRequiredString(row.release_date, "release_date"),
@@ -298,7 +308,8 @@ export function releaseRowToForecastInputs(
   record: ReleaseRecord,
 ): ReleaseForecastInputs {
   return {
-    monthlyListeners: record.monthly_listeners,
+    // Creation snapshot — never live/current ML.
+    monthlyListeners: record.monthly_listeners_at_release,
     isFeature: record.is_feature,
     editorialTier: record.editorial_tier,
     genre: record.genre,

@@ -112,6 +112,7 @@ const elderbrookRelease: ReleaseRecord = {
   artist_name: "Elderbrook",
   genre: "house",
   monthly_listeners: ELDERBROOK_MONTHLY_LISTENERS,
+  monthly_listeners_at_release: ELDERBROOK_MONTHLY_LISTENERS,
   is_feature: false,
   editorial_tier: 2,
   release_date: ELDERBROOK_RELEASE_DATE,

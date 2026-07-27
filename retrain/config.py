@@ -118,11 +118,39 @@ COOKS_D_THRESHOLD_FACTOR = 4.0  # flag when D > COOKS_D_THRESHOLD_FACTOR / n
 REPRODUCIBILITY_ATOL = 1e-10
 REPRODUCIBILITY_RTOL = 1e-10
 
+# SAVE_RATE_BANDS: Empirical Bayes toward catalog-wide p10/p90.
+# Genres with n < MIN shrink fully toward the prior; all genres get k-shrinkage.
+SAVE_RATE_BANDS_MIN_SAMPLE = 5
+SAVE_RATE_BANDS_SHRINKAGE_K = 5
+# Seed prior used only when the catalog has zero save-rate rows (cold start).
+SAVE_RATE_BANDS_SEED_PRIOR: dict[str, dict[str, float]] = {
+    "dubstep": {"lo": 17.0, "hi": 22.0},
+    "melodic-bass": {"lo": 13.0, "hi": 23.0},
+    "house": {"lo": 9.0, "hi": 16.0},
+    "big-room": {"lo": 5.0, "hi": 10.0},
+    "downtempo": {"lo": 10.0, "hi": 16.0},
+}
+
 # --- Wk1 window (must match lib/compute-week1-actuals.ts) ---
 
 WK1_DAY_START = 1
 WK1_DAY_END = 7
 STREAM_CURVE_DAY_END = 28
+# Editorial kernel length (New Music Friday bump + short tail).
+EDITORIAL_KERNEL_K = 2
+# Steady-state days for DOW fit (after wk1 editorial window).
+DOW_STEADY_STATE_DAY_START = 8
+# ISO weekday for composed-Thursday legacy curve_* / STREAM_CURVE_BASELINE view.
+THURSDAY_ISO_WEEKDAY = 4
+DOW_WEEKDAY_NAMES: tuple[str, ...] = (
+    "Mon",
+    "Tue",
+    "Wed",
+    "Thu",
+    "Fri",
+    "Sat",
+    "Sun",
+)
 
 # --- Golden fixture: Elderbrook (lib/fixtures/elderbrook-monitoring.ts) ---
 
@@ -141,9 +169,17 @@ CONSTANTS_MARKERS: dict[str, tuple[str, str]] = {
         "// RETRAIN:SAVE_RATE_BANDS:START",
         "// RETRAIN:SAVE_RATE_BANDS:END",
     ),
-    "STREAM_CURVE_TEMPLATE": (
-        "// RETRAIN:STREAM_CURVE_TEMPLATE:START",
-        "// RETRAIN:STREAM_CURVE_TEMPLATE:END",
+    "STREAM_DOW_MULTIPLIER": (
+        "// RETRAIN:STREAM_DOW_MULTIPLIER:START",
+        "// RETRAIN:STREAM_DOW_MULTIPLIER:END",
+    ),
+    "STREAM_EDITORIAL_KERNEL": (
+        "// RETRAIN:STREAM_EDITORIAL_KERNEL:START",
+        "// RETRAIN:STREAM_EDITORIAL_KERNEL:END",
+    ),
+    "STREAM_CURVE_TREND": (
+        "// RETRAIN:STREAM_CURVE_TREND:START",
+        "// RETRAIN:STREAM_CURVE_TREND:END",
     ),
     "RELEASE_TYPE_MAGNITUDE_MULTIPLIER": (
         "// RETRAIN:RELEASE_TYPE_MAGNITUDE_MULTIPLIER:START",
@@ -157,3 +193,5 @@ class RetrainFlags:
     dry_run: bool = False
     force: bool = False
     skip_constants_sync: bool = False
+    # Fit + write constants.ts; skip DB promote (operator reviews diff before commit).
+    hold_the_commit: bool = False

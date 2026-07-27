@@ -57,11 +57,20 @@ def parse_args(argv: list[str] | None = None) -> config.RetrainFlags:
         action="store_true",
         help="Promote DB rows only; do not patch lib/constants.ts.",
     )
+    parser.add_argument(
+        "--hold-the-commit",
+        action="store_true",
+        help=(
+            "Fit + write lib/constants.ts markers; skip DB promote. "
+            "Does not commit or deploy — review the constants diff first."
+        ),
+    )
     args = parser.parse_args(argv)
     return config.RetrainFlags(
         dry_run=args.dry_run,
         force=args.force,
         skip_constants_sync=args.skip_constants_sync,
+        hold_the_commit=args.hold_the_commit,
     )
 
 
@@ -188,41 +197,68 @@ def run(flags: config.RetrainFlags) -> int:
             force_r2=flags.force,
         )
 
+        hold_through_guardrail = False
         if not guardrail_result.passed:
             failure = guardrail_result.failure
-            report = RetrainReport(
-                dry_run=flags.dry_run,
-                force_r2=flags.force,
-                skip_constants_sync=flags.skip_constants_sync,
-                closed_release_count=closed_count,
-                eligible_release_count=eligible_count,
-                sample_size_initial=guardrail_result.sample_size_initial,
-                sample_size_final=guardrail_result.sample_size_final,
-                outlier_lines=_outlier_lines(guardrail_result.outlier_flags),
-                excluded_release_count=len(guardrail_result.excluded_release_ids),
-                r2_lines=_r2_lines(guardrail_result.r2_comparisons),
-                band_deltas=(),
-                promotion_status="blocked by guardrails",
-                files_written=tuple(files_written),
-                fitted_at=None,
-                success=False,
-                failure_code=failure.code if failure else "guardrail_failed",
-                failure_message=failure.message if failure else "Guardrails failed.",
-                recovery_instructions=_recovery_for_guardrail(guardrail_result),
+            # Hold-the-commit may continue past insufficient_sample so the
+            # weekday curve markers can still be reviewed (no DB promote).
+            can_hold_through = (
+                flags.hold_the_commit
+                and failure is not None
+                and failure.code == "insufficient_sample"
+                and len(training_rows) >= 2
             )
-            print_retrain_report(report)
-            return 1
+            if not can_hold_through:
+                report = RetrainReport(
+                    dry_run=flags.dry_run,
+                    force_r2=flags.force,
+                    skip_constants_sync=flags.skip_constants_sync,
+                    closed_release_count=closed_count,
+                    eligible_release_count=eligible_count,
+                    sample_size_initial=guardrail_result.sample_size_initial,
+                    sample_size_final=guardrail_result.sample_size_final,
+                    outlier_lines=_outlier_lines(guardrail_result.outlier_flags),
+                    excluded_release_count=len(guardrail_result.excluded_release_ids),
+                    r2_lines=_r2_lines(guardrail_result.r2_comparisons),
+                    band_deltas=(),
+                    promotion_status="blocked by guardrails",
+                    files_written=tuple(files_written),
+                    fitted_at=None,
+                    success=False,
+                    failure_code=failure.code if failure else "guardrail_failed",
+                    failure_message=failure.message if failure else "Guardrails failed.",
+                    recovery_instructions=_recovery_for_guardrail(guardrail_result),
+                )
+                print_retrain_report(report)
+                return 1
+
+            hold_through_guardrail = True
+            print(
+                "WARNING: --hold-the-commit continuing past insufficient_sample; "
+                f"fitting weekday curve on all {len(training_rows)} eligible "
+                "releases (Cook's D exclusion not applied to derived bands). "
+                "LIVE promote remains blocked until n≥40 after exclusion."
+            )
 
         filtered_rows = [
             row
             for row in training_rows
             if row.release_id not in guardrail_result.excluded_release_ids
         ]
+        # Curve / ad_rates / magnitude: full eligible when holding through
+        # sample-size failure; otherwise post-Cook's. Save bands always use
+        # the full eligible set (decoupled from wk1 Cook's D drops).
+        derived_rows = training_rows if hold_through_guardrail else filtered_rows
+        regression_rows = filtered_rows if len(filtered_rows) >= 2 else training_rows
 
-        stream_models = fit_all_streams_models(filtered_rows)
-        saves_model = fit_saves(filtered_rows)
+        stream_models = fit_all_streams_models(regression_rows)
+        saves_model = fit_saves(regression_rows)
         regression_models = _combine_regression_models(stream_models, saves_model)
-        derived_models = fit_all_derived_models(filtered_rows, active_ad_rates)
+        derived_models = fit_all_derived_models(
+            derived_rows,
+            active_ad_rates,
+            band_rows=training_rows,
+        )
 
         active_algo, active_save_rate, active_stream = _active_band_payloads(active_snapshot)
         band_deltas = build_band_deltas(
@@ -234,7 +270,7 @@ def run(flags: config.RetrainFlags) -> int:
             new_stream_curve=derived_models["stream_curve"].to_coefficients_json(),
         )
 
-        if flags.dry_run:
+        if flags.dry_run and not flags.hold_the_commit:
             promotion_status = "skipped (--dry-run)"
             report = RetrainReport(
                 dry_run=True,
@@ -255,6 +291,56 @@ def run(flags: config.RetrainFlags) -> int:
                 failure_code=None,
                 failure_message=None,
                 recovery_instructions=None,
+            )
+            print_retrain_report(report)
+            return 0
+
+        if flags.hold_the_commit:
+            promotion_status = "skipped (--hold-the-commit; no DB promote)"
+            if hold_through_guardrail:
+                promotion_status += "; insufficient_sample (review-only)"
+            if flags.skip_constants_sync:
+                raise RuntimeError(
+                    "--hold-the-commit writes constants; do not combine with "
+                    "--skip-constants-sync."
+                )
+            sync_constants(
+                algo_bands=derived_models["algo_bands"],
+                save_rate_bands=derived_models["save_rate_bands"],
+                stream_curve=derived_models["stream_curve"],
+                release_type_magnitude=derived_models["release_type_magnitude"],
+                dry_run=False,
+            )
+            files_written.append(str(config.CONSTANTS_TS_PATH))
+            recovery = (
+                "Hold-the-commit: constants.ts markers written. "
+                "Review the DOW / kernel / trend diff, then commit and "
+                "run a live promote when ready."
+            )
+            if hold_through_guardrail:
+                recovery += (
+                    " NOTE: post-Cook's n is below MIN_SAMPLE_SIZE — live "
+                    "promote is still blocked until more closed releases land."
+                )
+            report = RetrainReport(
+                dry_run=False,
+                force_r2=flags.force,
+                skip_constants_sync=False,
+                closed_release_count=closed_count,
+                eligible_release_count=eligible_count,
+                sample_size_initial=guardrail_result.sample_size_initial,
+                sample_size_final=guardrail_result.sample_size_final,
+                outlier_lines=_outlier_lines(guardrail_result.outlier_flags),
+                excluded_release_count=len(guardrail_result.excluded_release_ids),
+                r2_lines=_r2_lines(guardrail_result.r2_comparisons),
+                band_deltas=band_deltas,
+                promotion_status=promotion_status,
+                files_written=tuple(files_written),
+                fitted_at=None,
+                success=True,
+                failure_code=None,
+                failure_message=None,
+                recovery_instructions=recovery,
             )
             print_retrain_report(report)
             return 0

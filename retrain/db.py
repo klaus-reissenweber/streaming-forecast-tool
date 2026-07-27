@@ -289,18 +289,25 @@ def verify_promotion_result(
 
 
 def _validate_coefficients_json(model_type: str, payload: dict[str, Any]) -> None:
+    """
+    Validate active/new coefficient payloads.
+
+    Tolerates legacy active-row shapes (rmse/r2 on column only, log_dN,
+    stream_curve median/p25/p75, older save_rate genres) so retrain can read
+    production rows; new inserts still emit the current schema.
+    """
     if model_type in config.REGRESSION_MODEL_TYPES:
-        for key in ("intercept", "log_ml", "feat", "ed_tier", "rmse", "r2"):
+        for key in ("intercept", "log_ml", "feat", "ed_tier"):
             if key not in payload:
                 raise DbError(
                     f"Active row '{model_type}' coefficients_json missing '{key}'"
                 )
         if model_type.startswith("streams_d") and model_type != "streams_d0":
             day = int(model_type.removeprefix("streams_d"))
-            if f"log_d{day}" not in payload:
+            if f"log_d{day}" not in payload and "log_dN" not in payload:
                 raise DbError(
                     f"Active row '{model_type}' coefficients_json missing "
-                    f"'log_d{day}'"
+                    f"'log_d{day}' (or legacy 'log_dN')"
                 )
         if model_type == "saves" and "genre_offset" not in payload:
             raise DbError("Active row 'saves' coefficients_json missing 'genre_offset'")
@@ -313,15 +320,43 @@ def _validate_coefficients_json(model_type: str, payload: dict[str, Any]) -> Non
         return
 
     if model_type == "save_rate_bands":
-        for genre in config.GENRES:
-            if genre not in payload:
-                raise DbError(f"save_rate_bands missing genre '{genre}'")
+        if not payload:
+            raise DbError("save_rate_bands payload is empty")
         return
 
     if model_type == "stream_curve":
-        for key in ("curve_median", "curve_p25", "curve_p75"):
-            if key not in payload:
-                raise DbError(f"stream_curve missing '{key}'")
+        has_curve_keys = all(
+            key in payload for key in ("curve_median", "curve_p25", "curve_p75")
+        )
+        has_legacy_keys = all(key in payload for key in ("median", "p25", "p75"))
+        if not has_curve_keys and not has_legacy_keys:
+            raise DbError(
+                "stream_curve missing curve_median/p25/p75 "
+                "(or legacy median/p25/p75)"
+            )
+        # Weekday-aware components (optional on legacy active rows).
+        component_keys = (
+            "trend_median",
+            "trend_p25",
+            "trend_p75",
+            "dow_multiplier",
+            "editorial_kernel",
+        )
+        present = [key for key in component_keys if key in payload]
+        if present and len(present) != len(component_keys):
+            missing = [key for key in component_keys if key not in payload]
+            raise DbError(
+                "stream_curve weekday components incomplete; missing "
+                + ", ".join(missing)
+            )
+        if "dow_multiplier" in payload:
+            dow = payload["dow_multiplier"]
+            if not isinstance(dow, list) or len(dow) != 7:
+                raise DbError("stream_curve.dow_multiplier must be a list of 7")
+        if "editorial_kernel" in payload:
+            kernel = payload["editorial_kernel"]
+            if not isinstance(kernel, list) or len(kernel) < 1:
+                raise DbError("stream_curve.editorial_kernel must be a non-empty list")
         return
 
     if model_type == "ad_rates":

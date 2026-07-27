@@ -108,7 +108,9 @@ export function buildReleaseViewModel(
     lockedAtDisplay: formatLockTimestamp(release.created_at),
   };
 
-  const tier = artistTierFromMonthlyListeners(release.monthly_listeners);
+  const tier = artistTierFromMonthlyListeners(
+    release.monthly_listeners_at_release,
+  );
   const algoPositioning = algoPositioningBand(release.locked_forecast_saves, tier);
   const channelMix = recommendChannelMix(inputs, adRates);
   const streamCurve = buildStreamCurve(release.locked_forecast_streams, {

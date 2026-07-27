@@ -294,7 +294,9 @@ export function computeMonitoringSummary(
   locked: MonitoringLockedForecast,
 ): MonitoringSummary {
   const actuals = dailyDataToActuals(dailyData);
-  const tier = artistTierFromMonthlyListeners(release.monthly_listeners);
+  const tier = artistTierFromMonthlyListeners(
+    release.monthly_listeners_at_release,
+  );
   const curveOptions = { releaseDate: release.release_date };
   const lockedStreamCurve = buildStreamCurve(locked.streams, curveOptions);
   const paceCurve = lockedStreamCurve.dailyPct;

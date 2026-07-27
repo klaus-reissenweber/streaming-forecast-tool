@@ -50,9 +50,9 @@ export const RELEASE_TYPE_LABELS: Record<(typeof RELEASE_TYPES)[number], string>
 export const RELEASE_TYPE_MAGNITUDE_MULTIPLIER = {
   single: 1.0,
   lead_single: 1.0,
-  focus_track: 1.03,
-  album_track: 1.0,
-  alternate_version: 0.87,
+  focus_track: 1.14,
+  album_track: 0.91,
+  alternate_version: 0.88
 } as const;
 // RETRAIN:RELEASE_TYPE_MAGNITUDE_MULTIPLIER:END
 
@@ -95,42 +95,21 @@ export const EDITORIAL_TIER_TOGGLE_OPTIONS = EDITORIAL_TIER_VALUES.map((tier) =>
 }));
 
 /**
- * Release-anchored organic launch/decay (% of wk1), editorial-free.
- * Index 0 = day 1 … index 27 = day 28. Day 28 is a d27 carry-forward
- * (no calibration source); golden fixtures assert d1–d27 only.
- * Seeded from Elderbrook Thursday reference; p25/p75 = median until retrain.
- */
-export const STREAM_CURVE_BASELINE = {
-  median: [
-    6.37, 7.21, 8.05, 8.9, 13.58, 14.89, 14.19, 13.78, 11.18, 7.48, 5.36, 6.69,
-    6.74, 6.45, 5.6, 6.07, 4.92, 3.68, 4.47, 4.89, 4.63, 4.71, 5.81, 4.12, 2.83,
-    3.29, 3.62, 3.62,
-  ],
-  p25: [
-    6.37, 7.21, 8.05, 8.9, 13.58, 14.89, 14.19, 13.78, 11.18, 7.48, 5.36, 6.69,
-    6.74, 6.45, 5.6, 6.07, 4.92, 3.68, 4.47, 4.89, 4.63, 4.71, 5.81, 4.12, 2.83,
-    3.29, 3.62, 3.62,
-  ],
-  p75: [
-    6.37, 7.21, 8.05, 8.9, 13.58, 14.89, 14.19, 13.78, 11.18, 7.48, 5.36, 6.69,
-    6.74, 6.45, 5.6, 6.07, 4.92, 3.68, 4.47, 4.89, 4.63, 4.71, 5.81, 4.12, 2.83,
-    3.29, 3.62, 3.62,
-  ],
-} as const;
-
-/**
  * Calendar day-of-week multipliers (mean=1 over a week). Applied on top of
  * STREAM_CURVE_TREND so non-Thursday releases get the right Fri/Sun shape.
+ * Retrain-owned (see retrain/fit.py derive_dow_multiplier).
  */
+// RETRAIN:STREAM_DOW_MULTIPLIER:START
 export const STREAM_DOW_MULTIPLIER = {
-  Mon: 0.912,
-  Tue: 0.971,
-  Wed: 0.982,
-  Thu: 1.099,
-  Fri: 1.262,
-  Sat: 0.983,
-  Sun: 0.814,
+  Mon: 0.902,
+  Tue: 1.031,
+  Wed: 1.012,
+  Thu: 1.022,
+  Fri: 1.246,
+  Sat: 0.989,
+  Sun: 0.797
 } as const;
+// RETRAIN:STREAM_DOW_MULTIPLIER:END
 
 /** ISO weekday Mon=1 … Sun=7 → STREAM_DOW_MULTIPLIER value. */
 export const STREAM_DOW_MULTIPLIER_BY_ISO: readonly number[] = [
@@ -144,45 +123,75 @@ export const STREAM_DOW_MULTIPLIER_BY_ISO: readonly number[] = [
   STREAM_DOW_MULTIPLIER.Sun,
 ] as const;
 
-/** Elderbrook calibration release weekday (Thursday). */
-const ELDERBROOK_RELEASE_ISO_WEEKDAY = 4;
+/** New Music Friday bump (% of wk1). Index 0 = editorial Friday. */
+// RETRAIN:STREAM_EDITORIAL_KERNEL:START
+export const STREAM_EDITORIAL_KERNEL = [12.26, 3.89] as const;
+// RETRAIN:STREAM_EDITORIAL_KERNEL:END
 
-function deseasonalizeBaseline(
-  baseline: readonly number[],
-  releaseIsoWeekday: number,
-): number[] {
-  return baseline.map((pct, index) => {
+/**
+ * Seasonless trend (% of wk1). Recompose as
+ * trend[d] × dow(release, d) + editorialKernel, then rescale wk1 to 100.
+ * Retrain-owned (see retrain/fit.py derive_stream_curve_trend).
+ * Index 0 = day 1 … index 27 = day 28.
+ */
+// RETRAIN:STREAM_CURVE_TREND:START
+export const STREAM_CURVE_TREND = {
+  median: [
+    10.7, 10.8, 13.9, 13.6, 11.8, 12.0, 12.6, 9.0, 8.1, 8.1, 8.3, 8.3, 7.6,
+      7.4, 6.5, 6.4, 6.3, 6.6, 6.5, 6.5, 6.3, 5.9, 5.9, 5.4, 5.8, 5.8,
+      5.8, 5.8
+  ],
+  p25: [
+    8.2, 7.8, 11.6, 12.3, 11.3, 11.1, 11.0, 7.3, 6.4, 5.9, 6.2, 5.8, 5.6,
+      5.3, 5.2, 4.7, 4.6, 4.8, 4.5, 4.7, 4.7, 3.7, 4.0, 3.9, 3.7, 3.7,
+      3.7, 3.7
+  ],
+  p75: [
+    13.1, 11.8, 14.7, 15.4, 13.6, 13.2, 13.7, 10.3, 9.6, 9.9, 10.1, 10.0, 9.2,
+      8.5, 8.1, 7.9, 8.0, 8.1, 7.6, 7.5, 7.3, 7.5, 7.4, 7.3, 7.4, 7.4,
+      7.4, 7.4
+  ]
+} as const;
+// RETRAIN:STREAM_CURVE_TREND:END
+
+/** Thursday release ISO weekday (compose view for STREAM_CURVE_BASELINE). */
+const THURSDAY_RELEASE_ISO_WEEKDAY = 4;
+/** Editorial day-number for a Thursday release (first Friday = day 2). */
+const THURSDAY_EDITORIAL_OFFSET = 2;
+
+function composeThursdayBaseline(trend: readonly number[]): number[] {
+  const composed = trend.map((trendPct, index) => {
     const dayNumber = index + 1;
     const iso =
-      ((releaseIsoWeekday - 1 + dayNumber - 1) % 7) + 1;
-    const mult = STREAM_DOW_MULTIPLIER_BY_ISO[iso]!;
-    return pct / mult;
+      ((THURSDAY_RELEASE_ISO_WEEKDAY - 1 + dayNumber - 1) % 7) + 1;
+    const dow = STREAM_DOW_MULTIPLIER_BY_ISO[iso]!;
+    const kernelIndex = dayNumber - THURSDAY_EDITORIAL_OFFSET;
+    const editorial =
+      kernelIndex >= 0 && kernelIndex < STREAM_EDITORIAL_KERNEL.length
+        ? STREAM_EDITORIAL_KERNEL[kernelIndex]!
+        : 0;
+    return trendPct * dow + editorial;
   });
+
+  const week1Sum = composed.slice(0, 7).reduce((sum, pct) => sum + pct, 0);
+  if (week1Sum <= 0) {
+    return composed;
+  }
+  const scale = 100 / week1Sum;
+  return composed.map((pct, index) => (index < 7 ? pct * scale : pct));
 }
 
 /**
- * Seasonless trend (% of wk1): STREAM_CURVE_BASELINE ÷ Elderbrook-Thursday DOW.
- * Recompose as trend[d] × dow(release, d) + editorialKernel.
+ * Derived Thursday compose view: trend × DOW + editorial kernel, wk1-rescaled.
+ * Not retrain-synced — rebuilds from STREAM_CURVE_TREND components.
  */
-export const STREAM_CURVE_TREND = {
-  median: deseasonalizeBaseline(
-    STREAM_CURVE_BASELINE.median,
-    ELDERBROOK_RELEASE_ISO_WEEKDAY,
-  ),
-  p25: deseasonalizeBaseline(
-    STREAM_CURVE_BASELINE.p25,
-    ELDERBROOK_RELEASE_ISO_WEEKDAY,
-  ),
-  p75: deseasonalizeBaseline(
-    STREAM_CURVE_BASELINE.p75,
-    ELDERBROOK_RELEASE_ISO_WEEKDAY,
-  ),
-} as const;
+export const STREAM_CURVE_BASELINE = {
+  median: composeThursdayBaseline(STREAM_CURVE_TREND.median),
+  p25: composeThursdayBaseline(STREAM_CURVE_TREND.p25),
+  p75: composeThursdayBaseline(STREAM_CURVE_TREND.p75),
+};
 
-/** New Music Friday bump (% of wk1). Index 0 = editorial Friday. */
-export const STREAM_EDITORIAL_KERNEL = [21.33, 5.49] as const;
-
-/** @deprecated Use STREAM_CURVE_BASELINE — kept as alias for retrain sync until fast-follow. */
+/** @deprecated Use STREAM_CURVE_BASELINE — alias kept for older call sites. */
 export const STREAM_CURVE_TEMPLATE = STREAM_CURVE_BASELINE;
 
 export type CurvePercentile = keyof typeof STREAM_CURVE_BASELINE;
@@ -224,19 +233,23 @@ export const META_CLICK_TO_STREAM_CONVERSION: Record<
 };
 
 /** Save-rate health benchmarks (%), used by flags/monitoring, not forecast math. */
+// RETRAIN:SAVE_RATE_BANDS:START
 export const SAVE_RATE_BANDS = {
-  dubstep: { lo: 17, hi: 22 },
-  "melodic-bass": { lo: 13, hi: 23 },
-  house: { lo: 9, hi: 16 },
-  "big-room": { lo: 5, hi: 10 },
-  downtempo: { lo: 10, hi: 16 },
+  dubstep: { lo: 7.8, hi: 16 },
+  house: { lo: 4.3, hi: 14.9 },
+  "melodic-bass": { lo: 6.3, hi: 16.7 },
+  downtempo: { lo: 4.8, hi: 20.3 },
+  "big-room": { lo: 4.6, hi: 16.4 }
 } as const;
+// RETRAIN:SAVE_RATE_BANDS:END
 
 /** Algorithmic positioning thresholds (week-1 save counts) by artist tier. */
+// RETRAIN:SAVE_COUNT_BANDS:START
 export const SAVE_COUNT_BANDS = {
-  developing: { p25: 3018, p50: 5341, p75: 9101, p90: 13116 },
-  mid: { p25: 7545, p50: 12284, p75: 22628, p90: 42747 },
-  established: { p25: 19038, p50: 32482, p75: 53399, p90: 71510 },
+  developing: { p25: 3400, p50: 8616, p75: 10896, p90: 11439 },
+  mid: { p25: 4229, p50: 10358, p75: 26176, p90: 34888 },
+  established: { p25: 4229, p50: 10358, p75: 26176, p90: 34888 }
 } as const;
+// RETRAIN:SAVE_COUNT_BANDS:END
 
 export { GENRE_PLAYBOOKS, type GenrePlaybook } from "@/lib/constants/playbooks";

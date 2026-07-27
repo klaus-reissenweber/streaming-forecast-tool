@@ -7,11 +7,45 @@ Week-1 aggregation mirrors lib/compute-week1-actuals.ts exactly.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date
 from typing import Literal
 
 import config
 
 DailyField = Literal["streams", "saves"]
+
+
+def parse_release_date(value: str | None) -> str | None:
+    """Normalize to YYYY-MM-DD, or None if missing/unparsable."""
+    if value is None:
+        return None
+    text = value.strip()
+    if not text:
+        return None
+    try:
+        return date.fromisoformat(text[:10]).isoformat()
+    except ValueError:
+        return None
+
+
+def release_iso_weekday(release_date: str) -> int:
+    """ISO weekday Mon=1 … Sun=7 (UTC calendar day)."""
+    return date.fromisoformat(release_date[:10]).isoweekday()
+
+
+def editorial_day_number(release_date: str) -> int:
+    """
+    Day-number (1-based from release_date) of the first Friday on-or-after release.
+
+    Python twin of lib/forecast.ts editorialDayNumber (Thu→2, Wed→3).
+    """
+    iso = release_iso_weekday(release_date)
+    return 1 + ((5 - iso + 7) % 7)
+
+
+def iso_weekday_on_campaign_day(release_iso_weekday: int, day_number: int) -> int:
+    """ISO weekday of campaign day `day_number` (1-based) given release ISO weekday."""
+    return ((release_iso_weekday - 1 + day_number - 1) % 7) + 1
 
 
 @dataclass(frozen=True)
@@ -54,6 +88,10 @@ class ReleaseRecord:
     spotify_spend_planned: float
     locked_forecast_streams: int
     status: str
+    release_date: str | None = None
+    # Creation-time ML snapshot (forecast/retrain feature). None = pre-migration.
+    monthly_listeners_at_release: float | None = None
+    created_at: str | None = None
 
 
 @dataclass(frozen=True)
@@ -74,6 +112,7 @@ class TrainingRow:
     wk1_streams: int
     wk1_saves: int
     streams_by_day: dict[int, int]
+    release_date: str | None = None
 
 
 def _streams_by_day_from_daily_data(
@@ -92,22 +131,34 @@ def build_training_row(
     release: ReleaseRecord,
     daily_data: list[DailyDataPoint],
 ) -> TrainingRow | None:
-    """Build a training row when release is retrain-eligible with positive wk1 streams."""
+    """
+    Build a training row for closed releases with a complete D1–D7 stream week.
+
+    No wk1 volume floor — zero-stream complete weeks are included; individual
+    model fits still skip non-positive targets where log() requires it.
+    ML feature is monthly_listeners_at_release (creation snapshot).
+    """
     if release.status != "closed":
         return None
 
     wk1 = compute_week1_actuals(daily_data)
-    if not wk1.is_complete or wk1.streams is None or wk1.streams <= 0:
+    if not wk1.is_complete or wk1.streams is None:
         return None
 
     wk1_saves = wk1.saves if wk1.saves is not None and wk1.saves > 0 else 0
+    # Prefer creation snapshot; fall back to live ML for pre-migration rows.
+    ml_at_release = (
+        release.monthly_listeners_at_release
+        if release.monthly_listeners_at_release is not None
+        else release.monthly_listeners
+    )
 
     return TrainingRow(
         release_id=release.id,
         track_name=release.track_name,
         artist_name=release.artist_name,
         genre=release.genre,
-        monthly_listeners=release.monthly_listeners,
+        monthly_listeners=float(ml_at_release),
         is_feature=release.is_feature,
         editorial_tier=release.editorial_tier,
         release_type=release.release_type,
@@ -117,6 +168,7 @@ def build_training_row(
         wk1_streams=wk1.streams,
         wk1_saves=wk1_saves,
         streams_by_day=_streams_by_day_from_daily_data(daily_data),
+        release_date=parse_release_date(release.release_date),
     )
 
 

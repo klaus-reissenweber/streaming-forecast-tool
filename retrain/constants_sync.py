@@ -144,16 +144,25 @@ def _format_curve_number(value: float) -> str:
     return f"{round(value, 1):.1f}"
 
 
+def _format_dow_number(value: float) -> str:
+    return f"{round(value, 3):.3f}"
+
+
+def _format_kernel_number(value: float) -> str:
+    return f"{round(value, 2):.2f}"
+
+
 def _format_ts_array(
     values: list[float],
     *,
     indent: str,
     values_per_line: int,
+    format_value=_format_curve_number,
 ) -> list[str]:
     if not values:
         return ["[]"]
 
-    formatted = [_format_curve_number(value) for value in values]
+    formatted = [format_value(value) for value in values]
     lines: list[str] = []
     for index in range(0, len(formatted), values_per_line):
         chunk = formatted[index : index + values_per_line]
@@ -190,16 +199,40 @@ def format_save_rate_bands(save_rate_bands: SaveRateBandsFit) -> str:
     return "\n".join(lines)
 
 
-def format_stream_curve_template(stream_curve: StreamCurveFit) -> str:
-    lines = ["export const STREAM_CURVE_TEMPLATE = {"]
+def format_stream_dow_multiplier(stream_curve: StreamCurveFit) -> str:
+    lines = ["export const STREAM_DOW_MULTIPLIER = {"]
+    for name, value in zip(
+        config.DOW_WEEKDAY_NAMES,
+        stream_curve.dow_multiplier,
+        strict=True,
+    ):
+        lines.append(f"  {name}: {_format_dow_number(value)},")
+    lines[-1] = lines[-1][:-1]
+    lines.append("} as const;")
+    return "\n".join(lines)
+
+
+def format_stream_editorial_kernel(stream_curve: StreamCurveFit) -> str:
+    values = ", ".join(
+        _format_kernel_number(value) for value in stream_curve.editorial_kernel
+    )
+    return f"export const STREAM_EDITORIAL_KERNEL = [{values}] as const;"
+
+
+def format_stream_curve_trend(stream_curve: StreamCurveFit) -> str:
+    lines = ["export const STREAM_CURVE_TREND = {"]
     for field_name, values in (
-        ("median", stream_curve.median),
-        ("p25", stream_curve.p25),
-        ("p75", stream_curve.p75),
+        ("median", stream_curve.trend_median),
+        ("p25", stream_curve.trend_p25),
+        ("p75", stream_curve.trend_p75),
     ):
         lines.append(f"  {field_name}: [")
         lines.extend(
-            _format_ts_array(values, indent="  ", values_per_line=STREAM_CURVE_VALUES_PER_LINE)
+            _format_ts_array(
+                values,
+                indent="  ",
+                values_per_line=STREAM_CURVE_VALUES_PER_LINE,
+            )
         )
         lines.append("  ],")
     lines[-1] = lines[-1][:-1]
@@ -236,7 +269,9 @@ def build_marker_replacements(
     return {
         "SAVE_COUNT_BANDS": format_save_count_bands(algo_bands),
         "SAVE_RATE_BANDS": format_save_rate_bands(save_rate_bands),
-        "STREAM_CURVE_TEMPLATE": format_stream_curve_template(stream_curve),
+        "STREAM_DOW_MULTIPLIER": format_stream_dow_multiplier(stream_curve),
+        "STREAM_EDITORIAL_KERNEL": format_stream_editorial_kernel(stream_curve),
+        "STREAM_CURVE_TREND": format_stream_curve_trend(stream_curve),
         "RELEASE_TYPE_MAGNITUDE_MULTIPLIER": format_release_type_magnitude_multiplier(
             release_type_magnitude
         ),

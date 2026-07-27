@@ -15,7 +15,9 @@ from constants_sync import (
     find_marker_regions,
     format_save_count_bands,
     format_save_rate_bands,
-    format_stream_curve_template,
+    format_stream_curve_trend,
+    format_stream_dow_multiplier,
+    format_stream_editorial_kernel,
     sync_constants,
 )
 from fit import AlgoBandsFit, ReleaseTypeMagnitudeFit, SaveRateBandsFit, StreamCurveFit
@@ -46,11 +48,18 @@ def _sample_save_rate_bands() -> SaveRateBandsFit:
 
 
 def _sample_stream_curve() -> StreamCurveFit:
+    trend = [5.8, 5.7, 8.2] + [10.0] * 25
+    composed = [6.4, 28.5, 13.5] + [10.0] * 25
     return StreamCurveFit(
         sample_size=57,
-        median=[0.5, 27.2, 16.0] + [10.0] * 25,
-        p25=[0.2, 23.3, 14.9] + [8.0] * 25,
-        p75=[0.7, 31.7, 18.2] + [12.0] * 25,
+        trend_median=list(trend),
+        trend_p25=[5.0, 5.0, 7.0] + [8.0] * 25,
+        trend_p75=[6.5, 6.5, 9.0] + [12.0] * 25,
+        dow_multiplier=[0.912, 0.971, 0.982, 1.099, 1.262, 0.983, 0.814],
+        editorial_kernel=[21.33, 5.49],
+        median=list(composed),
+        p25=[5.0, 24.0, 12.0] + [8.0] * 25,
+        p75=[7.0, 32.0, 15.0] + [12.0] * 25,
     )
 
 
@@ -101,13 +110,25 @@ def _fixture_constants_with_markers() -> str:
         [
             'export const GENRES = ["house"] as const;',
             "",
-            "/** % of week-1 streams by day (index 0 = day 1 … index 27 = day 28). */",
+            "/** Calendar day-of-week multipliers. */",
             _marker_block(
-                "STREAM_CURVE_TEMPLATE",
-                "export const STREAM_CURVE_TEMPLATE = {\n  median: [1.0],\n} as const;",
+                "STREAM_DOW_MULTIPLIER",
+                "export const STREAM_DOW_MULTIPLIER = {\n  Mon: 1.0,\n} as const;",
             ),
             "",
-            "export type CurvePercentile = keyof typeof STREAM_CURVE_TEMPLATE;",
+            "/** New Music Friday bump. */",
+            _marker_block(
+                "STREAM_EDITORIAL_KERNEL",
+                "export const STREAM_EDITORIAL_KERNEL = [1.0, 0.0] as const;",
+            ),
+            "",
+            "/** Seasonless trend. */",
+            _marker_block(
+                "STREAM_CURVE_TREND",
+                "export const STREAM_CURVE_TREND = {\n  median: [1.0],\n} as const;",
+            ),
+            "",
+            "export type CurvePercentile = keyof typeof STREAM_CURVE_TREND;",
             "",
             "/** Save-rate health benchmarks (%), used by flags/monitoring, not forecast math. */",
             _marker_block(
@@ -183,7 +204,9 @@ def test_find_marker_regions_failure_without_markers() -> None:
     assert "Missing RETRAIN marker comments" in message
     assert "SAVE_COUNT_BANDS (MISSING)" in message
     assert "SAVE_RATE_BANDS (MISSING)" in message
-    assert "STREAM_CURVE_TEMPLATE (MISSING)" in message
+    assert "STREAM_DOW_MULTIPLIER (MISSING)" in message
+    assert "STREAM_EDITORIAL_KERNEL (MISSING)" in message
+    assert "STREAM_CURVE_TREND (MISSING)" in message
     assert "RELEASE_TYPE_MAGNITUDE_MULTIPLIER (MISSING)" in message
     assert "// RETRAIN:SAVE_COUNT_BANDS:START" in message
     assert str(config.CONSTANTS_TS_PATH) in message
@@ -217,9 +240,13 @@ def test_build_marker_replacements_formats_expected_blocks() -> None:
         "SAVE_COUNT_BANDS"
     ]
     assert '"melodic-bass": { lo: 13, hi: 23 }' in replacements["SAVE_RATE_BANDS"]
-    assert "median: [" in replacements["STREAM_CURVE_TEMPLATE"]
-    assert "p75: [" in replacements["STREAM_CURVE_TEMPLATE"]
-    assert "} as const;" in replacements["STREAM_CURVE_TEMPLATE"]
+    assert "Fri: 1.262" in replacements["STREAM_DOW_MULTIPLIER"]
+    assert "export const STREAM_EDITORIAL_KERNEL = [21.33, 5.49] as const;" in replacements[
+        "STREAM_EDITORIAL_KERNEL"
+    ]
+    assert "median: [" in replacements["STREAM_CURVE_TREND"]
+    assert "p75: [" in replacements["STREAM_CURVE_TREND"]
+    assert "} as const;" in replacements["STREAM_CURVE_TREND"]
     assert "focus_track: 1.03" in replacements["RELEASE_TYPE_MAGNITUDE_MULTIPLIER"]
     assert "alternate_version: 0.87" in replacements["RELEASE_TYPE_MAGNITUDE_MULTIPLIER"]
 
@@ -235,7 +262,7 @@ def test_apply_marker_replacements_updates_inner_content_only() -> None:
     assert outside_before == outside_after
     assert "p25: 1000, p50: 2000, p75: 3000, p90: 4000" in updated
     assert '"melodic-bass": { lo: 13, hi: 23 }' in updated
-    assert "export type CurvePercentile = keyof typeof STREAM_CURVE_TEMPLATE;" in updated
+    assert "export type CurvePercentile = keyof typeof STREAM_CURVE_TREND;" in updated
     assert 'export { GENRE_PLAYBOOKS } from "@/lib/constants/playbooks";' in updated
 
 
@@ -288,17 +315,22 @@ def test_sync_constants_writes_updated_file(tmp_path: Path) -> None:
     assert constants_path.read_text(encoding="utf-8") == updated
     assert "p25: 1000, p50: 2000, p75: 3000, p90: 4000" in updated
     assert "focus_track: 1.03" in updated
+    assert "Fri: 1.262" in updated
 
 
 def test_format_helpers_match_typescript_conventions() -> None:
     save_count = format_save_count_bands(_sample_algo_bands())
     save_rate = format_save_rate_bands(_sample_save_rate_bands())
-    stream_curve = format_stream_curve_template(_sample_stream_curve())
+    dow = format_stream_dow_multiplier(_sample_stream_curve())
+    kernel = format_stream_editorial_kernel(_sample_stream_curve())
+    trend = format_stream_curve_trend(_sample_stream_curve())
 
     assert save_count.endswith("} as const;")
     assert '"big-room": { lo: 5, hi: 10 }' in save_rate
-    assert "0.5, 27.2, 16.0" in stream_curve
-    assert stream_curve.count("[") == 3
+    assert "Mon: 0.912" in dow
+    assert kernel == "export const STREAM_EDITORIAL_KERNEL = [21.33, 5.49] as const;"
+    assert "5.8, 5.7, 8.2" in trend
+    assert trend.count("[") == 3
 
 
 def test_constants_sync_report(capsys: pytest.CaptureFixture[str]) -> None:

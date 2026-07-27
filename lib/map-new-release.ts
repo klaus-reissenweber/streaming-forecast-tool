@@ -11,6 +11,8 @@ export interface NewReleaseInsertRow {
   artist_name: string;
   genre: string;
   monthly_listeners: number;
+  /** Frozen at create — forecast + retrain use this, not live ML. */
+  monthly_listeners_at_release: number;
   is_feature: boolean;
   editorial_tier: number;
   release_date: string;
@@ -54,6 +56,7 @@ export function toNewReleaseInsertRow(
     artist_name: values.artistName.trim(),
     genre: values.genre,
     monthly_listeners: values.monthlyListeners,
+    monthly_listeners_at_release: values.monthlyListeners,
     is_feature: values.isFeature,
     editorial_tier: values.editorialTier,
     release_date: values.releaseDate,

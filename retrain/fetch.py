@@ -12,16 +12,43 @@ from typing import Any
 from supabase import Client
 
 import config
-from dataset import DailyDataPoint, ReleaseRecord, group_daily_data_by_release_id
+from dataset import (
+    DailyDataPoint,
+    ReleaseRecord,
+    group_daily_data_by_release_id,
+    parse_release_date,
+)
 
 RELEASES_TABLE = "releases"
 DAILY_DATA_TABLE = "daily_data"
 
-RELEASE_SELECT_COLUMNS = (
+RELEASE_SELECT_COLUMNS_BASE = (
     "id, track_name, artist_name, genre, monthly_listeners, is_feature, "
     "editorial_tier, release_type, spotify_format, meta_spend_planned, "
-    "spotify_spend_planned, locked_forecast_streams, status"
+    "spotify_spend_planned, locked_forecast_streams, status, release_date, "
+    "created_at"
 )
+RELEASE_SELECT_COLUMNS = (
+    "id, track_name, artist_name, genre, monthly_listeners, "
+    "monthly_listeners_at_release, is_feature, editorial_tier, release_type, "
+    "spotify_format, meta_spend_planned, spotify_spend_planned, "
+    "locked_forecast_streams, status, release_date, created_at"
+)
+
+_HAS_ML_AT_RELEASE: bool | None = None
+
+
+def _releases_have_ml_at_release(client: Client) -> bool:
+    """Probe once — migration may not be applied yet on every environment."""
+    global _HAS_ML_AT_RELEASE
+    if _HAS_ML_AT_RELEASE is not None:
+        return _HAS_ML_AT_RELEASE
+    try:
+        client.table(RELEASES_TABLE).select("monthly_listeners_at_release").limit(1).execute()
+        _HAS_ML_AT_RELEASE = True
+    except Exception:
+        _HAS_ML_AT_RELEASE = False
+    return _HAS_ML_AT_RELEASE
 
 DAILY_DATA_SELECT_COLUMNS = (
     "id, release_id, day_number, streams, saves, recorded_at"
@@ -103,6 +130,34 @@ def _parse_release_row(row: dict[str, Any]) -> ReleaseRecord:
     if not isinstance(is_feature, bool):
         raise FetchError(f"releases.id={release_id}: is_feature must be a boolean.")
 
+    release_date_raw = row.get("release_date")
+    release_date: str | None
+    if release_date_raw is None or release_date_raw == "":
+        release_date = None
+    elif isinstance(release_date_raw, str):
+        release_date = parse_release_date(release_date_raw)
+    else:
+        raise FetchError(
+            f"releases.id={release_id}: release_date must be a string or null."
+        )
+
+    ml_at_release_raw = row.get("monthly_listeners_at_release")
+    monthly_listeners_at_release: float | None
+    if ml_at_release_raw is None or ml_at_release_raw == "":
+        monthly_listeners_at_release = None
+    else:
+        monthly_listeners_at_release = _parse_number(
+            ml_at_release_raw,
+            "monthly_listeners_at_release",
+        )
+
+    created_at_raw = row.get("created_at")
+    created_at: str | None
+    if isinstance(created_at_raw, str) and created_at_raw.strip():
+        created_at = created_at_raw.strip()
+    else:
+        created_at = None
+
     return ReleaseRecord(
         id=release_id,
         track_name=_parse_required_string(row.get("track_name"), "track_name"),
@@ -124,6 +179,9 @@ def _parse_release_row(row: dict[str, Any]) -> ReleaseRecord:
             minimum=1,
         ),
         status=status,
+        release_date=release_date,
+        monthly_listeners_at_release=monthly_listeners_at_release,
+        created_at=created_at,
     )
 
 
@@ -147,9 +205,14 @@ def _parse_daily_data_row(row: dict[str, Any]) -> DailyDataPoint:
 
 
 def fetch_closed_releases(client: Client) -> list[ReleaseRecord]:
+    select_columns = (
+        RELEASE_SELECT_COLUMNS
+        if _releases_have_ml_at_release(client)
+        else RELEASE_SELECT_COLUMNS_BASE
+    )
     response = (
         client.table(RELEASES_TABLE)
-        .select(RELEASE_SELECT_COLUMNS)
+        .select(select_columns)
         .eq("status", "closed")
         .order("closed_at", desc=True)
         .order("created_at", desc=True)

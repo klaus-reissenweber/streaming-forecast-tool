@@ -203,6 +203,6 @@ export function computeFlagsForRelease(
     dailyData,
     locked,
     monitoring,
-    tier: artistTierFromMonthlyListeners(release.monthly_listeners),
+    tier: artistTierFromMonthlyListeners(release.monthly_listeners_at_release),
   });
 }

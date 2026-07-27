@@ -12,6 +12,12 @@ import {
   ELDERBROOK_WK1_STREAMS,
 } from "@/lib/fixtures/elderbrook-monitoring";
 import {
+  RELEASE_TYPE_MAGNITUDE_MULTIPLIER,
+  STREAM_CURVE_BASELINE,
+  STREAM_CURVE_TREND,
+  STREAM_EDITORIAL_KERNEL,
+} from "@/lib/constants";
+import {
   composeStreamCurvePct,
   computeLockedForecast,
   editorialDayNumber,
@@ -155,16 +161,34 @@ assert(
   "string and Date agree",
 );
 
-// (a) Thursday release reproduces Elderbrook curve within ±0.1pp; wk1 = 100%
+// (a) Thursday compose = STREAM_CURVE_BASELINE (derived view) + wk1 = 100%.
+// Catalog-fitted trend/kernel replaced the Elderbrook seed absolute targets.
 const thu = composeStreamCurvePct({ releaseDate: "2026-05-28" });
-const elderbrookTarget = [6.37, 28.54, 13.54, 8.9, 13.58, 14.89, 14.19];
-for (let i = 0; i < 7; i++) {
-  const diff = Math.abs(thu[i]! - elderbrookTarget[i]!);
-  assert(diff <= 0.1, `Thu d${i + 1} off by ${diff.toFixed(3)}pp (limit ±0.1)`);
+for (let i = 0; i < thu.length; i++) {
+  const diff = Math.abs(thu[i]! - STREAM_CURVE_BASELINE.median[i]!);
+  assert(
+    diff <= 1e-9,
+    `Thu compose d${i + 1} ≠ BASELINE.median (diff ${diff})`,
+  );
 }
 const thuWk1 = thu.slice(0, 7).reduce((s, p) => s + p, 0);
 assert(Math.abs(thuWk1 - 100) < 1e-6, `Thu wk1 sum ${thuWk1} ≠ 100`);
-console.log("PASS: Thu compose within ±0.1pp (Elderbrook); wk1=100");
+assert(
+  STREAM_EDITORIAL_KERNEL[0]! > STREAM_EDITORIAL_KERNEL[1]! &&
+    STREAM_EDITORIAL_KERNEL[1]! >= 0,
+  "editorial kernel should be decreasing and non-negative",
+);
+assert(
+  STREAM_CURVE_TREND.median.every((pct) => pct > 0),
+  "trend median must have no zero/empty tail",
+);
+assert(
+  thu[1]! > thu[0]!,
+  "Thu d2 (editorial Friday) should exceed d1 after compose",
+);
+console.log(
+  "PASS: Thu compose ≡ STREAM_CURVE_BASELINE; wk1=100; kernel/trend shape ok",
+);
 
 // (b) Friday: d1 editorial peak; Fridays high / Sundays low in the tail; wk1=100
 const fri = composeStreamCurvePct({ releaseDate: "2026-05-29" });
@@ -213,7 +237,10 @@ const albumTrack = computeLockedForecast(
   lockOpts,
 );
 
-const expectedRatio = 1.03 / 0.87;
+// Magnitudes are retrain-synced — assert against live constants, not seed ratios.
+const expectedRatio =
+  RELEASE_TYPE_MAGNITUDE_MULTIPLIER.focus_track /
+  RELEASE_TYPE_MAGNITUDE_MULTIPLIER.alternate_version;
 const streamsRatio =
   focus.streams.week1Streams / alternate.streams.week1Streams;
 const savesRatio = focus.saves.week1Saves / alternate.saves.week1Saves;
@@ -225,13 +252,12 @@ assert(
   Math.abs(savesRatio - expectedRatio) < 0.01,
   `focus:alt saves ratio ${savesRatio} ≠ ${expectedRatio}`,
 );
+const expectedAlbumRatio = RELEASE_TYPE_MAGNITUDE_MULTIPLIER.album_track;
+const albumStreamsRatio =
+  albumTrack.streams.week1Streams / single.streams.week1Streams;
 assert(
-  single.streams.week1Streams === albumTrack.streams.week1Streams,
-  "single and album_track streams should match (both 1.0×)",
-);
-assert(
-  single.saves.week1Saves === albumTrack.saves.week1Saves,
-  "single and album_track saves should match (both 1.0×)",
+  Math.abs(albumStreamsRatio - expectedAlbumRatio) < 0.01,
+  `album:single streams ratio ${albumStreamsRatio} ≠ ${expectedAlbumRatio}`,
 );
 assert(
   Math.abs(
@@ -245,7 +271,7 @@ assert(
   "curve shape (dailyPct) must be unchanged by magnitude",
 );
 console.log(
-  `PASS: focus/alt streams ${focus.streams.week1Streams}/${alternate.streams.week1Streams} ≈ 1.03:0.87; single=album_track=${single.streams.week1Streams}`,
+  `PASS: focus/alt ≈ ${RELEASE_TYPE_MAGNITUDE_MULTIPLIER.focus_track}:${RELEASE_TYPE_MAGNITUDE_MULTIPLIER.alternate_version}; album_track=${expectedAlbumRatio}×`,
 );
 
 console.log("\n=== day-0 import rejection ===");

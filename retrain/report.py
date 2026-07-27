@@ -191,7 +191,7 @@ def build_band_deltas(
         if old_median and new_median and old_median[0:1] and new_median[0:1]:
             deltas.append(
                 BandDeltaLine(
-                    block_name="STREAM_CURVE_TEMPLATE",
+                    block_name="STREAM_CURVE_TREND (composed Thu)",
                     summary=(
                         f"median D1 {_format_rate(old_median[0])}→{_format_rate(new_median[0])}, "
                         f"D2 {_format_rate(old_median[1])}→{_format_rate(new_median[1])}"

@@ -108,6 +108,11 @@ def _sample_derived_models() -> dict[str, Any]:
         ),
         "stream_curve": StreamCurveFit(
             sample_size=57,
+            trend_median=[5.8, 5.7],
+            trend_p25=[5.0, 5.0],
+            trend_p75=[6.5, 6.5],
+            dow_multiplier=[0.912, 0.971, 0.982, 1.099, 1.262, 0.983, 0.814],
+            editorial_kernel=[21.33, 5.49],
             median=[0.5, 27.2],
             p25=[0.2, 23.3],
             p75=[0.7, 31.7],
@@ -161,6 +166,11 @@ def _active_row(
                 "curve_median": [0.5],
                 "curve_p25": [0.2],
                 "curve_p75": [0.7],
+                "trend_median": [5.8],
+                "trend_p25": [5.0],
+                "trend_p75": [6.5],
+                "dow_multiplier": [0.912, 0.971, 0.982, 1.099, 1.262, 0.983, 0.814],
+                "editorial_kernel": [21.33, 5.49],
             }
         else:
             coefficients_json = {
