@@ -64,9 +64,9 @@ export const RELEASE_TYPE_LABELS: Record<(typeof RELEASE_TYPES)[number], string>
 export const RELEASE_TYPE_MAGNITUDE_MULTIPLIER = {
   single: 1.0,
   lead_single: 1.0,
-  focus_track: 1.14,
-  album_track: 0.91,
-  alternate_version: 0.88
+  focus_track: 1.06,
+  album_track: 0.87,
+  alternate_version: 0.82
 } as const;
 // RETRAIN:RELEASE_TYPE_MAGNITUDE_MULTIPLIER:END
 
@@ -115,13 +115,13 @@ export const EDITORIAL_TIER_TOGGLE_OPTIONS = EDITORIAL_TIER_VALUES.map((tier) =>
  */
 // RETRAIN:STREAM_DOW_MULTIPLIER:START
 export const STREAM_DOW_MULTIPLIER = {
-  Mon: 0.902,
-  Tue: 1.031,
-  Wed: 1.012,
-  Thu: 1.022,
-  Fri: 1.246,
-  Sat: 0.989,
-  Sun: 0.797
+  Mon: 0.916,
+  Tue: 0.984,
+  Wed: 1.019,
+  Thu: 1.034,
+  Fri: 1.265,
+  Sat: 0.965,
+  Sun: 0.817
 } as const;
 // RETRAIN:STREAM_DOW_MULTIPLIER:END
 
@@ -139,7 +139,7 @@ export const STREAM_DOW_MULTIPLIER_BY_ISO: readonly number[] = [
 
 /** New Music Friday bump (% of wk1). Index 0 = editorial Friday. */
 // RETRAIN:STREAM_EDITORIAL_KERNEL:START
-export const STREAM_EDITORIAL_KERNEL = [12.26, 3.89] as const;
+export const STREAM_EDITORIAL_KERNEL = [15.57, 7.50] as const;
 // RETRAIN:STREAM_EDITORIAL_KERNEL:END
 
 /**
@@ -151,19 +151,19 @@ export const STREAM_EDITORIAL_KERNEL = [12.26, 3.89] as const;
 // RETRAIN:STREAM_CURVE_TREND:START
 export const STREAM_CURVE_TREND = {
   median: [
-    10.7, 10.8, 13.9, 13.6, 11.8, 12.0, 12.6, 9.0, 8.1, 8.1, 8.3, 8.3, 7.6,
-      7.4, 6.5, 6.4, 6.3, 6.6, 6.5, 6.5, 6.3, 5.9, 5.9, 5.4, 5.8, 5.8,
-      5.8, 5.8
+    7.6, 6.8, 13.2, 13.3, 12.6, 12.6, 12.5, 9.0, 8.6, 8.0, 8.9, 8.7, 8.0,
+      7.6, 6.5, 7.5, 6.9, 7.1, 6.9, 6.6, 5.5, 5.5, 5.5, 5.5, 5.5, 5.5,
+      5.5, 5.5
   ],
   p25: [
-    8.2, 7.8, 11.6, 12.3, 11.3, 11.1, 11.0, 7.3, 6.4, 5.9, 6.2, 5.8, 5.6,
-      5.3, 5.2, 4.7, 4.6, 4.8, 4.5, 4.7, 4.7, 3.7, 4.0, 3.9, 3.7, 3.7,
-      3.7, 3.7
+    5.7, 5.2, 11.2, 11.3, 11.8, 11.2, 11.1, 7.4, 6.9, 6.1, 6.3, 6.2, 5.8,
+      5.5, 5.2, 4.8, 4.7, 4.8, 4.8, 4.7, 4.7, 4.7, 4.7, 4.7, 4.7, 4.7,
+      4.7, 4.7
   ],
   p75: [
-    13.1, 11.8, 14.7, 15.4, 13.6, 13.2, 13.7, 10.3, 9.6, 9.9, 10.1, 10.0, 9.2,
-      8.5, 8.1, 7.9, 8.0, 8.1, 7.6, 7.5, 7.3, 7.5, 7.4, 7.3, 7.4, 7.4,
-      7.4, 7.4
+    10.2, 8.1, 13.9, 15.3, 13.9, 14.0, 13.9, 10.7, 10.4, 10.4, 10.4, 10.3, 10.1,
+      9.2, 8.9, 9.1, 9.0, 8.8, 8.6, 8.3, 8.2, 8.2, 8.2, 8.2, 8.2, 8.2,
+      8.2, 8.2
   ]
 } as const;
 // RETRAIN:STREAM_CURVE_TREND:END
@@ -249,20 +249,20 @@ export const META_CLICK_TO_STREAM_CONVERSION: Record<
 /** Save-rate health benchmarks (%), used by flags/monitoring, not forecast math. */
 // RETRAIN:SAVE_RATE_BANDS:START
 export const SAVE_RATE_BANDS = {
-  dubstep: { lo: 7.8, hi: 16 },
-  house: { lo: 4.3, hi: 14.9 },
-  "melodic-bass": { lo: 6.3, hi: 16.7 },
-  downtempo: { lo: 4.8, hi: 20.3 },
-  "big-room": { lo: 4.6, hi: 16.4 }
+  dubstep: { lo: 7.9, hi: 15.9 },
+  house: { lo: 4.4, hi: 13.7 },
+  "melodic-bass": { lo: 6.5, hi: 16 },
+  downtempo: { lo: 4.9, hi: 18.6 },
+  "big-room": { lo: 4.5, hi: 16 }
 } as const;
 // RETRAIN:SAVE_RATE_BANDS:END
 
 /** Algorithmic positioning thresholds (week-1 save counts) by artist tier. */
 // RETRAIN:SAVE_COUNT_BANDS:START
 export const SAVE_COUNT_BANDS = {
-  developing: { p25: 3400, p50: 8616, p75: 10896, p90: 11439 },
-  mid: { p25: 4229, p50: 10358, p75: 26176, p90: 34888 },
-  established: { p25: 4229, p50: 10358, p75: 26176, p90: 34888 }
+  developing: { p25: 3641, p50: 7556, p75: 10896, p90: 10933 },
+  mid: { p25: 5137, p50: 10012, p75: 26400, p90: 34551 },
+  established: { p25: 5137, p50: 10012, p75: 26400, p90: 34551 }
 } as const;
 // RETRAIN:SAVE_COUNT_BANDS:END
 

@@ -290,6 +290,8 @@ git commit -m "Retrain model YYYY-MM-DD: n=XX, streams_d0 R² 0.XX→0.XX"
 |---|---|
 | `--dry-run` | Full fit + guardrails + report; no DB writes, no constants patch |
 | `--force` | Skip R² degradation guardrail (logged loudly; manual override only) |
+| `--hold-the-commit` | Fit + write `lib/constants.ts`; skip DB promote (review diff first) |
+| `--override-insufficient-sample REASON` | Promote despite post-Cook's `n < 40`; requires documented reason (logged). Uses all-eligible derived bands (same as hold-the-commit). |
 | `--skip-constants-sync` | Promote DB rows only; do not patch `lib/constants.ts` |
 
 ---
@@ -324,6 +326,8 @@ Shared TypeScript contract (not imported by Python):
 ### `insufficient_sample` (n < 40)
 
 Not enough closed releases with complete D1–D7 streams after outlier exclusion. Wait for more releases to close, or verify daily_data completeness in Supabase. Check `/archive` retrain-eligible count.
+
+To promote anyway with operator intent, pass `--override-insufficient-sample "documented reason"`. The reason is logged on the run; derived bands fit on all eligible (Cook's D still applies to regressions). Do not use this casually — prefer waiting for `n ≥ 40` clean.
 
 ### `r2_degradation` (one or more models worse by > 0.05)
 

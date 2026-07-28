@@ -201,5 +201,7 @@ class RetrainFlags:
     skip_constants_sync: bool = False
     # Fit + write constants.ts; skip DB promote (operator reviews diff before commit).
     hold_the_commit: bool = False
+    # Non-empty: promote past insufficient_sample (n < MIN_SAMPLE_SIZE). Logged loudly.
+    override_insufficient_sample: str | None = None
     # One-shot: stamp active model_coefficients.fitted_at = RETRAIN_LAST_AT, then exit.
     stamp_last_retrain: bool = False

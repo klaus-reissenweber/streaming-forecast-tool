@@ -67,6 +67,16 @@ def parse_args(argv: list[str] | None = None) -> config.RetrainFlags:
         ),
     )
     parser.add_argument(
+        "--override-insufficient-sample",
+        metavar="REASON",
+        default=None,
+        help=(
+            "Promote despite post-Cook's n < MIN_SAMPLE_SIZE. Requires a "
+            "non-empty documented reason (logged loudly). Uses the same "
+            "all-eligible derived-band path as --hold-the-commit."
+        ),
+    )
+    parser.add_argument(
         "--stamp-last-retrain",
         action="store_true",
         help=(
@@ -77,11 +87,15 @@ def parse_args(argv: list[str] | None = None) -> config.RetrainFlags:
         ),
     )
     args = parser.parse_args(argv)
+    override = args.override_insufficient_sample
+    if override is not None:
+        override = override.strip() or None
     return config.RetrainFlags(
         dry_run=args.dry_run,
         force=args.force,
         skip_constants_sync=args.skip_constants_sync,
         hold_the_commit=args.hold_the_commit,
+        override_insufficient_sample=override,
         stamp_last_retrain=args.stamp_last_retrain,
     )
 
@@ -231,13 +245,17 @@ def run(flags: config.RetrainFlags) -> int:
         hold_through_guardrail = False
         if not guardrail_result.passed:
             failure = guardrail_result.failure
-            # Hold-the-commit may continue past insufficient_sample so the
-            # weekday curve markers can still be reviewed (no DB promote).
+            # Hold-the-commit / sample override may continue past
+            # insufficient_sample so weekday curve + bands still fit
+            # (derived on all eligible; regression on post-Cook's).
             can_hold_through = (
-                flags.hold_the_commit
-                and failure is not None
+                failure is not None
                 and failure.code == "insufficient_sample"
                 and len(training_rows) >= 2
+                and (
+                    flags.hold_the_commit
+                    or bool(flags.override_insufficient_sample)
+                )
             )
             if not can_hold_through:
                 report = RetrainReport(
@@ -264,12 +282,21 @@ def run(flags: config.RetrainFlags) -> int:
                 return 1
 
             hold_through_guardrail = True
-            print(
-                "WARNING: --hold-the-commit continuing past insufficient_sample; "
-                f"fitting weekday curve on all {len(training_rows)} eligible "
-                "releases (Cook's D exclusion not applied to derived bands). "
-                "LIVE promote remains blocked until n≥40 after exclusion."
-            )
+            if flags.hold_the_commit and not flags.override_insufficient_sample:
+                print(
+                    "WARNING: --hold-the-commit continuing past insufficient_sample; "
+                    f"fitting weekday curve on all {len(training_rows)} eligible "
+                    "releases (Cook's D exclusion not applied to derived bands). "
+                    "LIVE promote remains blocked until n≥40 after exclusion."
+                )
+            else:
+                print(
+                    "WARNING: overriding insufficient_sample "
+                    f"(n={guardrail_result.sample_size_final} < "
+                    f"{config.MIN_SAMPLE_SIZE}); fitting derived bands on all "
+                    f"{len(training_rows)} eligible releases. "
+                    f"Override reason: {flags.override_insufficient_sample}"
+                )
 
         filtered_rows = [
             row
@@ -384,6 +411,13 @@ def run(flags: config.RetrainFlags) -> int:
             fitted_at=fitted_at,
         )
         promotion_status = "promoted (13 model_coefficients rows)"
+        if hold_through_guardrail and flags.override_insufficient_sample:
+            promotion_status += (
+                f"; insufficient_sample overridden "
+                f"(n={guardrail_result.sample_size_final}"
+                f"<{config.MIN_SAMPLE_SIZE}): "
+                f"{flags.override_insufficient_sample}"
+            )
 
         if not flags.skip_constants_sync:
             sync_constants(
