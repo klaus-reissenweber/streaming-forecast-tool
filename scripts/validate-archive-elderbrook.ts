@@ -9,7 +9,10 @@ import {
   ELDERBROOK_WK1_SAVES,
   ELDERBROOK_WK1_STREAMS,
 } from "@/lib/fixtures/elderbrook-monitoring";
+import { buildFallbackActiveModel } from "@/lib/model/active-model";
 import type { ReleaseRecord } from "@/lib/map-release-row";
+
+const MODEL = buildFallbackActiveModel();
 
 const ELDERBROOK_CLOSED: ReleaseRecord = {
   id: ELDERBROOK_RELEASE_ID,
@@ -60,6 +63,7 @@ const dailyDataByReleaseId = new Map([
 const archive = buildArchiveViewModel(
   [ELDERBROOK_CLOSED],
   dailyDataByReleaseId,
+  MODEL,
 );
 
 const row = archive.rows[0];
@@ -123,6 +127,7 @@ if (archive.summary.retrainProgressCount !== 0) {
 const afterBaseline = buildArchiveViewModel(
   [ELDERBROOK_CLOSED],
   new Map([[ELDERBROOK_CLOSED.id, [...ELDERBROOK_D1_D7]]]),
+  MODEL,
   { lastRetrainAt: "2020-01-01T00:00:00.000Z" },
 );
 if (afterBaseline.summary.retrainProgressCount !== 1) {
@@ -160,6 +165,7 @@ const sorted = buildArchiveViewModel(
       ELDERBROOK_D1_D7.map((d) => ({ ...d, release_id: "high-performer" })),
     ],
   ]),
+  MODEL,
   { sort: "streams_delta_pct_desc" },
 );
 

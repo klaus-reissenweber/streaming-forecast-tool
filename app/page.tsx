@@ -3,7 +3,9 @@ import Link from "next/link";
 import { DashboardSummaryBar } from "@/components/dashboard/DashboardSummaryBar";
 import { DashboardTable } from "@/components/dashboard/DashboardTable";
 import { buildDashboardViewModel } from "@/lib/build-dashboard-view-model";
+import { loadActiveModel } from "@/lib/load-active-model";
 import { loadActiveReleasesWithDailyData } from "@/lib/load-active-releases";
+import { logActiveModelSource } from "@/lib/model/forecast-model";
 
 export const metadata: Metadata = {
   title: "Active releases",
@@ -12,14 +14,21 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const { releases, dailyDataByReleaseId } =
-    await loadActiveReleasesWithDailyData();
+  const [{ releases, dailyDataByReleaseId }, model] = await Promise.all([
+    loadActiveReleasesWithDailyData(),
+    loadActiveModel(),
+  ]);
+  logActiveModelSource(model, "dashboard");
 
-  const viewModel = buildDashboardViewModel(releases, dailyDataByReleaseId);
+  const viewModel = buildDashboardViewModel(
+    releases,
+    dailyDataByReleaseId,
+    model,
+  );
 
   const totalActive = viewModel.summary.totalActive;
   const activeReleaseLabel = `${totalActive} active release${totalActive === 1 ? "" : "s"}`;
-  const metaLine = `${activeReleaseLabel} · monitoring window D1–D28`;
+  const metaLine = `${activeReleaseLabel} · monitoring window D1–D28 · model ${viewModel.summary.activeModelSource}`;
 
   return (
     <main className="mx-auto max-w-6xl px-5 py-8">

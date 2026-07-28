@@ -1,0 +1,96 @@
+{
+  "fitted_at": "2026-07-28T22:30:43.785479+00:00",
+  "activated_at": "2026-07-28T22:30:43.785479+00:00",
+  "is_active": true,
+  "status": "active",
+  "model_type": "forecast_model",
+  "sample_size": 32,
+  "r_squared": 0.5851640052850642,
+  "training_notes": "Phase 1 seed: lib/constants.ts marker blocks + live streams_d0 (promote 2026-07-28).",
+  "payload": {
+    "trend": {
+      "median": [
+        7.6, 6.8, 13.2, 13.3, 12.6, 12.6, 12.5, 9.0, 8.6, 8.0, 8.9, 8.7, 8.0,
+        7.6, 6.5, 7.5, 6.9, 7.1, 6.9, 6.6, 5.5, 5.5, 5.5, 5.5, 5.5, 5.5,
+        5.5, 5.5
+      ],
+      "p25": [
+        5.7, 5.2, 11.2, 11.3, 11.8, 11.2, 11.1, 7.4, 6.9, 6.1, 6.3, 6.2, 5.8,
+        5.5, 5.2, 4.8, 4.7, 4.8, 4.8, 4.7, 4.7, 4.7, 4.7, 4.7, 4.7, 4.7,
+        4.7, 4.7
+      ],
+      "p75": [
+        10.2, 8.1, 13.9, 15.3, 13.9, 14.0, 13.9, 10.7, 10.4, 10.4, 10.4, 10.3, 10.1,
+        9.2, 8.9, 9.1, 9.0, 8.8, 8.6, 8.3, 8.2, 8.2, 8.2, 8.2, 8.2, 8.2,
+        8.2, 8.2
+      ]
+    },
+    "dow": {
+      "Mon": 0.916,
+      "Tue": 0.984,
+      "Wed": 1.019,
+      "Thu": 1.034,
+      "Fri": 1.265,
+      "Sat": 0.965,
+      "Sun": 0.817
+    },
+    "editorial_kernel": [15.57, 7.5],
+    "kernel_length": 2,
+    "release_type_magnitude_multipliers": {
+      "single": 1.0,
+      "lead_single": 1.0,
+      "focus_track": 1.06,
+      "album_track": 0.87,
+      "alternate_version": 0.82
+    },
+    "save_rate_bands": {
+      "dubstep": { "lo": 7.9, "hi": 15.9 },
+      "house": { "lo": 4.4, "hi": 13.7 },
+      "melodic-bass": { "lo": 6.5, "hi": 16 },
+      "downtempo": { "lo": 4.9, "hi": 18.6 },
+      "big-room": { "lo": 4.5, "hi": 16 }
+    },
+    "save_count_bands": {
+      "developing": { "p25": 3641, "p50": 7556, "p75": 10896, "p90": 10933 },
+      "mid": { "p25": 5137, "p50": 10012, "p75": 26400, "p90": 34551 },
+      "established": { "p25": 5137, "p50": 10012, "p75": 26400, "p90": 34551 }
+    },
+    "streams_d0": {
+      "intercept": 7.155838064745286,
+      "log_ml": 0.28317147419418953,
+      "feat": -0.025481594279002096,
+      "ed_tier": 0.6398840977129234,
+      "rmse": 0.5231000595817937,
+      "r2": 0.5851640052850642
+    },
+    "config": {
+      "tier_ml_thresholds": { "mid": 500000, "established": 2000000 },
+      "retrain_min_sample_size": 40,
+      "retrain_threshold": 10,
+      "editorial_kernel_k": 2,
+      "stream_curve_day_end": 28,
+      "wk1_day_end": 7,
+      "release_type_magnitude_shrinkage_k": 5
+    }
+  },
+  "metadata": {
+    "sample_sizes": {
+      "eligible": 49,
+      "clean": 32,
+      "regression": 32,
+      "derived": 49
+    },
+    "forward_bias": {
+      "all": { "live": 0.274, "new": -0.035 },
+      "clean": { "live": 0.243, "new": -0.036 },
+      "newest_10": { "live": 0.091, "new": -0.099 }
+    },
+    "cooks_d_drops": 17,
+    "threshold": {
+      "min_sample_size": 40,
+      "retrain_threshold": 10,
+      "cooks_d_threshold_factor": 4.0
+    },
+    "override_notes": "new model −11% median forward bias vs live +28.9% on current 50; supersedes."
+  }
+}

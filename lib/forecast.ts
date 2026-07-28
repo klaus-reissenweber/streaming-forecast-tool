@@ -3,15 +3,14 @@ import {
   META_DELIVERY_PER_OBJECTIVE,
   META_OBJECTIVE_MULTIPLIERS,
   META_RATES_BY_GENRE,
-  RELEASE_TYPE_MAGNITUDE_MULTIPLIER,
-  SAVE_COUNT_BANDS,
   STREAM_CURVE_BASELINE,
-  STREAM_CURVE_TREND,
-  STREAM_DOW_MULTIPLIER_BY_ISO,
-  STREAM_EDITORIAL_KERNEL,
   TIER_ML_THRESHOLDS,
   type CurvePercentile,
 } from "./constants";
+import {
+  dowMultiplierByIso,
+  type ForecastModel,
+} from "./model/forecast-model";
 
 // --- Enums / unions ---
 
@@ -240,11 +239,12 @@ function spotifyCpsReleaseType(
 
 export function artistTierFromMonthlyListeners(
   monthlyListeners: number,
+  thresholds: ForecastModel["config"]["tierMlThresholds"] = TIER_ML_THRESHOLDS,
 ): ArtistTier {
-  if (monthlyListeners >= TIER_ML_THRESHOLDS.established) {
+  if (monthlyListeners >= thresholds.established) {
     return "established";
   }
-  if (monthlyListeners >= TIER_ML_THRESHOLDS.mid) {
+  if (monthlyListeners >= thresholds.mid) {
     return "mid";
   }
   return "developing";
@@ -497,8 +497,12 @@ export function predictAdImpact(
     | "metaObjective"
   >,
   adRates: AdRates,
+  model?: Pick<ForecastModel, "config">,
 ): AdImpactForecast {
-  const tier = artistTierFromMonthlyListeners(inputs.monthlyListeners);
+  const tier = artistTierFromMonthlyListeners(
+    inputs.monthlyListeners,
+    model?.config.tierMlThresholds,
+  );
 
   const spotifyCps = lookupSpotifyCps(
     adRates,
@@ -567,8 +571,9 @@ export function predictPaidDelivery(
 export function algoPositioningBand(
   saves: number,
   tier: ArtistTier,
+  saveCountBands: ForecastModel["saveCountBands"],
 ): AlgoPositioningResult {
-  const thresholds = SAVE_COUNT_BANDS[tier];
+  const thresholds = saveCountBands[tier];
 
   let band: AlgoBand;
   if (saves < thresholds.p25) {
@@ -660,10 +665,12 @@ export interface BuildStreamCurveOptions {
  * bump at/beyond the wk1 boundary; kernel is clamped to the available window.
  */
 export function composeStreamCurvePct(
+  model: ForecastModel,
   options?: BuildStreamCurveOptions,
 ): number[] {
   const percentile = options?.percentile ?? "median";
-  const trend = STREAM_CURVE_TREND[percentile];
+  const trend = model.trend[percentile];
+  const dowByIso = dowMultiplierByIso(model.dow);
   const offset =
     options?.editorialDayNumber ??
     (options?.releaseDate != null
@@ -677,11 +684,11 @@ export function composeStreamCurvePct(
   const composed = trend.map((trendPct, index) => {
     const dayNumber = index + 1;
     const iso = isoWeekdayOnCampaignDay(releaseIso, dayNumber);
-    const dow = STREAM_DOW_MULTIPLIER_BY_ISO[iso]!;
+    const dow = dowByIso[iso]!;
     const kernelIndex = dayNumber - offset;
     const editorial =
-      kernelIndex >= 0 && kernelIndex < STREAM_EDITORIAL_KERNEL.length
-        ? STREAM_EDITORIAL_KERNEL[kernelIndex]!
+      kernelIndex >= 0 && kernelIndex < model.editorialKernel.length
+        ? model.editorialKernel[kernelIndex]!
         : 0;
     return trendPct * dow + editorial;
   });
@@ -698,10 +705,11 @@ export function composeStreamCurvePct(
 }
 
 export function buildStreamCurve(
+  model: ForecastModel,
   week1Streams: number,
   options?: BuildStreamCurveOptions,
 ): StreamCurveForecast {
-  const dailyPct = composeStreamCurvePct(options);
+  const dailyPct = composeStreamCurvePct(model, options);
 
   const dailyStreams = dailyPct.map((pct) =>
     Math.round((week1Streams * pct) / 100),
@@ -723,6 +731,7 @@ export function buildStreamCurve(
 }
 
 export function expectedStreamsOnDay(
+  model: ForecastModel,
   week1Streams: number,
   dayNumber: number,
   options?: BuildStreamCurveOptions,
@@ -731,7 +740,7 @@ export function expectedStreamsOnDay(
     throw new RangeError(`dayNumber must be 1–28, got ${dayNumber}`);
   }
 
-  const dailyPct = composeStreamCurvePct(options)[dayNumber - 1]!;
+  const dailyPct = composeStreamCurvePct(model, options)[dayNumber - 1]!;
   return Math.round((week1Streams * dailyPct) / 100);
 }
 
@@ -739,6 +748,7 @@ export function computeLockedForecast(
   inputs: ReleaseForecastInputs,
   coefficients: ForecastCoefficients,
   adRates: AdRates,
+  model: ForecastModel,
   options: { releaseDate: string | Date },
 ): {
   streams: StreamsForecast;
@@ -748,7 +758,8 @@ export function computeLockedForecast(
   algoPositioning: AlgoPositioningResult;
   streamCurve: StreamCurveForecast;
 } {
-  const magnitude = RELEASE_TYPE_MAGNITUDE_MULTIPLIER[inputs.releaseType];
+  const magnitude =
+    model.releaseTypeMagnitudeMultipliers[inputs.releaseType];
 
   const rawStreams = predictStreams(inputs, coefficients);
   const rawSaves = predictSaves(inputs, coefficients, {
@@ -769,15 +780,22 @@ export function computeLockedForecast(
       week1Streams > 0 ? (week1Saves / week1Streams) * 100 : rawSaves.impliedSaveRate,
   };
 
-  const adImpact = predictAdImpact(inputs, adRates);
+  const adImpact = predictAdImpact(inputs, adRates, model);
   const metaDelivery = predictPaidDelivery(
     inputs.metaSpendPlanned,
     inputs.metaObjective,
     adRates,
   );
-  const tier = artistTierFromMonthlyListeners(inputs.monthlyListeners);
-  const algoPositioning = algoPositioningBand(saves.week1Saves, tier);
-  const streamCurve = buildStreamCurve(streams.week1Streams, {
+  const tier = artistTierFromMonthlyListeners(
+    inputs.monthlyListeners,
+    model.config.tierMlThresholds,
+  );
+  const algoPositioning = algoPositioningBand(
+    saves.week1Saves,
+    tier,
+    model.saveCountBands,
+  );
+  const streamCurve = buildStreamCurve(model, streams.week1Streams, {
     releaseDate: options.releaseDate,
   });
 

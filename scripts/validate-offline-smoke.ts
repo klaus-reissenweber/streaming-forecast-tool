@@ -32,8 +32,11 @@ import {
   type RegressionModel,
 } from "@/lib/forecast";
 import { resolveLastRetrainAt } from "@/lib/load-last-retrain-at";
+import { buildFallbackActiveModel } from "@/lib/model/active-model";
 import { parseDailyData } from "@/lib/parse-daily-data";
 import { validateDailyDay } from "@/lib/validate-daily-day";
+
+const MODEL = buildFallbackActiveModel();
 
 function assert(condition: boolean, message: string): void {
   if (!condition) {
@@ -121,7 +124,7 @@ function baseInputs(
 }
 
 console.log("=== empty dashboard / archive ===");
-const emptyDash = buildDashboardViewModel([], new Map());
+const emptyDash = buildDashboardViewModel([], new Map(), MODEL);
 assert(emptyDash.rows.length === 0, "dashboard rows should be empty");
 assert(emptyDash.summary.totalActive === 0, "totalActive should be 0");
 assert(emptyDash.summary.totalFlags === 0, "totalFlags should be 0");
@@ -131,7 +134,7 @@ assert(
 );
 console.log("PASS: empty dashboard view model");
 
-const emptyArchive = buildArchiveViewModel([], new Map());
+const emptyArchive = buildArchiveViewModel([], new Map(), MODEL);
 assert(emptyArchive.rows.length === 0, "archive rows should be empty");
 assert(emptyArchive.summary.totalClosed === 0, "totalClosed should be 0");
 assert(
@@ -235,7 +238,7 @@ assert(
 
 // (a) Thursday compose = STREAM_CURVE_BASELINE (derived view) + wk1 = 100%.
 // Catalog-fitted trend/kernel replaced the Elderbrook seed absolute targets.
-const thu = composeStreamCurvePct({ releaseDate: "2026-05-28" });
+const thu = composeStreamCurvePct(MODEL, { releaseDate: "2026-05-28" });
 for (let i = 0; i < thu.length; i++) {
   const diff = Math.abs(thu[i]! - STREAM_CURVE_BASELINE.median[i]!);
   assert(
@@ -263,7 +266,7 @@ console.log(
 );
 
 // (b) Friday: d1 editorial peak; Fridays high / Sundays low in the tail; wk1=100
-const fri = composeStreamCurvePct({ releaseDate: "2026-05-29" });
+const fri = composeStreamCurvePct(MODEL, { releaseDate: "2026-05-29" });
 const friMax = Math.max(...fri);
 assert(fri.indexOf(friMax) === 0, `Fri peak should be d1, got d${fri.indexOf(friMax) + 1}`);
 assert(fri[0]! > fri[1]!, "Fri d1 editorial peak > d2");
@@ -288,24 +291,28 @@ const focus = computeLockedForecast(
   baseInputs("focus_track"),
   STUB_COEFFICIENTS,
   STUB_AD_RATES,
+  MODEL,
   lockOpts,
 );
 const alternate = computeLockedForecast(
   baseInputs("alternate_version"),
   STUB_COEFFICIENTS,
   STUB_AD_RATES,
+  MODEL,
   lockOpts,
 );
 const single = computeLockedForecast(
   baseInputs("single"),
   STUB_COEFFICIENTS,
   STUB_AD_RATES,
+  MODEL,
   lockOpts,
 );
 const albumTrack = computeLockedForecast(
   baseInputs("album_track"),
   STUB_COEFFICIENTS,
   STUB_AD_RATES,
+  MODEL,
   lockOpts,
 );
 

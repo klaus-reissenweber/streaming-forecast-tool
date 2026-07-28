@@ -11,6 +11,8 @@ export interface MetricCardsProps {
   algoBandLabel: string;
   algoBandSublabel: string;
   modelConfidenceR2: number;
+  /** e.g. "db:0306ceae fitted_at=…" or "fallback" */
+  activeModelSource: string;
 }
 
 const COUNT_UP_STAGGER_MS = 40;
@@ -123,6 +125,7 @@ export function MetricCards({
   algoBandLabel,
   algoBandSublabel,
   modelConfidenceR2,
+  activeModelSource,
 }: MetricCardsProps) {
   const algoTag = algoBandSublabel === "Live pace" ? "[LIVE]" : "[LOCKED]";
   const algoTagClass =
@@ -199,7 +202,7 @@ export function MetricCards({
             tag="[MODEL]"
             tagClass="bracket-tag--neutral"
             label="Model confidence"
-            sublabel="streams_d0 R²"
+            sublabel={`streams_d0 R² · ${activeModelSource}`}
             value={
               <AnimatedR2Metric
                 value={modelConfidenceR2}

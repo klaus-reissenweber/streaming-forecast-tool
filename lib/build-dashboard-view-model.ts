@@ -2,6 +2,11 @@ import { EDITORIAL_TIER_DEFINITIONS } from "@/lib/constants";
 import { deltaTone } from "@/lib/build-archive-view-model";
 import { computeFlagsForRelease, type FlagType, type ReleaseFlag } from "@/lib/flags";
 import type { EditorialTier, Genre } from "@/lib/forecast";
+import type { ActiveModel } from "@/lib/model/active-model";
+import {
+  formatActiveModelSource,
+  type ForecastModel,
+} from "@/lib/model/forecast-model";
 import {
   computeMonitoringSummary,
   emptyMonitoringSummary,
@@ -65,6 +70,8 @@ export interface DashboardSummary {
   healthDistribution: HealthDistribution;
   totalFlags: number;
   recentFlags: RecentFlag[];
+  /** DB row id / fitted_at, or "fallback" — for prod observability. */
+  activeModelSource: string;
 }
 
 export interface DashboardViewModel {
@@ -141,6 +148,7 @@ function formatRecentFlagTimestamp(isoTimestamp: string): string {
 function buildMonitoringForRelease(
   release: ReleaseRecord,
   dailyData: DailyDataPoint[],
+  model: ForecastModel,
 ): MonitoringSummary {
   const locked = {
     streams: release.locked_forecast_streams,
@@ -148,18 +156,19 @@ function buildMonitoringForRelease(
   };
 
   if (dailyData.length === 0) {
-    return emptyMonitoringSummary(locked, release.release_date);
+    return emptyMonitoringSummary(locked, release.release_date, model);
   }
 
   const inputs = releaseRowToForecastInputs(release);
-  return computeMonitoringSummary(release, inputs, dailyData, locked);
+  return computeMonitoringSummary(release, inputs, dailyData, locked, model);
 }
 
 function buildDashboardRow(
   release: ReleaseRecord,
   dailyData: DailyDataPoint[],
+  model: ForecastModel,
 ): DashboardRow {
-  const monitoring = buildMonitoringForRelease(release, dailyData);
+  const monitoring = buildMonitoringForRelease(release, dailyData, model);
   const { health } = monitoring;
   const inputs = releaseRowToForecastInputs(release);
   const locked = {
@@ -169,7 +178,14 @@ function buildDashboardRow(
   const flags =
     dailyData.length === 0
       ? []
-      : computeFlagsForRelease(release, inputs, dailyData, locked, monitoring);
+      : computeFlagsForRelease(
+          release,
+          inputs,
+          dailyData,
+          locked,
+          monitoring,
+          model,
+        );
 
   const tierLabel = EDITORIAL_TIER_DEFINITIONS[release.editorial_tier].label;
 
@@ -205,6 +221,7 @@ function buildRecentFlags(
   releases: ReleaseRecord[],
   dailyDataByReleaseId: Map<string, DailyDataPoint[]>,
   now: Date,
+  model: ForecastModel,
 ): RecentFlag[] {
   const cutoffMs = now.getTime() - RECENT_FLAG_WINDOW_MS;
   const recent: RecentFlag[] = [];
@@ -225,7 +242,7 @@ function buildRecentFlags(
       continue;
     }
 
-    const monitoring = buildMonitoringForRelease(release, dailyData);
+    const monitoring = buildMonitoringForRelease(release, dailyData, model);
     const inputs = releaseRowToForecastInputs(release);
     const locked = {
       streams: release.locked_forecast_streams,
@@ -237,6 +254,7 @@ function buildRecentFlags(
       dailyData,
       locked,
       monitoring,
+      model,
     );
 
     for (const flag of flags) {
@@ -295,13 +313,16 @@ function buildHealthDistribution(rows: DashboardRow[]): HealthDistribution {
 export function buildDashboardViewModel(
   releases: ReleaseRecord[],
   dailyDataByReleaseId: Map<string, DailyDataPoint[]>,
+  model: ActiveModel,
   options?: { now?: Date },
 ): DashboardViewModel {
   const now = options?.now ?? new Date();
+  const forecastModel: ForecastModel = model;
   const rows = releases.map((release) =>
     buildDashboardRow(
       release,
       dailyDataByReleaseId.get(release.id) ?? [],
+      forecastModel,
     ),
   );
 
@@ -313,7 +334,13 @@ export function buildDashboardViewModel(
       totalActive: rows.length,
       healthDistribution: buildHealthDistribution(rows),
       totalFlags,
-      recentFlags: buildRecentFlags(releases, dailyDataByReleaseId, now),
+      recentFlags: buildRecentFlags(
+        releases,
+        dailyDataByReleaseId,
+        now,
+        forecastModel,
+      ),
+      activeModelSource: formatActiveModelSource(model),
     },
   };
 }

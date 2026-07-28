@@ -2,11 +2,13 @@
 
 import { redirect } from "next/navigation";
 import { computeLockedForecast } from "@/lib/forecast";
+import { loadActiveModel } from "@/lib/load-active-model";
 import { loadForecastData } from "@/lib/load-forecast-data";
 import {
   toNewReleaseInsertRow,
   toReleaseForecastInputs,
 } from "@/lib/map-new-release";
+import { logActiveModelSource } from "@/lib/model/forecast-model";
 import { rawValuesFromFormData } from "@/lib/parse-new-release-form-data";
 import {
   RELEASE_SAVE_ERROR_FATAL,
@@ -51,11 +53,35 @@ export async function createRelease(
   }
 
   try {
-    const { coefficients, adRates, modelVersionId } = await loadForecastData();
+    const [model, forecastData] = await Promise.all([
+      loadActiveModel(),
+      loadForecastData(),
+    ]);
+    logActiveModelSource(model, "createRelease");
+
+    const { coefficients, adRates, modelVersionId: legacyVersionId } =
+      forecastData;
+    // Prefer consolidated version row id when reading from DB.
+    const modelVersionId =
+      model.source === "db" && model.id ? model.id : legacyVersionId;
+
+    // Active model owns streams_d0 + curve/bands; refinement d1–d7 stay legacy.
+    const coefficientsWithActiveD0 = {
+      ...coefficients,
+      streams: {
+        ...coefficients.streams,
+        streams_d0: model.streamsD0,
+      },
+    };
+
     const inputs = toReleaseForecastInputs(parsed.values);
-    const forecast = computeLockedForecast(inputs, coefficients, adRates, {
-      releaseDate: parsed.values.releaseDate,
-    });
+    const forecast = computeLockedForecast(
+      inputs,
+      coefficientsWithActiveD0,
+      adRates,
+      model,
+      { releaseDate: parsed.values.releaseDate },
+    );
 
     const row = toNewReleaseInsertRow(parsed.values, {
       lockedForecastStreams: forecast.streams.week1Streams,

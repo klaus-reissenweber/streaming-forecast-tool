@@ -18,6 +18,11 @@ import {
   type StreamCurveForecast,
 } from "@/lib/forecast";
 import {
+  formatActiveModelSource,
+  type ForecastModel,
+} from "@/lib/model/forecast-model";
+import type { ActiveModel } from "@/lib/model/active-model";
+import {
   computeMonitoringSummary,
   emptyMonitoringSummary,
   type MonitoringSummary,
@@ -57,6 +62,8 @@ export interface ReleaseViewModel {
   algoPositioning: AlgoPositioningResult;
   channelMix: ChannelMixRecommendation;
   modelConfidenceR2: number;
+  /** DB row id / fitted_at, or "fallback" — for prod observability. */
+  activeModelSource: string;
   streamCurve: StreamCurveForecast;
   actualStreamsByDay: (number | null)[];
   monitoring: MonitoringSummary;
@@ -92,10 +99,12 @@ export function buildReleaseViewModel(
   dailyData: DailyDataPoint[],
   adRates: AdRates,
   streamsD0R2: number,
+  model: ActiveModel,
 ): ReleaseViewModel {
   const daysEntered = dailyData.length;
   const phase: ReleasePhase = daysEntered === 0 ? "pre-release" : "monitoring";
   const inputs = releaseRowToForecastInputs(release);
+  const forecastModel: ForecastModel = model;
 
   const locked: LockedForecastSummary = {
     streams: release.locked_forecast_streams,
@@ -110,22 +119,42 @@ export function buildReleaseViewModel(
 
   const tier = artistTierFromMonthlyListeners(
     release.monthly_listeners_at_release,
+    forecastModel.config.tierMlThresholds,
   );
-  const algoPositioning = algoPositioningBand(release.locked_forecast_saves, tier);
-  const channelMix = recommendChannelMix(inputs, adRates);
-  const streamCurve = buildStreamCurve(release.locked_forecast_streams, {
-    releaseDate: release.release_date,
-  });
+  const algoPositioning = algoPositioningBand(
+    release.locked_forecast_saves,
+    tier,
+    forecastModel.saveCountBands,
+  );
+  const channelMix = recommendChannelMix(inputs, adRates, forecastModel);
+  const streamCurve = buildStreamCurve(
+    forecastModel,
+    release.locked_forecast_streams,
+    { releaseDate: release.release_date },
+  );
   const { actualStreamsByDay } = chartSeriesFromDailyData(dailyData);
 
   const monitoring =
     phase === "monitoring"
-      ? computeMonitoringSummary(release, inputs, dailyData, locked)
-      : emptyMonitoringSummary(locked, release.release_date);
+      ? computeMonitoringSummary(
+          release,
+          inputs,
+          dailyData,
+          locked,
+          forecastModel,
+        )
+      : emptyMonitoringSummary(locked, release.release_date, forecastModel);
 
   const flags =
     phase === "monitoring"
-      ? computeFlagsForRelease(release, inputs, dailyData, locked, monitoring)
+      ? computeFlagsForRelease(
+          release,
+          inputs,
+          dailyData,
+          locked,
+          monitoring,
+          forecastModel,
+        )
       : [];
 
   return {
@@ -147,6 +176,7 @@ export function buildReleaseViewModel(
     algoPositioning,
     channelMix,
     modelConfidenceR2: streamsD0R2,
+    activeModelSource: formatActiveModelSource(model),
     streamCurve,
     actualStreamsByDay,
     monitoring,

@@ -1,4 +1,3 @@
-import { SAVE_COUNT_BANDS } from "@/lib/constants";
 import { formatCompactNumber } from "@/lib/format";
 import type {
   AlgoBand,
@@ -16,6 +15,7 @@ import {
   buildStreamCurve,
   projectFromCumulativePace,
 } from "@/lib/forecast";
+import type { ForecastModel } from "@/lib/model/forecast-model";
 import type { DailyDataPoint, ReleaseRecord } from "@/lib/map-release-row";
 
 /** ±10% band for on-track / outperforming / lagging (v1). */
@@ -227,12 +227,13 @@ function sumSavesOnStreamPaceDays(
   return total;
 }
 
-/** Save pace vs tier-typical (SAVE_COUNT_BANDS p50 from lib/constants.ts). */
+/** Save pace vs tier-typical (saveCountBands p50 from active model). */
 export function computeSaveVelocitySummary(
   actuals: DailyActuals,
   tier: ArtistTier,
   cumExpectedPct: number,
   cumStreams: number,
+  model: ForecastModel,
 ): SaveVelocitySummary {
   const saveDaysEntered = countSaveDaysEntered(actuals.savesByDay);
   const cumSaves = sumSavesOnStreamPaceDays(
@@ -256,7 +257,7 @@ export function computeSaveVelocitySummary(
     cumSaves / (cumExpectedPct / 100),
   );
 
-  const tierTypicalSaves = SAVE_COUNT_BANDS[tier].p50;
+  const tierTypicalSaves = model.saveCountBands[tier].p50;
   const vsTypicalPct =
     tierTypicalSaves > 0
       ? (projectedWeek1Saves / tierTypicalSaves) * 100
@@ -268,6 +269,7 @@ export function computeSaveVelocitySummary(
   const liveAlgoBand = algoPositioningBand(
     projectedWeek1Saves,
     tier,
+    model.saveCountBands,
   ).band;
 
   const display =
@@ -292,13 +294,19 @@ export function computeMonitoringSummary(
   _inputs: ReleaseForecastInputs,
   dailyData: DailyDataPoint[],
   locked: MonitoringLockedForecast,
+  model: ForecastModel,
 ): MonitoringSummary {
   const actuals = dailyDataToActuals(dailyData);
   const tier = artistTierFromMonthlyListeners(
     release.monthly_listeners_at_release,
+    model.config.tierMlThresholds,
   );
   const curveOptions = { releaseDate: release.release_date };
-  const lockedStreamCurve = buildStreamCurve(locked.streams, curveOptions);
+  const lockedStreamCurve = buildStreamCurve(
+    model,
+    locked.streams,
+    curveOptions,
+  );
   const paceCurve = lockedStreamCurve.dailyPct;
 
   const health = computeHealthSummary(
@@ -312,16 +320,21 @@ export function computeMonitoringSummary(
     tier,
     health.cumExpectedPct,
     health.cumActual,
+    model,
   );
 
   const projectedStreamCurve =
     health.streamDaysEntered > 0
-      ? buildStreamCurve(health.projectedWk1, curveOptions)
+      ? buildStreamCurve(model, health.projectedWk1, curveOptions)
       : null;
 
   const liveAlgoPositioning =
     saveVelocity.projectedWeek1Saves != null
-      ? algoPositioningBand(saveVelocity.projectedWeek1Saves, tier)
+      ? algoPositioningBand(
+          saveVelocity.projectedWeek1Saves,
+          tier,
+          model.saveCountBands,
+        )
       : null;
 
   return {
@@ -337,8 +350,11 @@ export function computeMonitoringSummary(
 export function emptyMonitoringSummary(
   locked: MonitoringLockedForecast,
   releaseDate: string,
+  model: ForecastModel,
 ): MonitoringSummary {
-  const lockedStreamCurve = buildStreamCurve(locked.streams, { releaseDate });
+  const lockedStreamCurve = buildStreamCurve(model, locked.streams, {
+    releaseDate,
+  });
   const health = computeHealthSummary(
     { streamsByDay: {} },
     locked.streams,
@@ -353,6 +369,7 @@ export function emptyMonitoringSummary(
       tier,
       0,
       0,
+      model,
     ),
     lockedStreamCurve,
     projectedStreamCurve: null,

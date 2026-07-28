@@ -1,8 +1,12 @@
-import { SAVE_RATE_BANDS } from "@/lib/constants";
 import { computeWeek1Actuals } from "@/lib/compute-week1-actuals";
 import { formatLockTimestamp, formatReleaseDate } from "@/lib/format";
 import type { Genre } from "@/lib/forecast";
 import { isTimestampAfter } from "@/lib/is-timestamp-after";
+import type { ActiveModel } from "@/lib/model/active-model";
+import {
+  formatActiveModelSource,
+  type ForecastModel,
+} from "@/lib/model/forecast-model";
 import {
   HEALTH_LAGGING_THRESHOLD_PCT,
   HEALTH_OUTPERFORM_THRESHOLD_PCT,
@@ -65,6 +69,8 @@ export interface ArchiveSummary {
   retrainProgressCount: number;
   /** ISO cutoff used for retrainProgressCount (max fitted_at / RETRAIN_LAST_AT). */
   lastRetrainAt: string | null;
+  /** DB row id / fitted_at, or "fallback" — for prod observability. */
+  activeModelSource: string;
 }
 
 export interface ArchiveViewModel {
@@ -122,12 +128,13 @@ export function deltaTone(deltaPct: number | null): DeltaTone | null {
 function classifySaveRateVsBand(
   actualSaveRate: number | null,
   genre: Genre,
+  model: ForecastModel,
 ): SaveRateVsBand | null {
   if (actualSaveRate == null) {
     return null;
   }
 
-  const band = SAVE_RATE_BANDS[genre];
+  const band = model.saveRateBands[genre];
   if (actualSaveRate < band.lo) {
     return "below";
   }
@@ -140,6 +147,7 @@ function classifySaveRateVsBand(
 function buildArchiveRow(
   release: ReleaseRecord,
   dailyData: DailyDataPoint[],
+  model: ForecastModel,
 ): ArchiveRow {
   const wk1 = computeWeek1Actuals(dailyData);
   const lockedSaveRate = computeSaveRate(
@@ -190,8 +198,12 @@ function buildArchiveRow(
     savesDeltaPct: savesDeltaResult.deltaPct,
     savesDeltaTone: deltaTone(savesDeltaResult.deltaPct),
 
-    saveRateBand: SAVE_RATE_BANDS[release.genre],
-    saveRateVsBand: classifySaveRateVsBand(actualSaveRate, release.genre),
+    saveRateBand: model.saveRateBands[release.genre],
+    saveRateVsBand: classifySaveRateVsBand(
+      actualSaveRate,
+      release.genre,
+      model,
+    ),
 
     detailHref: `/release/${release.id}`,
   };
@@ -275,12 +287,15 @@ export function sortArchiveRows(
 export function buildArchiveViewModel(
   releases: ReleaseRecord[],
   dailyDataByReleaseId: Map<string, DailyDataPoint[]>,
+  model: ActiveModel,
   options?: { sort?: ArchiveSortOption; lastRetrainAt?: string | null },
 ): ArchiveViewModel {
+  const forecastModel: ForecastModel = model;
   const rows = releases.map((release) =>
     buildArchiveRow(
       release,
       dailyDataByReleaseId.get(release.id) ?? [],
+      forecastModel,
     ),
   );
 
@@ -301,6 +316,7 @@ export function buildArchiveViewModel(
       retrainEligible,
       retrainProgressCount,
       lastRetrainAt,
+      activeModelSource: formatActiveModelSource(model),
     },
   };
 }

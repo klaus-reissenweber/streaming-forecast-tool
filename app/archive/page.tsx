@@ -11,8 +11,10 @@ import {
 import { GENRES } from "@/lib/constants";
 import { formatReleaseDate } from "@/lib/format";
 import type { Genre } from "@/lib/forecast";
+import { loadActiveModel } from "@/lib/load-active-model";
 import { loadClosedReleasesWithDailyData } from "@/lib/load-closed-releases";
 import { loadLastRetrainAt } from "@/lib/load-last-retrain-at";
+import { logActiveModelSource } from "@/lib/model/forecast-model";
 
 export const metadata: Metadata = {
   title: "Release archive",
@@ -71,22 +73,30 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
   const genre = parseGenreFilter(params.genre);
   const sort = parseSortOption(params.sort);
 
-  const [{ releases, dailyDataByReleaseId }, lastRetrainAt] = await Promise.all([
-    loadClosedReleasesWithDailyData({ genre }),
-    loadLastRetrainAt(),
-  ]);
+  const [{ releases, dailyDataByReleaseId }, lastRetrainAt, model] =
+    await Promise.all([
+      loadClosedReleasesWithDailyData({ genre }),
+      loadLastRetrainAt(),
+      loadActiveModel(),
+    ]);
+  logActiveModelSource(model, "archive");
 
-  const viewModel = buildArchiveViewModel(releases, dailyDataByReleaseId, {
-    sort,
-    lastRetrainAt,
-  });
+  const viewModel = buildArchiveViewModel(
+    releases,
+    dailyDataByReleaseId,
+    model,
+    {
+      sort,
+      lastRetrainAt,
+    },
+  );
 
   const closedReleaseCount = viewModel.summary.totalClosed;
   const dateRange = formatArchiveDateRange(viewModel.rows);
   const closedReleaseLabel = `${closedReleaseCount} closed release${closedReleaseCount === 1 ? "" : "s"}`;
   const archiveMetaLine = dateRange
-    ? `${closedReleaseLabel} · ${dateRange}`
-    : closedReleaseLabel;
+    ? `${closedReleaseLabel} · ${dateRange} · model ${viewModel.summary.activeModelSource}`
+    : `${closedReleaseLabel} · model ${viewModel.summary.activeModelSource}`;
 
   return (
     <main className="mx-auto max-w-6xl px-5 py-8">

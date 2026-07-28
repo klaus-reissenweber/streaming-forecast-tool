@@ -7,13 +7,15 @@ import {
 } from "@/lib/fixtures/elderbrook-monitoring";
 import { computeFlags } from "@/lib/flags";
 import { composeStreamCurvePct } from "@/lib/forecast";
+import { buildFallbackActiveModel } from "@/lib/model/active-model";
 import { computeHealthSummary, computeMonitoringSummary } from "@/lib/monitoring";
 import type { DailyDataPoint, ReleaseRecord } from "@/lib/map-release-row";
 
+const MODEL = buildFallbackActiveModel();
 const LOCKED_STREAMS = ELDERBROOK_LOCKED_STREAMS;
 /** Thursday release — matches closed Elderbrook calibration. */
 const ELDERBROOK_RELEASE_DATE = "2026-05-28";
-const THURSDAY_CURVE = composeStreamCurvePct({
+const THURSDAY_CURVE = composeStreamCurvePct(MODEL, {
   releaseDate: ELDERBROOK_RELEASE_DATE,
 });
 
@@ -151,6 +153,7 @@ const monitoring = computeMonitoringSummary(
   elderbrookInputs,
   ELDERBROOK_D1_D7,
   locked,
+  MODEL,
 );
 
 const flags = computeFlags({
@@ -158,6 +161,7 @@ const flags = computeFlags({
   inputs: elderbrookInputs,
   dailyData: ELDERBROOK_D1_D7,
   locked,
+  model: MODEL,
   monitoring,
   tier: "established",
 });

@@ -1,5 +1,6 @@
 import type { AdImpactForecast, AdRates, ReleaseForecastInputs } from "@/lib/forecast";
 import { predictAdImpact } from "@/lib/forecast";
+import type { ForecastModel } from "@/lib/model/forecast-model";
 
 export interface ChannelMixRecommendation {
   spotify_pct: number;
@@ -33,8 +34,9 @@ export function recommendChannelMix(
     | "metaObjective"
   >,
   adRates: AdRates,
+  model?: Pick<ForecastModel, "config">,
 ): ChannelMixRecommendation {
-  const adImpact = predictAdImpact(inputs, adRates);
+  const adImpact = predictAdImpact(inputs, adRates, model);
   const spotifyCps = adImpact.spotify.costPerStream;
   const metaCps = adImpact.meta.costPerStream;
   const totalSpend = inputs.spotifySpendPlanned + inputs.metaSpendPlanned;

@@ -13,8 +13,10 @@ import { ReleasePageHeader } from "@/components/release/ReleasePageHeader";
 import { StreamCurveChart } from "@/components/release/StreamCurveChart";
 import { ALGO_BAND_DISPLAY } from "@/lib/algo-positioning-display";
 import { buildReleaseViewModel } from "@/lib/build-release-view-model";
+import { loadActiveModel } from "@/lib/load-active-model";
 import { loadForecastData } from "@/lib/load-forecast-data";
 import { loadDailyData, loadRelease } from "@/lib/load-release";
+import { logActiveModelSource } from "@/lib/model/forecast-model";
 
 interface ReleasePageProps {
   params: Promise<{ id: string }>;
@@ -45,12 +47,17 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
   }
 
   const dailyData = await loadDailyData(id);
-  const { adRates, coefficients } = await loadForecastData();
+  const [model, { adRates, coefficients }] = await Promise.all([
+    loadActiveModel(),
+    loadForecastData(),
+  ]);
+  logActiveModelSource(model, `release/${id}`);
   const viewModel = buildReleaseViewModel(
     release,
     dailyData,
     adRates,
-    coefficients.streams.streams_d0.r2,
+    model.source === "db" ? model.streamsD0.r2 : coefficients.streams.streams_d0.r2,
+    model,
   );
 
   const { health, saveVelocity, liveAlgoPositioning } = viewModel.monitoring;
@@ -102,6 +109,7 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
               algoBandLabel={liveAlgoBandLabel}
               algoBandSublabel={algoBandSublabel}
               modelConfidenceR2={viewModel.modelConfidenceR2}
+              activeModelSource={viewModel.activeModelSource}
             />
           </div>
         </section>

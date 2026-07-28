@@ -1,7 +1,7 @@
-import { SAVE_COUNT_BANDS, SAVE_RATE_BANDS } from "@/lib/constants";
 import { formatCompactNumber, formatPercent } from "@/lib/format";
 import type { ArtistTier, ForecastDay, ReleaseForecastInputs } from "@/lib/forecast";
 import { artistTierFromMonthlyListeners, expectedStreamsOnDay } from "@/lib/forecast";
+import type { ForecastModel } from "@/lib/model/forecast-model";
 import type { DailyDataPoint, ReleaseRecord } from "@/lib/map-release-row";
 import {
   dailyDataToActuals,
@@ -25,6 +25,7 @@ export interface FlagDetectionContext {
   locked: MonitoringLockedForecast;
   monitoring: MonitoringSummary;
   tier: ArtistTier;
+  model: ForecastModel;
 }
 
 /** Fractional drop in save rate (last 2 vs prior 2 days) that triggers a warning. */
@@ -81,8 +82,8 @@ export function computeFlags(ctx: FlagDetectionContext): ReleaseFlag[] {
   const actuals = dailyDataToActuals(ctx.dailyData);
   const { health, saveVelocity } = ctx.monitoring;
   const { streamsByDay, savesByDay } = actuals;
-  const tierBands = SAVE_COUNT_BANDS[ctx.tier];
-  const genreBand = SAVE_RATE_BANDS[ctx.release.genre];
+  const tierBands = ctx.model.saveCountBands[ctx.tier];
+  const genreBand = ctx.model.saveRateBands[ctx.release.genre];
 
   if (health.streamDaysEntered === 1 && isValidStreamDay(streamsByDay[1])) {
     flags.push({
@@ -96,7 +97,7 @@ export function computeFlags(ctx: FlagDetectionContext): ReleaseFlag[] {
 
   const d1Streams = streamsByDay[1];
   if (isValidStreamDay(d1Streams)) {
-    const expectedD1 = expectedStreamsOnDay(ctx.locked.streams, 1, {
+    const expectedD1 = expectedStreamsOnDay(ctx.model, ctx.locked.streams, 1, {
       releaseDate: ctx.release.release_date,
     });
     if (d1Streams > expectedD1 * 5) {
@@ -196,6 +197,7 @@ export function computeFlagsForRelease(
   dailyData: DailyDataPoint[],
   locked: MonitoringLockedForecast,
   monitoring: MonitoringSummary,
+  model: ForecastModel,
 ): ReleaseFlag[] {
   return computeFlags({
     release,
@@ -203,6 +205,10 @@ export function computeFlagsForRelease(
     dailyData,
     locked,
     monitoring,
-    tier: artistTierFromMonthlyListeners(release.monthly_listeners_at_release),
+    tier: artistTierFromMonthlyListeners(
+      release.monthly_listeners_at_release,
+      model.config.tierMlThresholds,
+    ),
+    model,
   });
 }
