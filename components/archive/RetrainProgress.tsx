@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useEffect, useState, useTransition } from "react";
+import { enqueueRetrainJob } from "@/app/archive/actions";
 import { RETRAIN_THRESHOLD } from "@/lib/constants";
 import { useCountUp } from "@/lib/hooks/use-count-up";
+import type { RetrainJobSummary } from "@/lib/load-retrain-job";
 
 export interface RetrainProgressProps {
   /** Eligible releases closed after last retrain (numerator). */
@@ -11,6 +14,10 @@ export interface RetrainProgressProps {
   threshold?: number;
   /** ISO last-retrain cutoff shown for operator context. */
   lastRetrainAt?: string | null;
+  /** Latest job for chip + polling (Phase 2a). */
+  initialJob?: RetrainJobSummary | null;
+  /** Whether the signed-in user may enqueue. */
+  canEnqueue?: boolean;
 }
 
 function easeOutExpo(progress: number): number {
@@ -42,10 +49,25 @@ function formatCutoff(iso: string): string {
   });
 }
 
+function statusTagClass(status: RetrainJobSummary["status"]): string {
+  switch (status) {
+    case "queued":
+      return "bracket-tag--neutral";
+    case "running":
+      return "bracket-tag--accent";
+    case "completed":
+      return "bracket-tag--positive";
+    case "failed":
+      return "bracket-tag--warning";
+  }
+}
+
 export function RetrainProgress({
   progressCount,
   threshold = RETRAIN_THRESHOLD,
   lastRetrainAt = null,
+  initialJob = null,
+  canEnqueue = false,
 }: RetrainProgressProps) {
   const progress = Math.min(progressCount / threshold, 1);
   const remaining = Math.max(0, threshold - progressCount);
@@ -53,6 +75,9 @@ export function RetrainProgress({
 
   const animatedCount = useCountUp(progressCount);
   const [barProgress, setBarProgress] = useState(0);
+  const [job, setJob] = useState<RetrainJobSummary | null>(initialJob);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     const durationMs = getMotionDurationChartMs();
@@ -86,6 +111,62 @@ export function RetrainProgress({
       cancelAnimationFrame(rafId);
     };
   }, [progress]);
+
+  // Poll while job is in flight.
+  useEffect(() => {
+    if (!job || (job.status !== "queued" && job.status !== "running")) {
+      return;
+    }
+
+    let cancelled = false;
+    const tick = async () => {
+      try {
+        const res = await fetch(`/api/retrain-jobs/${job.id}`, {
+          cache: "no-store",
+        });
+        if (!res.ok) {
+          return;
+        }
+        const next = (await res.json()) as RetrainJobSummary | null;
+        if (!cancelled && next) {
+          setJob(next);
+        }
+      } catch {
+        // ignore transient poll errors
+      }
+    };
+
+    const id = window.setInterval(tick, 3000);
+    void tick();
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [job]);
+
+  const onEnqueue = () => {
+    setActionError(null);
+    startTransition(async () => {
+      const result = await enqueueRetrainJob();
+      if (!result.success) {
+        setActionError(result.error);
+        return;
+      }
+      setJob({
+        id: result.jobId,
+        status: "queued",
+        createdAt: new Date().toISOString(),
+        startedAt: null,
+        completedAt: null,
+        draftModelId: null,
+        error: null,
+        triggeredEmail: null,
+      });
+    });
+  };
+
+  const inflight =
+    job?.status === "queued" || job?.status === "running" ? job : null;
 
   return (
     <section
@@ -126,7 +207,7 @@ export function RetrainProgress({
             [ELIGIBLE]
           </span>
           <span className="align-middle">
-            Run retrain manually via retrain/retrain.py
+            Enough new closes — enqueue a draft retrain when ready.
           </span>
         </p>
       ) : (
@@ -136,6 +217,57 @@ export function RetrainProgress({
           {lastRetrainAt ? ` (${formatCutoff(lastRetrainAt)})` : ""}
         </p>
       )}
+
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        {canEnqueue ? (
+          <button
+            type="button"
+            onClick={onEnqueue}
+            disabled={isPending || inflight != null}
+            className="rounded-tag border border-border bg-canvas px-3 py-1.5 text-sm font-medium text-foreground hover:border-accent disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isPending ? "Enqueueing…" : "Enqueue retrain"}
+          </button>
+        ) : null}
+
+        {job ? (
+          <p className="text-body-sm text-secondary" data-testid="retrain-job-chip">
+            <span
+              className={`bracket-tag ${statusTagClass(job.status)} mr-1.5 align-middle`}
+            >
+              [{job.status.toUpperCase()}]
+            </span>
+            <span className="align-middle font-mono text-xs">
+              {job.id.slice(0, 8)}
+            </span>
+            {job.status === "completed" && job.draftModelId ? (
+              <>
+                {" · "}
+                <Link
+                  href={`/admin/retrain/approve/${job.draftModelId}`}
+                  className="text-accent-readable hover:underline"
+                >
+                  Review draft
+                </Link>
+                <span className="text-secondary"> (Phase 2b)</span>
+              </>
+            ) : null}
+            {job.status === "failed" && job.error ? (
+              <span className="ml-2 text-semantic-negative">{job.error}</span>
+            ) : null}
+          </p>
+        ) : null}
+      </div>
+
+      {actionError ? (
+        <p className="mt-2 text-body-sm text-semantic-negative">{actionError}</p>
+      ) : null}
+
+      {inflight ? (
+        <p className="mt-2 text-xs text-secondary">
+          GitHub Actions claims queued jobs about every 30 minutes.
+        </p>
+      ) : null}
     </section>
   );
 }

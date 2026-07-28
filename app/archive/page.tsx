@@ -8,12 +8,15 @@ import {
   type ArchiveRow,
   type ArchiveSortOption,
 } from "@/lib/build-archive-view-model";
+import { canRetrain } from "@/lib/auth/retrain-allowed";
+import { requireAllowedUser } from "@/lib/auth/require-allowed-user";
 import { GENRES } from "@/lib/constants";
 import { formatReleaseDate } from "@/lib/format";
 import type { Genre } from "@/lib/forecast";
 import { loadActiveModel } from "@/lib/load-active-model";
 import { loadClosedReleasesWithDailyData } from "@/lib/load-closed-releases";
 import { loadLastRetrainAt } from "@/lib/load-last-retrain-at";
+import { loadLatestRetrainJob } from "@/lib/load-retrain-job";
 import { logActiveModelSource } from "@/lib/model/forecast-model";
 
 export const metadata: Metadata = {
@@ -73,12 +76,19 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
   const genre = parseGenreFilter(params.genre);
   const sort = parseSortOption(params.sort);
 
-  const [{ releases, dailyDataByReleaseId }, lastRetrainAt, model] =
-    await Promise.all([
-      loadClosedReleasesWithDailyData({ genre }),
-      loadLastRetrainAt(),
-      loadActiveModel(),
-    ]);
+  const [
+    { releases, dailyDataByReleaseId },
+    lastRetrainAt,
+    model,
+    latestJob,
+    auth,
+  ] = await Promise.all([
+    loadClosedReleasesWithDailyData({ genre }),
+    loadLastRetrainAt(),
+    loadActiveModel(),
+    loadLatestRetrainJob(),
+    requireAllowedUser(),
+  ]);
   logActiveModelSource(model, "archive");
 
   const viewModel = buildArchiveViewModel(
@@ -90,6 +100,9 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
       lastRetrainAt,
     },
   );
+
+  const canEnqueue =
+    auth.ok && canRetrain(auth.user.email);
 
   const closedReleaseCount = viewModel.summary.totalClosed;
   const dateRange = formatArchiveDateRange(viewModel.rows);
@@ -129,6 +142,8 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
         <RetrainProgress
           progressCount={viewModel.summary.retrainProgressCount}
           lastRetrainAt={viewModel.summary.lastRetrainAt}
+          initialJob={latestJob}
+          canEnqueue={canEnqueue}
         />
 
         <div className="mt-6">

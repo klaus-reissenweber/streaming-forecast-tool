@@ -21,14 +21,30 @@ from db import (
     get_db_client,
     insert_and_promote,
     load_active_ad_rates,
+    load_active_consolidated_payload,
     load_active_r2,
     load_active_snapshot,
     stamp_active_fitted_at,
     utc_now_iso,
 )
+from draft_model import (
+    build_draft_metadata,
+    build_forecast_model_payload,
+    insert_draft_forecast_model,
+)
+from forward_bias import scorer_from_payload
 from fetch import ClosedReleasesBundle, FetchError, fetch_closed_releases_with_daily_data
-from fit import SavesFit, fit_all_derived_models, fit_all_streams_models, fit_saves
+from fit import (
+    RegressionFit,
+    SavesFit,
+    fit_all_derived_models,
+    fit_all_streams_models,
+    fit_saves,
+)
 from guardrails import GuardrailResult, OutlierFlag, R2Comparison, run_guardrails
+
+# Set by --write-draft on success for the job runner to attach to retrain_jobs.
+LAST_DRAFT_MODEL_ID: str | None = None
 from report import (
     BandDeltaLine,
     OutlierReportLine,
@@ -67,6 +83,21 @@ def parse_args(argv: list[str] | None = None) -> config.RetrainFlags:
         ),
     )
     parser.add_argument(
+        "--write-draft",
+        action="store_true",
+        help=(
+            "Fit + write one consolidated model_coefficients draft row "
+            "(status=draft, not active). Skips constants.ts sync and promote. "
+            "Reviewable guardrail failures still write the draft."
+        ),
+    )
+    parser.add_argument(
+        "--job-id",
+        metavar="UUID",
+        default=None,
+        help="Optional retrain_jobs.id to stamp into draft metadata.",
+    )
+    parser.add_argument(
         "--override-insufficient-sample",
         metavar="REASON",
         default=None,
@@ -90,11 +121,14 @@ def parse_args(argv: list[str] | None = None) -> config.RetrainFlags:
     override = args.override_insufficient_sample
     if override is not None:
         override = override.strip() or None
+    job_id = args.job_id.strip() if isinstance(args.job_id, str) else None
     return config.RetrainFlags(
         dry_run=args.dry_run,
         force=args.force,
         skip_constants_sync=args.skip_constants_sync,
         hold_the_commit=args.hold_the_commit,
+        write_draft=args.write_draft,
+        job_id=job_id or None,
         override_insufficient_sample=override,
         stamp_last_retrain=args.stamp_last_retrain,
     )
@@ -207,6 +241,9 @@ def run_stamp_last_retrain() -> int:
 
 
 def run(flags: config.RetrainFlags) -> int:
+    global LAST_DRAFT_MODEL_ID
+    LAST_DRAFT_MODEL_ID = None
+
     if flags.stamp_last_retrain:
         return run_stamp_last_retrain()
 
@@ -245,18 +282,19 @@ def run(flags: config.RetrainFlags) -> int:
         hold_through_guardrail = False
         if not guardrail_result.passed:
             failure = guardrail_result.failure
-            # Hold-the-commit / sample override may continue past
-            # insufficient_sample so weekday curve + bands still fit
-            # (derived on all eligible; regression on post-Cook's).
-            can_hold_through = (
-                failure is not None
-                and failure.code == "insufficient_sample"
-                and len(training_rows) >= 2
-                and (
+            # Reviewable → continue fit + (for write-draft) still write draft.
+            # Hard fail: reproducibility_failed / unknown codes.
+            if failure is not None and failure.code == "r2_degradation":
+                can_hold_through = flags.write_draft and len(training_rows) >= 2
+            elif failure is not None and failure.code == "insufficient_sample":
+                can_hold_through = len(training_rows) >= 2 and (
                     flags.hold_the_commit
+                    or flags.write_draft
                     or bool(flags.override_insufficient_sample)
                 )
-            )
+            else:
+                can_hold_through = False
+
             if not can_hold_through:
                 report = RetrainReport(
                     dry_run=flags.dry_run,
@@ -282,7 +320,18 @@ def run(flags: config.RetrainFlags) -> int:
                 return 1
 
             hold_through_guardrail = True
-            if flags.hold_the_commit and not flags.override_insufficient_sample:
+            if failure is not None and failure.code == "r2_degradation":
+                print(
+                    "WARNING: --write-draft continuing past r2_degradation; "
+                    "draft will record guardrails.passed=false for review."
+                )
+            elif flags.write_draft and not flags.override_insufficient_sample:
+                print(
+                    "WARNING: --write-draft continuing past insufficient_sample; "
+                    f"fitting on all {len(training_rows)} eligible "
+                    "(regression on post-Cook's). Draft guardrails.passed=false."
+                )
+            elif flags.hold_the_commit and not flags.override_insufficient_sample:
                 print(
                     "WARNING: --hold-the-commit continuing past insufficient_sample; "
                     f"fitting weekday curve on all {len(training_rows)} eligible "
@@ -328,7 +377,7 @@ def run(flags: config.RetrainFlags) -> int:
             new_stream_curve=derived_models["stream_curve"].to_coefficients_json(),
         )
 
-        if flags.dry_run and not flags.hold_the_commit:
+        if flags.dry_run and not flags.hold_the_commit and not flags.write_draft:
             promotion_status = "skipped (--dry-run)"
             report = RetrainReport(
                 dry_run=True,
@@ -351,6 +400,93 @@ def run(flags: config.RetrainFlags) -> int:
                 recovery_instructions=None,
             )
             print_retrain_report(report)
+            return 0
+
+        if flags.write_draft:
+            streams_d0_raw = regression_models["streams_d0"]
+            if not isinstance(streams_d0_raw, RegressionFit):
+                raise RuntimeError("streams_d0 fit missing for --write-draft")
+            streams_d0 = streams_d0_raw
+            payload = build_forecast_model_payload(
+                streams_d0=streams_d0,
+                stream_curve=derived_models["stream_curve"],
+                release_type_magnitude=derived_models["release_type_magnitude"],
+                algo_bands=derived_models["algo_bands"],
+                save_rate_bands=derived_models["save_rate_bands"],
+            )
+            live_payload = load_active_consolidated_payload(client)
+            live_scorer = scorer_from_payload(live_payload)
+            metadata = build_draft_metadata(
+                eligible_rows=training_rows,
+                clean_rows=filtered_rows,
+                derived_rows=derived_rows,
+                guardrail_result=guardrail_result,
+                streams_d0=streams_d0,
+                release_type_magnitude=derived_models["release_type_magnitude"],
+                live_scorer=live_scorer,
+                job_id=flags.job_id,
+            )
+            fitted_at = utc_now_iso()
+            draft_id = insert_draft_forecast_model(
+                client,
+                payload=payload,
+                metadata=metadata,
+                streams_d0=streams_d0,
+                fitted_at=fitted_at,
+            )
+            LAST_DRAFT_MODEL_ID = draft_id
+            promotion_status = (
+                f"draft written id={draft_id} "
+                f"(guardrails.passed={guardrail_result.passed})"
+            )
+            print(f"OK: --write-draft → model_coefficients id={draft_id}")
+            print(
+                "forward_bias:",
+                metadata.get("forward_bias"),
+            )
+            report = RetrainReport(
+                dry_run=False,
+                force_r2=flags.force,
+                skip_constants_sync=True,
+                closed_release_count=closed_count,
+                eligible_release_count=eligible_count,
+                sample_size_initial=guardrail_result.sample_size_initial,
+                sample_size_final=guardrail_result.sample_size_final,
+                outlier_lines=_outlier_lines(guardrail_result.outlier_flags),
+                excluded_release_count=len(guardrail_result.excluded_release_ids),
+                r2_lines=_r2_lines(guardrail_result.r2_comparisons),
+                band_deltas=band_deltas,
+                promotion_status=promotion_status,
+                files_written=tuple(files_written),
+                fitted_at=fitted_at,
+                success=True,
+                failure_code=(
+                    None
+                    if guardrail_result.passed
+                    else (
+                        guardrail_result.failure.code
+                        if guardrail_result.failure
+                        else "guardrail_failed"
+                    )
+                ),
+                failure_message=(
+                    None
+                    if guardrail_result.passed
+                    else (
+                        guardrail_result.failure.message
+                        if guardrail_result.failure
+                        else "Guardrails failed (draft still written)."
+                    )
+                ),
+                recovery_instructions=(
+                    None
+                    if guardrail_result.passed
+                    else "Draft written for review; do not activate until resolved."
+                ),
+            )
+            print_retrain_report(report)
+            # Exit 0 so the job worker can mark completed + attach draft_id.
+            # Guardrail issues live on metadata.guardrails / report failure_*.
             return 0
 
         if flags.hold_the_commit:

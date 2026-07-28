@@ -26,13 +26,13 @@ RELEASE_SELECT_COLUMNS_BASE = (
     "id, track_name, artist_name, genre, monthly_listeners, is_feature, "
     "editorial_tier, release_type, spotify_format, meta_spend_planned, "
     "spotify_spend_planned, locked_forecast_streams, status, release_date, "
-    "created_at"
+    "created_at, closed_at"
 )
 RELEASE_SELECT_COLUMNS = (
     "id, track_name, artist_name, genre, monthly_listeners, "
     "monthly_listeners_at_release, is_feature, editorial_tier, release_type, "
     "spotify_format, meta_spend_planned, spotify_spend_planned, "
-    "locked_forecast_streams, status, release_date, created_at"
+    "locked_forecast_streams, status, release_date, created_at, closed_at"
 )
 
 _HAS_ML_AT_RELEASE: bool | None = None
@@ -158,6 +158,13 @@ def _parse_release_row(row: dict[str, Any]) -> ReleaseRecord:
     else:
         created_at = None
 
+    closed_at_raw = row.get("closed_at")
+    closed_at: str | None
+    if isinstance(closed_at_raw, str) and closed_at_raw.strip():
+        closed_at = closed_at_raw.strip()
+    else:
+        closed_at = None
+
     return ReleaseRecord(
         id=release_id,
         track_name=_parse_required_string(row.get("track_name"), "track_name"),
@@ -182,6 +189,7 @@ def _parse_release_row(row: dict[str, Any]) -> ReleaseRecord:
         release_date=release_date,
         monthly_listeners_at_release=monthly_listeners_at_release,
         created_at=created_at,
+        closed_at=closed_at,
     )
 
 

@@ -211,6 +211,34 @@ def load_active_ad_rates(client: Client) -> dict[str, Any]:
     return dict(record.coefficients_json)
 
 
+def load_active_consolidated_payload(client: Client) -> dict[str, Any]:
+    """
+    Active consolidated forecast_model payload (status='active', payload not null).
+
+    Same row loadActiveModel() reads — NOT legacy per-model_type is_active rows.
+    """
+    response = (
+        client.table(MODEL_COEFFICIENTS_TABLE)
+        .select("id, status, payload, fitted_at, model_type")
+        .eq("status", "active")
+        .not_.is_("payload", "null")
+        .limit(1)
+        .maybe_single()
+        .execute()
+    )
+    if not response.data:
+        raise DbError(
+            "No active consolidated model_coefficients row "
+            "(status='active' with non-null payload)"
+        )
+    payload = response.data.get("payload")
+    if not isinstance(payload, dict):
+        raise DbError(
+            f"Active consolidated row {response.data.get('id')} has invalid payload"
+        )
+    return dict(payload)
+
+
 def count_active_by_model_type(client: Client) -> dict[str, int]:
     response = (
         client.table(MODEL_COEFFICIENTS_TABLE)

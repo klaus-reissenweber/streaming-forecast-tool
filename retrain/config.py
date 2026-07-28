@@ -25,14 +25,20 @@ load_dotenv(ENV_LOCAL_PATH)
 # --- Supabase ---
 
 SUPABASE_URL_ENV = "NEXT_PUBLIC_SUPABASE_URL"
+# GitHub Actions secrets use SUPABASE_URL (alias).
+SUPABASE_URL_ALIAS_ENV = "SUPABASE_URL"
 SUPABASE_SERVICE_ROLE_KEY_ENV = "SUPABASE_SERVICE_ROLE_KEY"
+
+# Archive soft threshold (mirrors lib/constants.ts RETRAIN_THRESHOLD).
+RETRAIN_THRESHOLD = 10
 
 
 def get_supabase_url() -> str:
-    url = os.getenv(SUPABASE_URL_ENV)
+    url = os.getenv(SUPABASE_URL_ENV) or os.getenv(SUPABASE_URL_ALIAS_ENV)
     if not url:
         raise RuntimeError(
-            f"Missing {SUPABASE_URL_ENV}. Set it in {ENV_LOCAL_PATH}."
+            f"Missing {SUPABASE_URL_ENV} (or {SUPABASE_URL_ALIAS_ENV}). "
+            f"Set it in {ENV_LOCAL_PATH} or the process environment."
         )
     return url
 
@@ -201,6 +207,10 @@ class RetrainFlags:
     skip_constants_sync: bool = False
     # Fit + write constants.ts; skip DB promote (operator reviews diff before commit).
     hold_the_commit: bool = False
+    # Fit + write one consolidated draft model_coefficients row (no promote, no constants).
+    write_draft: bool = False
+    # Optional retrain_jobs.id stamped into draft metadata / job completion.
+    job_id: str | None = None
     # Non-empty: promote past insufficient_sample (n < MIN_SAMPLE_SIZE). Logged loudly.
     override_insufficient_sample: str | None = None
     # One-shot: stamp active model_coefficients.fitted_at = RETRAIN_LAST_AT, then exit.

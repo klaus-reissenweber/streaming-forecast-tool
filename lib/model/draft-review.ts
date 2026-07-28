@@ -1,0 +1,589 @@
+/**
+ * Phase 2b: draft vs active diff + HARD/SOFT guardrail evaluation for approve UI.
+ */
+
+import { composeStreamCurvePct } from "@/lib/forecast";
+import type { ActiveModel, DowKey } from "@/lib/model/active-model";
+import type { ForecastModel } from "@/lib/model/forecast-model";
+
+const DOW_KEYS: DowKey[] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const RELEASE_TYPE_KEYS = [
+  "single",
+  "lead_single",
+  "focus_track",
+  "album_track",
+  "alternate_version",
+] as const;
+const GENRE_KEYS = [
+  "dubstep",
+  "house",
+  "melodic-bass",
+  "downtempo",
+  "big-room",
+] as const;
+const TIER_KEYS = ["developing", "mid", "established"] as const;
+const BAND_PCTS = ["p25", "p50", "p75", "p90"] as const;
+
+/** Sample calendar dates for composed-curve preview. */
+export const PREVIEW_FRIDAY = "2026-05-29";
+export const PREVIEW_WEDNESDAY = "2026-05-27";
+
+const DOW_MEAN_TOLERANCE = 0.05;
+const WK1_SUM_TOLERANCE = 0.51;
+const LARGE_MOVE_ABS = {
+  dow: 0.05,
+  kernel: 1.0,
+  trend: 1.5,
+  magnitude: 0.05,
+  saveRate: 2.0,
+  saveCountRel: 0.15,
+} as const;
+const SAVE_RATE_MIN_WIDTH = 1.0;
+
+export type DiffRow = {
+  label: string;
+  active: number;
+  draft: number;
+  delta: number;
+};
+
+export type ModelDiff = {
+  dow: DiffRow[];
+  editorialKernel: DiffRow[];
+  trendMedian: DiffRow[];
+  trendP25: DiffRow[];
+  trendP75: DiffRow[];
+  releaseTypeMagnitude: DiffRow[];
+  saveRateBands: DiffRow[];
+  saveCountBands: DiffRow[];
+};
+
+export type GuardrailSeverity = "hard" | "soft";
+
+export type GuardrailCheck = {
+  id: string;
+  severity: GuardrailSeverity;
+  label: string;
+  passed: boolean;
+  /** Human-readable computed value for the panel. */
+  value: string;
+  detail?: string;
+};
+
+export type CurvePreview = {
+  label: string;
+  releaseDate: string;
+  activePct: number[];
+  draftPct: number[];
+  activeWk1Sum: number;
+  draftWk1Sum: number;
+};
+
+export type DraftReview = {
+  diff: ModelDiff;
+  hard: GuardrailCheck[];
+  soft: GuardrailCheck[];
+  allHardPassed: boolean;
+  curves: CurvePreview[];
+};
+
+export type DraftRawGuardrails = {
+  passed: boolean;
+  insufficientSample: boolean;
+  codes: string[];
+  message: string | null;
+};
+
+/** Attach optional raw guardrails from draft metadata JSON. */
+export type DraftWithRawGuardrails = ActiveModel & {
+  rawGuardrails?: DraftRawGuardrails | null;
+};
+
+function asForecastModel(model: ActiveModel): ForecastModel {
+  return model;
+}
+
+function fmtPctBias(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) {
+    return "n/a";
+  }
+  const pct = value * 100;
+  const sign = pct > 0 ? "+" : "";
+  return `${sign}${pct.toFixed(1)}%`;
+}
+
+function fmtNum(value: number, digits = 3): string {
+  if (!Number.isFinite(value)) {
+    return "n/a";
+  }
+  return value.toFixed(digits);
+}
+
+function row(label: string, active: number, draft: number): DiffRow {
+  return { label, active, draft, delta: draft - active };
+}
+
+export function buildModelDiff(
+  draft: ActiveModel,
+  active: ActiveModel,
+): ModelDiff {
+  const dow = DOW_KEYS.map((key) =>
+    row(key, active.dow[key], draft.dow[key]),
+  );
+
+  const kernelLen = Math.max(
+    draft.editorialKernel.length,
+    active.editorialKernel.length,
+  );
+  const editorialKernel = Array.from({ length: kernelLen }, (_, index) =>
+    row(
+      `k[${index}]`,
+      active.editorialKernel[index] ?? 0,
+      draft.editorialKernel[index] ?? 0,
+    ),
+  );
+
+  const trendMedian = draft.trend.median.map((value, index) =>
+    row(`D${index + 1}`, active.trend.median[index] ?? 0, value),
+  );
+  const trendP25 = draft.trend.p25.map((value, index) =>
+    row(`D${index + 1}`, active.trend.p25[index] ?? 0, value),
+  );
+  const trendP75 = draft.trend.p75.map((value, index) =>
+    row(`D${index + 1}`, active.trend.p75[index] ?? 0, value),
+  );
+
+  const releaseTypeMagnitude = RELEASE_TYPE_KEYS.map((key) =>
+    row(
+      key,
+      active.releaseTypeMagnitudeMultipliers[key],
+      draft.releaseTypeMagnitudeMultipliers[key],
+    ),
+  );
+
+  const saveRateBands: DiffRow[] = [];
+  for (const genre of GENRE_KEYS) {
+    saveRateBands.push(
+      row(
+        `${genre}.lo`,
+        active.saveRateBands[genre].lo,
+        draft.saveRateBands[genre].lo,
+      ),
+      row(
+        `${genre}.hi`,
+        active.saveRateBands[genre].hi,
+        draft.saveRateBands[genre].hi,
+      ),
+    );
+  }
+
+  const saveCountBands: DiffRow[] = [];
+  for (const tier of TIER_KEYS) {
+    for (const pct of BAND_PCTS) {
+      saveCountBands.push(
+        row(
+          `${tier}.${pct}`,
+          active.saveCountBands[tier][pct],
+          draft.saveCountBands[tier][pct],
+        ),
+      );
+    }
+  }
+
+  return {
+    dow,
+    editorialKernel,
+    trendMedian,
+    trendP25,
+    trendP75,
+    releaseTypeMagnitude,
+    saveRateBands,
+    saveCountBands,
+  };
+}
+
+function closerToZero(newBias: number, liveBias: number): boolean {
+  return Math.abs(newBias) < Math.abs(liveBias);
+}
+
+function evaluateNewBeatsLive(draft: ActiveModel): GuardrailCheck {
+  const fb = draft.metadata?.forwardBias;
+  if (!fb) {
+    return {
+      id: "new_beats_live",
+      severity: "hard",
+      label: "New beats live (forward bias)",
+      passed: false,
+      value: "missing metadata.forward_bias",
+    };
+  }
+
+  // HARD gate: large reliable samples only (all + clean).
+  // newest_10 is noisy (n=10) — soft warning via evaluateNewest10Bias.
+  const hardSlices = [
+    { key: "all", live: fb.all.live, neu: fb.all.new },
+    { key: "clean", live: fb.clean.live, neu: fb.clean.new },
+  ] as const;
+
+  const results = hardSlices.map((slice) => ({
+    ...slice,
+    ok: closerToZero(slice.neu, slice.live),
+    equal:
+      Number.isFinite(slice.neu) &&
+      Number.isFinite(slice.live) &&
+      Math.abs(slice.neu) === Math.abs(slice.live),
+  }));
+
+  const passed = results.every((r) => r.ok);
+  const allEqual = results.every((r) => r.equal);
+  const value = results
+    .map(
+      (r) =>
+        `${r.key}: live ${fmtPctBias(r.live)} → new ${fmtPctBias(r.neu)}`,
+    )
+    .join(" · ");
+
+  return {
+    id: "new_beats_live",
+    severity: "hard",
+    label: "New beats live (forward bias)",
+    passed,
+    value,
+    detail: allEqual
+      ? "no improvement — |new| equals |live| on all + clean"
+      : passed
+        ? undefined
+        : "new median |bias| must be strictly closer to 0 than live on all + clean (newest_10 is soft-only)",
+  };
+}
+
+function evaluateNewest10Bias(draft: ActiveModel): GuardrailCheck {
+  const fb = draft.metadata?.forwardBias;
+  if (!fb) {
+    return {
+      id: "newest_10_bias",
+      severity: "soft",
+      label: "Newest-10 forward bias",
+      passed: false,
+      value: "missing metadata.forward_bias",
+    };
+  }
+
+  const live = fb.newest10.live;
+  const neu = fb.newest10.new;
+  const passed = closerToZero(neu, live);
+  const equal =
+    Number.isFinite(neu) &&
+    Number.isFinite(live) &&
+    Math.abs(neu) === Math.abs(live);
+
+  return {
+    id: "newest_10_bias",
+    severity: "soft",
+    label: "Newest-10 forward bias",
+    passed,
+    value: `newest_10: live ${fmtPctBias(live)} → new ${fmtPctBias(neu)}`,
+    detail: passed
+      ? undefined
+      : equal
+        ? "no improvement on newest_10 (informational — not a hard block)"
+        : "newer model worse on newest_10 (noisy n=10 — warn only)",
+  };
+}
+
+function evaluateKernelDecreasing(draft: ActiveModel): GuardrailCheck {
+  const k = draft.editorialKernel;
+  const k0 = k[0];
+  const k1 = k[1];
+  const passed =
+    k0 != null &&
+    k1 != null &&
+    k0 > k1 &&
+    k1 >= 0 &&
+    k.every((value) => Number.isFinite(value) && value >= 0);
+
+  return {
+    id: "kernel_decreasing",
+    severity: "hard",
+    label: "Kernel decreasing (k[0] > k[1] ≥ 0)",
+    passed,
+    value: `k=[${k.map((v) => fmtNum(v, 2)).join(", ")}]`,
+  };
+}
+
+function evaluateTrendShape(draft: ActiveModel): GuardrailCheck {
+  const { median, p25, p75 } = draft.trend;
+  const lenOk =
+    median.length === 28 && p25.length === 28 && p75.length === 28;
+  const noZeroTail =
+    (median[27] ?? 0) > 0 && (p25[27] ?? 0) > 0 && (p75[27] ?? 0) > 0;
+  const passed = lenOk && noZeroTail;
+
+  return {
+    id: "trend_shape",
+    severity: "hard",
+    label: "Trend length 28, no zero tail",
+    passed,
+    value: `len=${median.length}/${p25.length}/${p75.length}; D28 median=${fmtNum(median[27] ?? NaN, 1)}`,
+  };
+}
+
+function evaluateDowShape(draft: ActiveModel): GuardrailCheck {
+  const values = DOW_KEYS.map((key) => draft.dow[key]);
+  const fri = draft.dow.Fri;
+  const sun = draft.dow.Sun;
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+  const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
+  const friMax = fri === max;
+  const sunMin = sun === min;
+  const meanOk = Math.abs(mean - 1) <= DOW_MEAN_TOLERANCE;
+  const passed = friMax && sunMin && meanOk;
+
+  return {
+    id: "dow_shape",
+    severity: "hard",
+    label: "DOW Fri-max / Sun-min, mean ≈ 1",
+    passed,
+    value: `Fri=${fmtNum(fri)} Sun=${fmtNum(sun)} mean=${fmtNum(mean)}`,
+  };
+}
+
+function evaluateSaveCountMonotonic(draft: ActiveModel): GuardrailCheck {
+  const failures: string[] = [];
+  for (const pct of BAND_PCTS) {
+    const dev = draft.saveCountBands.developing[pct];
+    const mid = draft.saveCountBands.mid[pct];
+    const est = draft.saveCountBands.established[pct];
+    if (!(dev <= mid && mid <= est)) {
+      failures.push(`${pct}: ${dev} ≰ ${mid} ≰ ${est}`);
+    }
+  }
+  return {
+    id: "save_count_monotonic",
+    severity: "hard",
+    label: "Save-count bands monotonic (dev ≤ mid ≤ est)",
+    passed: failures.length === 0,
+    value:
+      failures.length === 0
+        ? "dev ≤ mid ≤ est for p25/p50/p75/p90"
+        : failures.join("; "),
+  };
+}
+
+function wk1Sum(pct: number[]): number {
+  return pct.slice(0, 7).reduce((sum, value) => sum + value, 0);
+}
+
+function evaluateWk1Composes(draft: ActiveModel): GuardrailCheck {
+  const fri = composeStreamCurvePct(asForecastModel(draft), {
+    releaseDate: PREVIEW_FRIDAY,
+  });
+  const wed = composeStreamCurvePct(asForecastModel(draft), {
+    releaseDate: PREVIEW_WEDNESDAY,
+  });
+  const friSum = wk1Sum(fri);
+  const wedSum = wk1Sum(wed);
+  const passed =
+    Math.abs(friSum - 100) <= WK1_SUM_TOLERANCE &&
+    Math.abs(wedSum - 100) <= WK1_SUM_TOLERANCE;
+
+  return {
+    id: "wk1_composes",
+    severity: "hard",
+    label: "Wk1 composes to ~100",
+    passed,
+    value: `Fri Σd1–7=${fmtNum(friSum, 2)} · Wed Σd1–7=${fmtNum(wedSum, 2)}`,
+  };
+}
+
+function evaluateInsufficientSample(
+  draft: DraftWithRawGuardrails,
+): GuardrailCheck {
+  const clean = draft.metadata?.sampleSizes.clean ?? 0;
+  const min = draft.metadata?.threshold.minSampleSize ?? 40;
+  const flagged =
+    draft.rawGuardrails?.insufficientSample === true || clean < min;
+  return {
+    id: "insufficient_sample",
+    severity: "soft",
+    label: "Clean count vs threshold",
+    passed: !flagged,
+    value: `clean=${clean} (need ≥ ${min})`,
+    detail: flagged
+      ? draft.rawGuardrails?.message ?? "insufficient_sample"
+      : undefined,
+  };
+}
+
+function evaluateSaveRateNotCollapsed(draft: ActiveModel): GuardrailCheck {
+  const collapsed: string[] = [];
+  for (const genre of GENRE_KEYS) {
+    const { lo, hi } = draft.saveRateBands[genre];
+    const width = hi - lo;
+    if (!(hi > lo) || width < SAVE_RATE_MIN_WIDTH) {
+      collapsed.push(`${genre} width=${fmtNum(width, 1)}`);
+    }
+  }
+  return {
+    id: "save_rate_width",
+    severity: "soft",
+    label: "Save-rate bands not collapsed",
+    passed: collapsed.length === 0,
+    value:
+      collapsed.length === 0
+        ? `all genres width ≥ ${SAVE_RATE_MIN_WIDTH}`
+        : collapsed.join("; "),
+  };
+}
+
+function evaluateLargeParameterMove(
+  draft: ActiveModel,
+  active: ActiveModel,
+  diff: ModelDiff,
+): GuardrailCheck {
+  const movers: string[] = [];
+
+  for (const row of diff.dow) {
+    if (Math.abs(row.delta) > LARGE_MOVE_ABS.dow) {
+      movers.push(`dow.${row.label} Δ=${fmtNum(row.delta)}`);
+    }
+  }
+  for (const row of diff.editorialKernel) {
+    if (Math.abs(row.delta) > LARGE_MOVE_ABS.kernel) {
+      movers.push(`${row.label} Δ=${fmtNum(row.delta, 2)}`);
+    }
+  }
+  for (const row of diff.trendMedian) {
+    if (Math.abs(row.delta) > LARGE_MOVE_ABS.trend) {
+      movers.push(`trend.median.${row.label} Δ=${fmtNum(row.delta, 1)}`);
+    }
+  }
+  for (const row of diff.releaseTypeMagnitude) {
+    if (Math.abs(row.delta) > LARGE_MOVE_ABS.magnitude) {
+      movers.push(`mag.${row.label} Δ=${fmtNum(row.delta)}`);
+    }
+  }
+  for (const row of diff.saveRateBands) {
+    if (Math.abs(row.delta) > LARGE_MOVE_ABS.saveRate) {
+      movers.push(`save_rate.${row.label} Δ=${fmtNum(row.delta, 1)}`);
+    }
+  }
+  for (const row of diff.saveCountBands) {
+    if (row.active === 0) {
+      continue;
+    }
+    const rel = Math.abs(row.delta) / Math.abs(row.active);
+    if (rel > LARGE_MOVE_ABS.saveCountRel) {
+      movers.push(
+        `save_count.${row.label} Δ=${(rel * 100).toFixed(0)}%`,
+      );
+    }
+  }
+
+  // Silence unused-param lint if structure changes — keep active for parity.
+  void active;
+
+  const passed = movers.length === 0;
+  return {
+    id: "large_parameter_move",
+    severity: "soft",
+    label: "Large parameter moves vs active",
+    passed,
+    value: passed
+      ? "no large moves"
+      : movers.slice(0, 8).join("; ") +
+        (movers.length > 8 ? ` (+${movers.length - 8} more)` : ""),
+  };
+}
+
+export function parseRawGuardrails(
+  rawMetadata: Record<string, unknown> | null,
+): DraftRawGuardrails | null {
+  if (!rawMetadata) {
+    return null;
+  }
+  const g = rawMetadata.guardrails;
+  if (g == null || typeof g !== "object" || Array.isArray(g)) {
+    return null;
+  }
+  const record = g as Record<string, unknown>;
+  return {
+    passed: Boolean(record.passed),
+    insufficientSample: Boolean(record.insufficient_sample),
+    codes: Array.isArray(record.codes)
+      ? record.codes.map(String)
+      : [],
+    message: record.message == null ? null : String(record.message),
+  };
+}
+
+export function parseCooksDroppedIds(
+  rawMetadata: Record<string, unknown> | null,
+): string[] {
+  if (!rawMetadata) {
+    return [];
+  }
+  const ids = rawMetadata.cooks_d_dropped_ids;
+  if (!Array.isArray(ids)) {
+    return [];
+  }
+  return ids.map(String);
+}
+
+function buildCurvePreview(
+  label: string,
+  releaseDate: string,
+  draft: ActiveModel,
+  active: ActiveModel,
+): CurvePreview {
+  const activePct = composeStreamCurvePct(asForecastModel(active), {
+    releaseDate,
+  });
+  const draftPct = composeStreamCurvePct(asForecastModel(draft), {
+    releaseDate,
+  });
+  return {
+    label,
+    releaseDate,
+    activePct,
+    draftPct,
+    activeWk1Sum: wk1Sum(activePct),
+    draftWk1Sum: wk1Sum(draftPct),
+  };
+}
+
+export function buildDraftReview(
+  draftInput: DraftWithRawGuardrails,
+  active: ActiveModel,
+): DraftReview {
+  const draft = draftInput;
+  const diff = buildModelDiff(draft, active);
+
+  const hard: GuardrailCheck[] = [
+    evaluateNewBeatsLive(draft),
+    evaluateKernelDecreasing(draft),
+    evaluateTrendShape(draft),
+    evaluateDowShape(draft),
+    evaluateSaveCountMonotonic(draft),
+    evaluateWk1Composes(draft),
+  ];
+
+  const soft: GuardrailCheck[] = [
+    evaluateInsufficientSample(draft),
+    evaluateNewest10Bias(draft),
+    evaluateSaveRateNotCollapsed(draft),
+    evaluateLargeParameterMove(draft, active, diff),
+  ];
+
+  return {
+    diff,
+    hard,
+    soft,
+    allHardPassed: hard.every((check) => check.passed),
+    curves: [
+      buildCurvePreview("Friday", PREVIEW_FRIDAY, draft, active),
+      buildCurvePreview("Wednesday", PREVIEW_WEDNESDAY, draft, active),
+    ],
+  };
+}

@@ -92,6 +92,7 @@ class ReleaseRecord:
     # Creation-time ML snapshot (forecast/retrain feature). None = pre-migration.
     monthly_listeners_at_release: float | None = None
     created_at: str | None = None
+    closed_at: str | None = None
 
 
 @dataclass(frozen=True)
@@ -113,6 +114,8 @@ class TrainingRow:
     wk1_saves: int
     streams_by_day: dict[int, int]
     release_date: str | None = None
+    created_at: str | None = None
+    closed_at: str | None = None
 
 
 def _streams_by_day_from_daily_data(
@@ -169,6 +172,8 @@ def build_training_row(
         wk1_saves=wk1_saves,
         streams_by_day=_streams_by_day_from_daily_data(daily_data),
         release_date=parse_release_date(release.release_date),
+        created_at=release.created_at,
+        closed_at=release.closed_at,
     )
 
 
