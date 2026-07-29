@@ -14,6 +14,14 @@ export const RETRAIN_MIN_SAMPLE_SIZE = 40;
 export const RETRAIN_THRESHOLD = 10;
 
 /**
+ * Minimum forward-bias improvement for new_beats_live (approve HARD gate).
+ * Required on both all + clean: |live| − |new| ≥ this value (bias fraction;
+ * 0.01 = one percentage point). Filters float noise / no-op refits where
+ * new ≈ live within ~1e-15.
+ */
+export const FORWARD_BIAS_MIN_IMPROVEMENT = 0.01;
+
+/**
  * Initial seed for the archive retrain-progress cutoff (ISO).
  * Runtime cutoff = max(this, max active model_coefficients.fitted_at).
  * Live promotes stamp fitted_at = promote time; do not bump this for future

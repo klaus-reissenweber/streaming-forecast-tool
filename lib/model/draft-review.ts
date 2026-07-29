@@ -2,6 +2,7 @@
  * Phase 2b: draft vs active diff + HARD/SOFT guardrail evaluation for approve UI.
  */
 
+import { FORWARD_BIAS_MIN_IMPROVEMENT } from "@/lib/constants";
 import { composeStreamCurvePct } from "@/lib/forecast";
 import type { ActiveModel, DowKey } from "@/lib/model/active-model";
 import type { ForecastModel } from "@/lib/model/forecast-model";
@@ -202,8 +203,26 @@ export function buildModelDiff(
   };
 }
 
-function closerToZero(newBias: number, liveBias: number): boolean {
-  return Math.abs(newBias) < Math.abs(liveBias);
+/**
+ * Meaningful improvement toward zero: |live| − |new| ≥ minDelta.
+ * Rejects float-noise / no-op refits where new ≈ live.
+ */
+export function beatsLiveBias(
+  newBias: number,
+  liveBias: number,
+  minDelta: number = FORWARD_BIAS_MIN_IMPROVEMENT,
+): boolean {
+  if (!Number.isFinite(newBias) || !Number.isFinite(liveBias)) {
+    return false;
+  }
+  return Math.abs(liveBias) - Math.abs(newBias) >= minDelta;
+}
+
+function biasImprovement(
+  newBias: number,
+  liveBias: number,
+): number {
+  return Math.abs(liveBias) - Math.abs(newBias);
 }
 
 function evaluateNewBeatsLive(draft: ActiveModel): GuardrailCheck {
@@ -225,21 +244,24 @@ function evaluateNewBeatsLive(draft: ActiveModel): GuardrailCheck {
     { key: "clean", live: fb.clean.live, neu: fb.clean.new },
   ] as const;
 
-  const results = hardSlices.map((slice) => ({
-    ...slice,
-    ok: closerToZero(slice.neu, slice.live),
-    equal:
-      Number.isFinite(slice.neu) &&
-      Number.isFinite(slice.live) &&
-      Math.abs(slice.neu) === Math.abs(slice.live),
-  }));
+  const results = hardSlices.map((slice) => {
+    const improvement = biasImprovement(slice.neu, slice.live);
+    return {
+      ...slice,
+      improvement,
+      ok: beatsLiveBias(slice.neu, slice.live),
+    };
+  });
 
   const passed = results.every((r) => r.ok);
-  const allEqual = results.every((r) => r.equal);
+  const noOp = results.every(
+    (r) => Math.abs(r.improvement) < FORWARD_BIAS_MIN_IMPROVEMENT,
+  );
+  const minPts = (FORWARD_BIAS_MIN_IMPROVEMENT * 100).toFixed(0);
   const value = results
     .map(
       (r) =>
-        `${r.key}: live ${fmtPctBias(r.live)} → new ${fmtPctBias(r.neu)}`,
+        `${r.key}: live ${fmtPctBias(r.live)} → new ${fmtPctBias(r.neu)} (Δ|bias|=${fmtPctBias(r.improvement).replace("+", "")})`,
     )
     .join(" · ");
 
@@ -249,11 +271,11 @@ function evaluateNewBeatsLive(draft: ActiveModel): GuardrailCheck {
     label: "New beats live (forward bias)",
     passed,
     value,
-    detail: allEqual
-      ? "no improvement — |new| equals |live| on all + clean"
-      : passed
-        ? undefined
-        : "new median |bias| must be strictly closer to 0 than live on all + clean (newest_10 is soft-only)",
+    detail: passed
+      ? undefined
+      : noOp
+        ? `no improvement — |new| ≈ |live| on all + clean (need ≥ ${minPts}pt)`
+        : `new must beat live by ≥ ${minPts}pt of |bias| on all + clean (newest_10 is soft-only)`,
   };
 }
 
@@ -271,22 +293,20 @@ function evaluateNewest10Bias(draft: ActiveModel): GuardrailCheck {
 
   const live = fb.newest10.live;
   const neu = fb.newest10.new;
-  const passed = closerToZero(neu, live);
-  const equal =
-    Number.isFinite(neu) &&
-    Number.isFinite(live) &&
-    Math.abs(neu) === Math.abs(live);
+  const improvement = biasImprovement(neu, live);
+  const passed = beatsLiveBias(neu, live);
+  const minPts = (FORWARD_BIAS_MIN_IMPROVEMENT * 100).toFixed(0);
 
   return {
     id: "newest_10_bias",
     severity: "soft",
     label: "Newest-10 forward bias",
     passed,
-    value: `newest_10: live ${fmtPctBias(live)} → new ${fmtPctBias(neu)}`,
+    value: `newest_10: live ${fmtPctBias(live)} → new ${fmtPctBias(neu)} (Δ|bias|=${fmtPctBias(improvement).replace("+", "")})`,
     detail: passed
       ? undefined
-      : equal
-        ? "no improvement on newest_10 (informational — not a hard block)"
+      : Math.abs(improvement) < FORWARD_BIAS_MIN_IMPROVEMENT
+        ? `no meaningful improvement on newest_10 (need ≥ ${minPts}pt — warn only)`
         : "newer model worse on newest_10 (noisy n=10 — warn only)",
   };
 }
