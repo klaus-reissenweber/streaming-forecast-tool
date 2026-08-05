@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  Area,
   CartesianGrid,
+  ComposedChart,
   Line,
-  LineChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -18,6 +19,12 @@ import type { StreamCurveForecast } from "@/lib/forecast";
 export interface StreamCurveChartProps {
   lockedStreamCurve: StreamCurveForecast;
   projectedStreamCurve?: StreamCurveForecast | null;
+  /** Daily Marquee attributed streams (additive, 28). */
+  marqueeAdDaily?: number[];
+  /** Daily Showcase attributed streams (additive, 28). */
+  showcaseAdDaily?: number[];
+  /** Daily Meta ad attributed streams (additive, 28). */
+  metaAdDaily?: number[];
   actualStreamsByDay: (number | null)[];
   phase: ReleasePhase;
   releaseDate: string;
@@ -26,12 +33,18 @@ export interface StreamCurveChartProps {
 interface ChartRow {
   day: number;
   locked: number;
+  marqueeAds: number;
+  showcaseAds: number;
+  metaAds: number;
   projected: number | null;
   actual: number | null;
 }
 
 interface ChartPalette {
   locked: string;
+  marqueeAds: string;
+  showcaseAds: string;
+  metaAds: string;
   projected: string;
   actual: string;
   grid: string;
@@ -55,6 +68,9 @@ const LEGEND_STAGGER_MS = 60;
 
 const DEFAULT_PALETTE: ChartPalette = {
   locked: "#8fa800",
+  marqueeAds: "#1db954",
+  showcaseAds: "#0d7a3a",
+  metaAds: "#1877f2",
   projected: "#1565a8",
   actual: "#12151a",
   grid: "#eceef2",
@@ -65,11 +81,17 @@ const DEFAULT_PALETTE: ChartPalette = {
 function buildChartRows(
   lockedStreamCurve: StreamCurveForecast,
   projectedStreamCurve: StreamCurveForecast | null | undefined,
+  marqueeAdDaily: number[] | undefined,
+  showcaseAdDaily: number[] | undefined,
+  metaAdDaily: number[] | undefined,
   actualStreamsByDay: (number | null)[],
 ): ChartRow[] {
   return lockedStreamCurve.dailyStreams.map((locked, index) => ({
     day: index + 1,
     locked,
+    marqueeAds: marqueeAdDaily?.[index] ?? 0,
+    showcaseAds: showcaseAdDaily?.[index] ?? 0,
+    metaAds: metaAdDaily?.[index] ?? 0,
     projected: projectedStreamCurve?.dailyStreams[index] ?? null,
     actual: actualStreamsByDay[index] ?? null,
   }));
@@ -103,6 +125,15 @@ function readChartPalette(): ChartPalette {
 
   return {
     locked: read("--color-chart-locked", DEFAULT_PALETTE.locked),
+    marqueeAds: read(
+      "--color-chart-spotify-marquee",
+      DEFAULT_PALETTE.marqueeAds,
+    ),
+    showcaseAds: read(
+      "--color-chart-spotify-showcase",
+      DEFAULT_PALETTE.showcaseAds,
+    ),
+    metaAds: read("--color-chart-meta-ads", DEFAULT_PALETTE.metaAds),
     projected: read("--color-chart-projected", DEFAULT_PALETTE.projected),
     actual: read("--color-chart-actual", DEFAULT_PALETTE.actual),
     grid: read("--color-chart-grid", DEFAULT_PALETTE.grid),
@@ -218,13 +249,22 @@ function useLineDrawIn(
   };
 }
 
-function LegendLineSample({
+function LegendSwatch({
   color,
-  dashed = false,
+  kind,
 }: {
   color: string;
-  dashed?: boolean;
+  kind: "area" | "line" | "dashed";
 }) {
+  if (kind === "area") {
+    return (
+      <span
+        className="inline-block h-2.5 w-5 shrink-0 rounded-[2px]"
+        style={{ backgroundColor: color }}
+        aria-hidden="true"
+      />
+    );
+  }
   return (
     <svg
       width={28}
@@ -239,8 +279,8 @@ function LegendLineSample({
         x2={28}
         y2={4}
         stroke={color}
-        strokeWidth={dashed ? 2 : 2.5}
-        strokeDasharray={dashed ? "4 3" : undefined}
+        strokeWidth={kind === "dashed" ? 2 : 2.5}
+        strokeDasharray={kind === "dashed" ? "4 3" : undefined}
       />
     </svg>
   );
@@ -249,12 +289,14 @@ function LegendLineSample({
 export function StreamCurveChart({
   lockedStreamCurve,
   projectedStreamCurve,
+  marqueeAdDaily,
+  showcaseAdDaily,
+  metaAdDaily,
   actualStreamsByDay,
   phase,
   releaseDate,
 }: StreamCurveChartProps) {
   const palette = useChartPalette();
-  const lockedDraw = useLineDrawIn(DRAW_STAGGER_MS.locked);
   const projectedDraw = useLineDrawIn(DRAW_STAGGER_MS.projected, {
     dashedWhenDone: true,
   });
@@ -263,10 +305,16 @@ export function StreamCurveChart({
   const chartData = buildChartRows(
     lockedStreamCurve,
     projectedStreamCurve,
+    marqueeAdDaily,
+    showcaseAdDaily,
+    metaAdDaily,
     actualStreamsByDay,
   );
   const hasActuals = actualStreamsByDay.some((value) => value != null);
   const hasProjected = projectedStreamCurve != null;
+  const hasMarqueeAds = (marqueeAdDaily ?? []).some((v) => v > 0);
+  const hasShowcaseAds = (showcaseAdDaily ?? []).some((v) => v > 0);
+  const hasMetaAds = (metaAdDaily ?? []).some((v) => v > 0);
   const campaignDay = useMemo(
     () => (phase === "monitoring" ? getCampaignDay(releaseDate) : null),
     [phase, releaseDate],
@@ -277,17 +325,41 @@ export function StreamCurveChart({
     {
       tag: "[LOCKED]",
       tagClass: "bracket-tag--accent",
-      label: "Locked forecast",
+      label: "Organic locked forecast",
       color: palette.locked,
-      dashed: false,
+      kind: "area" as const,
       visible: true,
+    },
+    {
+      tag: "[MARQUEE]",
+      tagClass: "bracket-tag--neutral",
+      label: "Marquee attributed lift",
+      color: palette.marqueeAds,
+      kind: "area" as const,
+      visible: hasMarqueeAds,
+    },
+    {
+      tag: "[SHOWCASE]",
+      tagClass: "bracket-tag--neutral",
+      label: "Showcase attributed lift",
+      color: palette.showcaseAds,
+      kind: "area" as const,
+      visible: hasShowcaseAds,
+    },
+    {
+      tag: "[META ADS]",
+      tagClass: "bracket-tag--info",
+      label: "Meta attributed lift",
+      color: palette.metaAds,
+      kind: "area" as const,
+      visible: hasMetaAds,
     },
     {
       tag: "[PROJECTED]",
       tagClass: "bracket-tag--info",
       label: "Live pace projection",
       color: palette.projected,
-      dashed: true,
+      kind: "dashed" as const,
       visible: hasProjected,
     },
     {
@@ -298,7 +370,7 @@ export function StreamCurveChart({
           ? `Daily actuals D1–D${lastActualDay}`
           : "Daily actuals",
       color: palette.actual,
-      dashed: false,
+      kind: "line" as const,
       visible: hasActuals,
     },
   ].filter((item) => item.visible);
@@ -323,12 +395,12 @@ export function StreamCurveChart({
           </span>
         </h2>
         <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.06em] text-muted">
-          LOCKED · PROJECTED · ACTUAL · D1–D28
+          LOCKED · MARQUEE · SHOWCASE · META ADS · PROJECTED · ACTUAL · D1–D28
         </p>
         {phase === "pre-release" || !hasActuals ? (
           <p className="mt-2 text-caption text-muted">
-            Expected curve from locked forecast. Actual daily streams overlay once
-            data is entered.
+            Organic locked curve with additive ad bands. Actual daily streams
+            overlay once data is entered.
           </p>
         ) : null}
       </div>
@@ -364,7 +436,7 @@ export function StreamCurveChart({
           </div>
         ))}
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart
+          <ComposedChart
             data={chartData}
             margin={{
               top: CHART_MARGIN_TOP,
@@ -426,22 +498,61 @@ export function StreamCurveChart({
                 strokeWidth={1}
               />
             ) : null}
-            <Line
+            <Area
               type="monotone"
               dataKey="locked"
-              name="Locked"
+              name="[LOCKED]"
+              stackId="forecast"
+              fill={palette.locked}
               stroke={palette.locked}
-              strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 4, fill: palette.locked }}
+              fillOpacity={0.55}
+              strokeWidth={1.25}
               isAnimationActive={false}
-              {...lockedDraw}
             />
+            {hasMarqueeAds ? (
+              <Area
+                type="monotone"
+                dataKey="marqueeAds"
+                name="[MARQUEE]"
+                stackId="forecast"
+                fill={palette.marqueeAds}
+                stroke={palette.marqueeAds}
+                fillOpacity={0.55}
+                strokeWidth={1}
+                isAnimationActive={false}
+              />
+            ) : null}
+            {hasShowcaseAds ? (
+              <Area
+                type="monotone"
+                dataKey="showcaseAds"
+                name="[SHOWCASE]"
+                stackId="forecast"
+                fill={palette.showcaseAds}
+                stroke={palette.showcaseAds}
+                fillOpacity={0.55}
+                strokeWidth={1}
+                isAnimationActive={false}
+              />
+            ) : null}
+            {hasMetaAds ? (
+              <Area
+                type="monotone"
+                dataKey="metaAds"
+                name="[META ADS]"
+                stackId="forecast"
+                fill={palette.metaAds}
+                stroke={palette.metaAds}
+                fillOpacity={0.5}
+                strokeWidth={1}
+                isAnimationActive={false}
+              />
+            ) : null}
             {hasProjected ? (
               <Line
                 type="monotone"
                 dataKey="projected"
-                name="Projected"
+                name="[PROJECTED]"
                 stroke={palette.projected}
                 strokeWidth={2}
                 dot={false}
@@ -454,7 +565,7 @@ export function StreamCurveChart({
               <Line
                 type="monotone"
                 dataKey="actual"
-                name="Actual"
+                name="[ACTUAL]"
                 stroke={palette.actual}
                 strokeWidth={2.5}
                 dot={{ r: 2, fill: palette.actual }}
@@ -463,7 +574,7 @@ export function StreamCurveChart({
                 {...actualDraw}
               />
             ) : null}
-          </LineChart>
+          </ComposedChart>
         </ResponsiveContainer>
       </div>
 
@@ -480,7 +591,7 @@ export function StreamCurveChart({
               <span className={`bracket-tag bracket-tag--axis ${item.tagClass}`}>
                 {item.tag}
               </span>
-              <LegendLineSample color={item.color} dashed={item.dashed} />
+              <LegendSwatch color={item.color} kind={item.kind} />
               <span className="text-xs text-secondary">{item.label}</span>
             </li>
           ))}

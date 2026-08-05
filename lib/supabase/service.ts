@@ -2,7 +2,8 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 /**
  * Service-role Supabase client (bypasses RLS). Server-only — never import
- * from client components. Use for non-user reads such as model_coefficients.
+ * from client components. Use for non-user reads such as model_coefficients
+ * and ad_* campaign tables.
  *
  * Runtime guard (not the `server-only` package) so the same module can be
  * exercised by Node scripts (tsx parity) and Next server code.

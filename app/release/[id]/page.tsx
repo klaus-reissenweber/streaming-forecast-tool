@@ -96,6 +96,11 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
           saves={viewModel.locked.saves}
           impliedSaveRate={viewModel.locked.impliedSaveRate}
           lockedAtDisplay={viewModel.locked.lockedAtDisplay}
+          week1WithAds={viewModel.adLayer.week1WithAds}
+          week1AdMarquee={viewModel.adLayer.week1AdMarquee}
+          week1AdShowcase={viewModel.adLayer.week1AdShowcase}
+          week1AdMeta={viewModel.adLayer.week1AdMeta}
+          metaAwarenessSpend={viewModel.adLayer.plan.metaAwarenessSpend}
         />
 
         <section className="mt-6" aria-label="Monitoring summary">
@@ -130,6 +135,9 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
           <StreamCurveChart
             lockedStreamCurve={viewModel.streamCurve}
             projectedStreamCurve={viewModel.monitoring.projectedStreamCurve}
+            marqueeAdDaily={viewModel.adLayer.marqueeDaily}
+            showcaseAdDaily={viewModel.adLayer.showcaseDaily}
+            metaAdDaily={viewModel.adLayer.metaDaily}
             actualStreamsByDay={viewModel.actualStreamsByDay}
             phase={viewModel.phase}
             releaseDate={viewModel.header.releaseDate}
@@ -142,9 +150,11 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
           <ChannelMixRecommendation mix={viewModel.channelMix} />
 
           <MetaFunnelForecast
-            spend={release.meta_spend_planned}
-            objective={release.meta_objective}
+            spend={viewModel.adLayer.plan.metaTrafficSpend}
+            artistName={release.artist_name}
             genre={release.genre}
+            adModel={model.adModel}
+            awarenessSpend={viewModel.adLayer.plan.metaAwarenessSpend}
           />
 
           <GenrePlaybook genre={viewModel.header.genre} />

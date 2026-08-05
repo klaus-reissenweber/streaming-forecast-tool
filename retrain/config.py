@@ -97,7 +97,7 @@ RELEASE_TYPE_MAGNITUDE_SHRINKAGE_K = 5
 # Legacy keys in ad_rates.spotify_rates until CPS is recalibrated on catalog roles.
 SPOTIFY_CPS_RELEASE_TYPES: tuple[str, ...] = ("single", "ep", "album")
 SPOTIFY_FORMATS: tuple[str, ...] = ("marquee", "showcase")
-META_OBJECTIVES: tuple[str, ...] = ("traffic", "awareness", "reach")
+META_OBJECTIVES: tuple[str, ...] = ("awareness", "traffic", "streaming")
 
 # --- Model types written to model_coefficients ---
 

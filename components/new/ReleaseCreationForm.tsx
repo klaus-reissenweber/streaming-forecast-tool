@@ -10,13 +10,13 @@ import {
   EDITORIAL_TIER_DEFINITIONS,
   EDITORIAL_TIER_TOGGLE_OPTIONS,
   GENRES,
-  META_OBJECTIVES,
   RELEASE_TYPE_LABELS,
   RELEASE_TYPES,
   SPOTIFY_FORMATS,
 } from "@/lib/constants";
-import type { EditorialTier, Genre, MetaObjective } from "@/lib/forecast";
+import type { EditorialTier, Genre } from "@/lib/forecast";
 import { DEFAULT_NEW_RELEASE_FORM_VALUES } from "@/lib/map-new-release";
+import type { AdModel } from "@/lib/model/ad-model";
 import {
   parseAndValidateNewReleaseForm,
   type NewReleaseFieldKey,
@@ -27,12 +27,6 @@ const FEATURE_OPTIONS = [
   { value: "solo", label: "Solo release" },
   { value: "feature", label: "Feature / collab" },
 ] as const;
-
-const META_OBJECTIVE_LABELS: Record<(typeof META_OBJECTIVES)[number], string> = {
-  traffic: "Traffic",
-  awareness: "Awareness",
-  reach: "Reach",
-};
 
 const SPOTIFY_FORMAT_LABELS: Record<(typeof SPOTIFY_FORMATS)[number], string> = {
   marquee: "Marquee",
@@ -103,7 +97,7 @@ function MessageBox({
   );
 }
 
-export function ReleaseCreationForm() {
+export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
   const [values, setValues] = useState<NewReleaseFormRawValues>(
     DEFAULT_NEW_RELEASE_FORM_VALUES,
   );
@@ -161,7 +155,7 @@ export function ReleaseCreationForm() {
 
   const editorialTier = values.editorialTier as EditorialTier;
   const genre = values.genre as Genre;
-  const metaSpend = validation.values.metaSpendPlanned;
+  const metaTrafficSpend = validation.values.metaTrafficSpendPlanned;
 
   return (
     <form
@@ -301,42 +295,53 @@ export function ReleaseCreationForm() {
 
       <FormSection label="Meta campaign">
         <div className="space-y-4">
-          <label className="flex flex-col gap-1 sm:max-w-xs">
-            <span className="text-body-sm font-medium text-foreground">
-              Meta spend (USD)
-            </span>
-            <input
-              className={NUMERIC_INPUT_CLASS}
-              inputMode="decimal"
-              value={values.metaSpendPlanned}
-              onChange={(event) =>
-                setField("metaSpendPlanned", event.target.value)
-              }
-              disabled={pending}
-              placeholder="0"
-              required
-            />
-          </label>
+          <div className="grid gap-4 sm:grid-cols-2 sm:max-w-xl">
+            <label className="flex flex-col gap-1">
+              <span className="text-body-sm font-medium text-foreground">
+                Meta traffic spend (USD)
+              </span>
+              <input
+                className={NUMERIC_INPUT_CLASS}
+                inputMode="decimal"
+                value={values.metaTrafficSpendPlanned}
+                onChange={(event) =>
+                  setField("metaTrafficSpendPlanned", event.target.value)
+                }
+                disabled={pending}
+                placeholder="0"
+              />
+              <span className="text-caption text-muted">
+                Click funnel → attributed streams
+              </span>
+            </label>
 
-          <ToggleGroup
-            name="metaObjective"
-            label="Meta objective"
-            options={META_OBJECTIVES.map((objective) => ({
-              value: objective,
-              label: META_OBJECTIVE_LABELS[objective],
-            }))}
-            value={values.metaObjective}
-            onChange={(metaObjective) =>
-              setField("metaObjective", metaObjective as MetaObjective)
-            }
-            disabled={pending}
-          />
+            <label className="flex flex-col gap-1">
+              <span className="text-body-sm font-medium text-foreground">
+                Meta awareness spend (USD)
+              </span>
+              <input
+                className={NUMERIC_INPUT_CLASS}
+                inputMode="decimal"
+                value={values.metaAwarenessSpendPlanned}
+                onChange={(event) =>
+                  setField("metaAwarenessSpendPlanned", event.target.value)
+                }
+                disabled={pending}
+                placeholder="0"
+              />
+              <span className="text-caption text-muted">
+                Reach-only · zero attributed streams
+              </span>
+            </label>
+          </div>
 
           {values.genre ? (
             <MetaFunnelForecast
-              spend={metaSpend}
-              objective={values.metaObjective}
+              spend={metaTrafficSpend}
+              artistName={values.artistName}
               genre={genre}
+              adModel={adModel}
+              awarenessSpend={validation.values.metaAwarenessSpendPlanned}
             />
           ) : null}
         </div>

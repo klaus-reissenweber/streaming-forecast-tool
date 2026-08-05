@@ -25,7 +25,7 @@ export type ArtistTier = "developing" | "mid" | "established";
 
 export type EditorialTier = 0 | 1 | 2 | 3;
 
-export type MetaObjective = "traffic" | "awareness" | "reach";
+export type MetaObjective = "awareness" | "traffic" | "streaming";
 
 /** Catalog release role on `releases.release_type` (multipliers TBD). */
 export type ReleaseType =

@@ -37,10 +37,11 @@ export const GENRES = [
   "big-room",
 ] as const;
 
+/** Paid-media objectives: awareness (reach-only), traffic (click funnel), streaming (Spotify SPL). */
 export const META_OBJECTIVES = [
-  "traffic",
   "awareness",
-  "reach",
+  "traffic",
+  "streaming",
 ] as const;
 
 /** Catalog release role (form + magnitude at lock; curve shape unchanged). */
@@ -229,13 +230,15 @@ export const META_RATES_BY_GENRE = {
 export const META_OBJECTIVE_MULTIPLIERS = {
   traffic: 1.0,
   awareness: 21.4,
-  reach: 8.9,
+  /** Streaming uses Spotify SPL path; multiplier unused for Meta funnel. */
+  streaming: 1.0,
 } as const;
 
 export const META_DELIVERY_PER_OBJECTIVE = {
   traffic: { cpm: 3.83, cpr: 6.91, cpc: 0.1 },
   awareness: { cpm: 4.3, cpr: 6.58, cpc: 2.14 },
-  reach: { cpm: 2.09, cpr: 2.18, cpc: 0.89 },
+  /** Reach-style delivery retained for display; attributed streams = 0 in ad layer. */
+  streaming: { cpm: 2.09, cpr: 2.18, cpc: 0.89 },
 } as const;
 
 /**

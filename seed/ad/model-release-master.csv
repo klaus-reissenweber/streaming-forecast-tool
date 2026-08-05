@@ -1,0 +1,92 @@
+artist,release,release_key,release_date,first_campaign_date,sources_present,n_sources,meta_campaigns,meta_spend_usd,meta_link_clicks,meta_landing_page_views,meta_reach,spotify_campaigns,spotify_spend_usd,spotify_formats,spotify_countries,spotify_converted_listeners,spotify_est_attributed_streams,linkfire_visits,linkfire_clickthroughs,linkfire_ctr_pct,linkfire_top_service,total_paid_spend_usd,est_streams_per_paid_usd,meta_cost_per_click_usd,spotify_cost_per_converted_listener_usd,meta_clicks_to_linkfire_visits_ratio,tier
+Pretty Girl,Body Step,body step,2026-07-07,2026-07-15,Meta+Spotify+Linkfire,3,1,1349.54,8575,8378,96134,3,1215.15,Marquee,3,3369,11967,20067,417,2.08,,2564.69,4.67,0.1574,0.3607,0.427,A: paid + streaming outcome
+Âme,Pha Na Pha,pha na pha,2025-11-20,2025-12-08,Meta+Spotify+Linkfire,3,2,401.4,6186,4849,109884,4,576.0,Marquee,4,611,1995,5129,865,16.86,Spotify,977.4,2.04,0.0649,0.9427,1.206,A: paid + streaming outcome
+Elderbrook,Bette Davis Eyes,bette davis eyes,2025-12-04,2025-12-12,Meta+Spotify,2,2,1992.96,18155,15482,351561,4,998.0,Showcase,4,3396,14752,,,,,2990.96,4.93,0.1098,0.2939,,A: paid + streaming outcome
+Elderbrook,Teardrop,teardrop,2025-10-14,2025-10-25,Meta+Spotify,2,3,2254.47,3822,3257,245316,2,666.0,Marquee+Showcase,2,1510,5340,,,,,2920.47,1.83,0.5899,0.4411,,A: paid + streaming outcome
+Borgore,CHIAROSCURO,chiaroscuro,2024-03-29,2024-04-08,Meta+Spotify,2,1,1500.0,1329,770,193936,1,1000.0,Marquee,1,2438,20430,,,,,2500.0,8.17,1.1287,0.4102,,A: paid + streaming outcome
+Rhye,JOY,joy,2026-06-12,2026-07-13,Spotify+Linkfire,2,0,,,,,4,2000.0,Showcase,3,6886,42952,1486,529,35.6,Spotify Pre Release,2000.0,21.48,,0.2904,,B: streaming outcome only
+Boogie T,Live From Spring Adventure,live from spring adventure,2023-09-20,2023-09-25,Meta+Spotify,2,2,249.99,315,1,37176,1,1307.08,Marquee,1,2175,16922,,,,,1557.07,10.87,0.7936,0.601,,A: paid + streaming outcome
+Âme,Shadow Of Love,shadow of love,2024-10-03,2024-10-14,Meta+Spotify,2,3,979.18,3630,0,196084,2,576.0,Marquee,2,577,1020,,,,,1555.18,0.66,0.2697,0.9983,,A: paid + streaming outcome
+Zomboy,Project Z,project z,2024-09-27,2024-09-30,Meta+Spotify,2,2,900.0,774,0,307631,3,599.92,Marquee+Showcase,2,2202,4646,,,,,1499.92,3.1,1.1628,0.2724,,A: paid + streaming outcome
+Boogie T,Psych,psych,2025-03-13,2025-03-17,Meta+Spotify,2,1,349.97,492,422,63671,1,1145.2,Showcase,1,5063,13721,,,,,1495.17,9.18,0.7113,0.2262,,A: paid + streaming outcome
+Big Gigantic,Friends,friends,2019-08-16,2025-05-02,Meta+Spotify,2,1,403.4,2354,3,38464,1,993.6,Showcase,1,1243,2449,,,,,1397.0,1.75,0.1714,0.7994,,A: paid + streaming outcome
+Boogie T,Choppa,choppa,2024-12-19,2024-12-23,Meta+Spotify,2,1,249.99,151,124,51710,1,998.2,Showcase,1,3038,5468,,,,,1248.19,4.38,1.6556,0.3286,,A: paid + streaming outcome
+Borgore,TORN UP,torn up,2025-12-12,2025-12-18,Meta+Spotify,2,1,249.99,1324,1116,14745,3,750.0,Marquee+Showcase,2,1809,3614,,,,,999.99,3.61,0.1888,0.4146,,A: paid + streaming outcome
+Âme,Don't Waste My Time,dont waste my time,2025-07-10,2025-07-24,Meta+Spotify,2,3,296.63,3590,3,97304,5,576.0,Marquee+Showcase,5,1107,3192,,,,,872.63,3.66,0.0826,0.5203,,A: paid + streaming outcome
+Boogie T,Lotis Eater,lotis eater,2026-02-20,2026-02-23,Meta+Spotify,2,1,249.75,112,64,38055,1,450.0,Showcase,1,2294,5827,,,,,699.75,8.33,2.2299,0.1962,,A: paid + streaming outcome
+Âme,Love Is The Dance,love is the dance,2026-03-12,2026-03-23,Spotify+Linkfire,2,0,,,,,2,576.0,Showcase,2,1009,4264,8107,1369,16.89,Spotify,576.0,7.4,,0.5709,,B: streaming outcome only
+GRiZ,Chaos Theory,chaos theory,2025-05-30,2025-06-02,Meta+Spotify,2,1,0.0,0,0,0,1,500.0,Showcase,1,1701,4321,,,,,500.0,8.64,,0.2939,,A: paid + streaming outcome
+Zomboy,Dead Man Walking Pt. 2,dead man walking pt 2,2024-10-25,2024-11-04,Spotify,1,0,,,,,6,2798.4,Marquee+Showcase,3,6641,30223,,,,,2798.4,10.8,,0.4214,,B: streaming outcome only
+LSDREAM,LSZEE,lszee,2024-09-27,2024-10-04,Spotify,1,0,,,,,4,2499.62,Marquee+Showcase,2,7777,65497,,,,,2499.62,26.2,,0.3214,,B: streaming outcome only
+Bob Moses,BLINK,blink,2025-10-17,2026-02-16,Spotify,1,0,,,,,3,2152.0,Showcase,1,7588,45727,,,,,2152.0,21.25,,0.2836,,B: streaming outcome only
+Boogie T,The Archives,the archives,2023-06-28,2023-07-03,Spotify,1,0,,,,,1,2000.0,Marquee,1,4524,23344,,,,,2000.0,11.67,,0.4421,,B: streaming outcome only
+Borgore,Way Up,way up,2022-10-21,2022-11-03,Spotify,1,0,,,,,1,2000.0,Marquee,1,2980,8761,,,,,2000.0,4.38,,0.6711,,B: streaming outcome only
+GRiZ,Coast 2 Coast,coast 2 coast,2025-07-18,2025-07-21,Spotify,1,0,,,,,1,2000.0,Showcase,1,22759,50297,,,,,2000.0,25.15,,0.0879,,B: streaming outcome only
+Rhye,Love Affair,love affair,2024-10-16,2024-10-23,Spotify,1,0,,,,,3,2000.0,Marquee,3,4846,12032,,,,,2000.0,6.02,,0.4127,,B: streaming outcome only
+Hayden James,We Could Be Love,we could be love,2024-09-12,2023-09-04,Spotify,1,0,,,,,5,1895.4,Marquee,3,4163,27932,,,,,1895.4,14.74,,0.4553,,B: streaming outcome only
+Borgore,Tonight (I’m Sorry),tonight im sorry,2026-01-01,2026-01-12,Spotify,1,0,,,,,5,1500.0,Marquee+Showcase,4,3125,7706,,,,,1500.0,5.14,,0.48,,B: streaming outcome only
+Gramatik,Ten More Miles,ten more miles,2023-02-10,2023-02-24,Spotify,1,0,,,,,2,1500.0,Marquee+Showcase,1,2536,4083,,,,,1500.0,2.72,,0.5915,,B: streaming outcome only
+Rhye,Hold On,hold on,2025-12-04,2025-12-17,Spotify,1,0,,,,,2,1500.0,Marquee,2,5387,12118,,,,,1500.0,8.08,,0.2784,,B: streaming outcome only
+Zomboy,Fallout,fallout,2024-08-28,2024-09-09,Spotify,1,0,,,,,4,1150.0,Marquee+Showcase,3,3205,6682,,,,,1150.0,5.81,,0.3588,,B: streaming outcome only
+Hayden James,Follow Me,follow me,2025-06-13,2025-06-16,Spotify,1,0,,,,,2,1053.0,Marquee,2,1840,4703,,,,,1053.0,4.47,,0.5723,,B: streaming outcome only
+Borgore,COLLABORATIVE EXTENDED PLAY,collaborative extended play,2026-06-18,2026-06-29,Spotify,1,0,,,,,3,1050.04,Marquee+Showcase,3,1794,8555,,,,,1050.04,8.15,,0.5853,,B: streaming outcome only
+Borgore,FIX ME UP,fix me up,2025-05-30,2025-06-09,Spotify,1,0,,,,,2,1000.0,Marquee+Showcase,1,2399,6926,,,,,1000.0,6.93,,0.4168,,B: streaming outcome only
+GRiZ,BBFL,bbfl,2026-04-17,2026-04-23,Spotify,1,0,,,,,1,1000.0,Showcase,1,3204,7209,,,,,1000.0,7.21,,0.3121,,B: streaming outcome only
+GRiZ,Light You Up,light you up,2025-11-14,2025-11-20,Spotify,1,0,,,,,1,1000.0,Showcase,1,5707,14895,,,,,1000.0,14.89,,0.1752,,B: streaming outcome only
+Gramatik,Aequoreus,aequoreus,2025-02-21,2025-03-06,Spotify,1,0,,,,,1,1000.0,Marquee,1,2106,18175,,,,,1000.0,18.18,,0.4748,,B: streaming outcome only
+Gramatik,Dante’s Paradiso,dantes paradiso,2024-08-30,2024-09-05,Spotify,1,0,,,,,1,1000.0,Marquee,1,1523,2680,,,,,1000.0,2.68,,0.6566,,B: streaming outcome only
+Gramatik,Good Love,good love,2023-08-25,2023-09-01,Spotify,1,0,,,,,1,1000.0,Marquee,1,1396,2597,,,,,1000.0,2.6,,0.7163,,B: streaming outcome only
+Gramatik,Ice Machine,ice machine,2024-02-02,2024-02-08,Spotify,1,0,,,,,1,1000.0,Marquee,1,2393,4523,,,,,1000.0,4.52,,0.4179,,B: streaming outcome only
+Gramatik,No Place Like NYC,no place like nyc,2023-05-05,2023-05-15,Spotify,1,0,,,,,1,1000.0,Marquee,1,1611,2658,,,,,1000.0,2.66,,0.6207,,B: streaming outcome only
+Gramatik,Nowhere,nowhere,2025-02-14,2025-02-17,Spotify,1,0,,,,,1,1000.0,Marquee,1,1318,2069,,,,,1000.0,2.07,,0.7587,,B: streaming outcome only
+Gramatik,Poseidon's Revenge,poseidons revenge,2024-10-18,2024-10-24,Spotify,1,0,,,,,1,1000.0,Marquee,1,2466,4389,,,,,1000.0,4.39,,0.4055,,B: streaming outcome only
+Gramatik,Queen,queen,2024-04-26,2024-05-03,Spotify,1,0,,,,,1,1000.0,Marquee,1,2025,3604,,,,,1000.0,3.6,,0.4938,,B: streaming outcome only
+Gramatik,Replicore Memory,replicore memory,2024-12-06,2024-12-11,Spotify,1,0,,,,,1,1000.0,Marquee,1,1403,2301,,,,,1000.0,2.3,,0.7128,,B: streaming outcome only
+Gramatik,The Istrian Job,the istrian job,2024-06-28,2024-07-01,Spotify,1,0,,,,,1,1000.0,Marquee,1,2571,4654,,,,,1000.0,4.65,,0.389,,B: streaming outcome only
+KSHMR,Bass Down Low [Trap Version],bass down low trap version,2026-02-06,2026-02-16,Spotify,1,0,,,,,2,1000.0,Marquee+Showcase,1,3007,6358,,,,,1000.0,6.36,,0.3326,,B: streaming outcome only
+KSHMR,Radiate,radiate,2025-09-11,2025-09-25,Spotify,1,0,,,,,2,1000.0,Marquee+Showcase,2,2176,5708,,,,,1000.0,5.71,,0.4596,,B: streaming outcome only
+Zomboy,Monsters,monsters,2023-09-08,2023-09-15,Spotify,1,0,,,,,1,1000.0,Marquee,1,1234,2073,,,,,1000.0,2.07,,0.8104,,B: streaming outcome only
+GRiZ,Color Of Your Soul,color of your soul,2022-02-04,2022-02-11,Spotify,1,0,,,,,1,750.0,Marquee,1,1385,2604,,,,,750.0,3.47,,0.5415,,B: streaming outcome only
+Gramatik,Within Cells Interlinked,within cells interlinked,2026-03-19,2026-03-30,Spotify,1,0,,,,,3,735.65,Marquee+Showcase,3,1955,2902,,,,,735.65,3.94,,0.3763,,B: streaming outcome only
+Hayden James,Beggin' You,beggin you,2023-11-08,2023-11-20,Spotify,1,0,,,,,1,702.0,Marquee,1,1049,2171,,,,,702.0,3.09,,0.6692,,B: streaming outcome only
+Rhye,Passing,passing,2023-03-10,2023-03-25,Spotify,1,0,,,,,3,700.0,Marquee,3,1476,6890,,,,,700.0,9.84,,0.4743,,B: streaming outcome only
+Zomboy,Royal Blood,royal blood,2025-06-13,2025-06-16,Spotify,1,0,,,,,3,600.0,Marquee,2,1684,4494,,,,,600.0,7.49,,0.3563,,B: streaming outcome only
+Âme,Howling (Âme Remix),howling me remix,2012-07-27,2024-09-26,Spotify,1,0,,,,,2,576.0,Showcase,2,1789,2863,,,,,576.0,4.97,,0.322,,B: streaming outcome only
+KSHMR,Wild Ride,wild ride,2025-06-27,2025-07-21,Spotify,1,0,,,,,1,502.0,Showcase,1,5145,14355,,,,,502.0,28.6,,0.0976,,B: streaming outcome only
+Zingara,The Magic Garden,the magic garden,2025-12-12,2025-12-18,Spotify,1,0,,,,,3,500.36,Marquee+Showcase,1,1479,8411,,,,,500.36,16.81,,0.3383,,B: streaming outcome only
+Big Gigantic,Fluorescence,fluorescence,2025-05-09,2025-05-12,Spotify,1,0,,,,,1,500.0,Marquee,1,967,3036,,,,,500.0,6.07,,0.5171,,B: streaming outcome only
+Big Gigantic,Funk Rocket,funk rocket,2026-02-20,2026-03-02,Spotify,1,0,,,,,1,500.0,Marquee,1,1128,2121,,,,,500.0,4.24,,0.4433,,B: streaming outcome only
+Big Gigantic,Hot Mic,hot mic,2025-12-12,2025-12-18,Spotify,1,0,,,,,2,500.0,Marquee+Showcase,1,1194,2098,,,,,500.0,4.2,,0.4188,,B: streaming outcome only
+Borgore,AIRPLANE MODE,airplane mode,2025-07-25,2025-08-01,Spotify,1,0,,,,,2,500.0,Marquee+Showcase,1,1035,2353,,,,,500.0,4.71,,0.4831,,B: streaming outcome only
+EAZYBAKED,INTERTWINED,intertwined,2022-03-04,2022-03-04,Spotify,1,0,,,,,1,500.0,Marquee,1,1600,21568,,,,,500.0,43.14,,0.3125,,B: streaming outcome only
+EAZYBAKED,Respawn,respawn,2025-02-14,2025-02-24,Spotify,1,0,,,,,1,500.0,Marquee,1,992,4285,,,,,500.0,8.57,,0.504,,B: streaming outcome only
+GRiZ,Nobody Else,nobody else,2025-12-19,2025-12-22,Spotify,1,0,,,,,1,500.0,Showcase,1,2157,5738,,,,,500.0,11.48,,0.2318,,B: streaming outcome only
+Gramatik,Crossroads City,crossroads city,2026-01-29,2026-02-06,Spotify,1,0,,,,,2,500.0,Marquee,2,621,1009,,,,,500.0,2.02,,0.8052,,B: streaming outcome only
+Gramatik,The Montauk,the montauk,2026-04-30,2026-05-18,Spotify,1,0,,,,,2,500.0,Marquee,2,1135,2026,,,,,500.0,4.05,,0.4405,,B: streaming outcome only
+KSHMR,All Night,all night,2024-02-09,2024-02-15,Spotify,1,0,,,,,1,500.0,Showcase,1,1080,3240,,,,,500.0,6.48,,0.463,,B: streaming outcome only
+Zingara,Parallel Spirits,parallel spirits,2026-01-28,2026-02-06,Spotify,1,0,,,,,1,500.0,Showcase,1,1411,5136,,,,,500.0,10.27,,0.3544,,B: streaming outcome only
+Zingara,Telekinesis,telekinesis,2026-06-24,2026-07-08,Spotify,1,0,,,,,1,500.0,Showcase,1,1670,3924,,,,,500.0,7.85,,0.2994,,B: streaming outcome only
+LSDREAM,DESTINY,destiny,2024-08-23,2024-09-13,Spotify,1,0,,,,,2,499.84,Showcase,2,1287,2598,,,,,499.84,5.2,,0.3884,,B: streaming outcome only
+LSDREAM,LOST,lost,2025-02-21,2025-02-28,Spotify,1,0,,,,,2,499.6,Marquee+Showcase,1,1261,2815,,,,,499.6,5.63,,0.3962,,B: streaming outcome only
+Zomboy,Lone Wolf,lone wolf,2018-11-16,2025-06-07,Spotify,1,0,,,,,2,400.0,Showcase,2,1163,1862,,,,,400.0,4.66,,0.3439,,B: streaming outcome only
+Zingara,For The Crystal Children,for the crystal children,2024-11-01,2024-11-08,Spotify,1,0,,,,,1,299.88,Marquee,1,664,3446,,,,,299.88,11.49,,0.4516,,B: streaming outcome only
+EAZYBAKED,Rollin' Deep,rollin deep,2024-02-23,2024-03-08,Spotify,1,0,,,,,1,270.5,Marquee,1,543,999,,,,,270.5,3.69,,0.4982,,B: streaming outcome only
+Gramatik,I'm A Problem,im a problem,2025-01-24,2025-01-27,Spotify,1,0,,,,,1,252.32,Marquee,1,520,806,,,,,252.32,3.19,,0.4852,,B: streaming outcome only
+Bob Moses,Love Brand New,love brand new,2022-01-14,2025-04-01,Spotify,1,0,,,,,1,250.0,Showcase,1,436,1199,,,,,250.0,4.8,,0.5734,,B: streaming outcome only
+LSDREAM,KOOLAID MAN,koolaid man,2026-05-01,2026-05-28,Spotify,1,0,,,,,1,250.0,Showcase,1,718,1515,,,,,250.0,6.06,,0.3482,,B: streaming outcome only
+LSDREAM,LSZEE: ENIGMA MIXTAPE,lszee enigma mixtape,2025-06-12,2025-06-20,Spotify,1,0,,,,,1,250.0,Marquee,1,656,8856,,,,,250.0,35.42,,0.3811,,B: streaming outcome only
+Bob Moses,The Silence in Between,the silence in between,2022-03-04,2025-04-07,Spotify,1,0,,,,,1,249.6,Showcase,1,591,3776,,,,,249.6,15.13,,0.4223,,B: streaming outcome only
+EAZYBAKED,The Antennae,the antennae,2025-12-12,2025-12-21,Spotify,1,0,,,,,1,188.7,Marquee,1,620,4755,,,,,188.7,25.2,,0.3044,,B: streaming outcome only
+Boogie T,Encore,encore,2024-02-23,2024-03-02,Spotify,1,0,,,,,1,187.6,Marquee,1,747,2107,,,,,187.6,11.23,,0.2511,,B: streaming outcome only
+Âme,Asa,asa,2024-07-12,2024-07-22,Spotify,1,0,,,,,1,172.8,Marquee,1,228,522,,,,,172.8,3.02,,0.7579,,B: streaming outcome only
+Âme,Shadow Of Love (Echonomist Remix),shadow of love echonomist remix,2025-03-28,2025-04-11,Spotify,1,0,,,,,1,112.62,Showcase,1,238,421,,,,,112.62,3.74,,0.4732,,B: streaming outcome only
+Boogie T,On The Rocks,on the rocks,2024-03-22,2024-03-25,Spotify,1,0,,,,,1,0.0,Marquee,1,,,,,,,,,,,,B: streaming outcome only
+GRiZ,Rainbow Brain,rainbow brain,2021-07-24,2021-08-04,Spotify,1,0,,,,,1,0.0,Marquee,1,,,,,,,,,,,,B: streaming outcome only
+Jepe,Monza,monza,,,Linkfire,1,0,,,,,0,,,,,,3715,193,5.2,Spotify,,,,,,C: no streaming outcome
+Selim Sivade & Barbara Nicole,Savage EP,savage ep,,,Linkfire,1,0,,,,,0,,,,,,3113,546,17.54,Spotify,,,,,,C: no streaming outcome
+Innervisions (VA),Secret Weapons Part 18,secret weapons part 18,,,Linkfire,1,0,,,,,0,,,,,,15133,3549,23.45,Spotify,,,,,,C: no streaming outcome
+Âme,Pha Na Pha (TSHA Remix),pha na pha tsha remix,,,Linkfire,1,0,,,,,0,,,,,,1948,327,16.79,Spotify,,,,,,C: no streaming outcome
+Jimi Jules,Whisper To Me feat. Modern Tales,whisper to me,,,Linkfire,1,0,,,,,0,,,,,,8522,5395,63.31,Spotify Pre Release,,,,,,C: no streaming outcome
+Crankdat,Movement,movement,,,Linkfire,1,0,,,,,0,,,,,,47302,47301,100.0,Spotify,,,,,,C: no streaming outcome
+Subtronics,Eyes Cut Deeper,eyes cut deeper,,,Linkfire,1,0,,,,,0,,,,,,46830,46809,99.96,Spotify,,,,,,C: no streaming outcome
+Subtronics,Fall Back To Nothing (feat. Saint Monet),fall back to nothing,,,Linkfire,1,0,,,,,0,,,,,,47652,47666,100.03,Spotify,,,,,,C: no streaming outcome

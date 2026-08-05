@@ -65,12 +65,12 @@ ACTIVE_META_AD_RATES = {
     "meta_objective_multipliers": {
         "traffic": 1.0,
         "awareness": 21.4,
-        "reach": 8.9,
+        "streaming": 1.0,
     },
     "meta_delivery_per_objective": {
         "traffic": {"cpm": 3.83, "cpr": 6.91, "cpc": 0.1},
         "awareness": {"cpm": 4.3, "cpr": 6.58, "cpc": 2.14},
-        "reach": {"cpm": 2.09, "cpr": 2.18, "cpc": 0.89},
+        "streaming": {"cpm": 2.09, "cpr": 2.18, "cpc": 0.89},
     },
 }
 

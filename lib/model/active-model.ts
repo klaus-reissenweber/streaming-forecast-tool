@@ -16,6 +16,11 @@ import {
   TIER_ML_THRESHOLDS,
 } from "@/lib/constants";
 import type { RegressionModel } from "@/lib/forecast";
+import {
+  parseAdModel,
+  SEED_AD_MODEL,
+  type AdModel,
+} from "@/lib/model/ad-model";
 import liveSeed from "@/seed/live-model-version.json";
 
 const DOW_KEYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
@@ -100,6 +105,8 @@ export type ActiveModel = {
   saveCountBands: SaveCountBands;
   streamsD0: RegressionModel;
   config: ActiveModelConfig;
+  /** Ad-spend layer (spec §3). Absent payload block → seed defaults. */
+  adModel: AdModel;
   metadata: ActiveModelMetadata | null;
 };
 
@@ -369,6 +376,8 @@ export function parseActiveModelPayload(raw: unknown): Omit<
     saveCountBands: parseSaveCountBands(raw.save_count_bands),
     streamsD0: parseStreamsD0(raw.streams_d0),
     config: parseConfig(raw.config),
+    // Optional for pre-ad_model rows; seed fills until a fit is written.
+    adModel: parseAdModel(raw.ad_model),
   };
 }
 
@@ -411,9 +420,16 @@ export function buildFallbackActiveModel(): ActiveModel {
       wk1DayEnd: 7,
       releaseTypeMagnitudeShrinkageK: 5,
     },
+    adModel: parseAdModel(
+      (liveSeed.payload as { ad_model?: unknown }).ad_model,
+    ),
     metadata: seedMeta,
   };
 }
+
+// Re-export for callers that already import from active-model.
+export type { AdModel } from "@/lib/model/ad-model";
+export { SEED_AD_MODEL };
 
 export type ActiveModelRow = {
   id: string;

@@ -1,6 +1,5 @@
 import {
   GENRES,
-  META_OBJECTIVES,
   RELEASE_TYPES,
   SPOTIFY_FORMATS,
 } from "@/lib/constants";
@@ -11,6 +10,7 @@ import type {
   ReleaseType,
   SpotifyFormat,
 } from "@/lib/forecast";
+import { deriveMetaObjectiveFromSpends } from "@/lib/meta-objective";
 
 /** Coerced, typed values used by validation and forecast mapping. */
 export interface NewReleaseFormValues {
@@ -23,6 +23,11 @@ export interface NewReleaseFormValues {
   releaseDate: string;
   releaseType: ReleaseType;
   spotifyFormat: SpotifyFormat;
+  /** Meta traffic spend — click→stream funnel. */
+  metaTrafficSpendPlanned: number;
+  /** Meta awareness spend — reach-only, zero attributed streams. */
+  metaAwarenessSpendPlanned: number;
+  /** traffic + awareness (legacy total for organic / channel-mix). */
   metaSpendPlanned: number;
   metaObjective: MetaObjective;
   spotifySpendPlanned: number;
@@ -42,8 +47,8 @@ export interface NewReleaseFormRawValues {
   releaseDate: string;
   releaseType: ReleaseType;
   spotifyFormat: SpotifyFormat;
-  metaSpendPlanned: number | string;
-  metaObjective: MetaObjective;
+  metaTrafficSpendPlanned: number | string;
+  metaAwarenessSpendPlanned: number | string;
   spotifySpendPlanned: number | string;
 }
 
@@ -137,13 +142,22 @@ export function coerceNewReleaseFormValues(
     fieldErrors.monthlyListeners = ml.error;
   }
 
-  const metaSpend = coerceNumericInput(
-    raw.metaSpendPlanned,
+  const metaTraffic = coerceNumericInput(
+    raw.metaTrafficSpendPlanned,
     0,
-    "Meta spend",
+    "Meta traffic spend",
   );
-  if (!metaSpend.ok) {
-    fieldErrors.metaSpendPlanned = metaSpend.error;
+  if (!metaTraffic.ok) {
+    fieldErrors.metaTrafficSpendPlanned = metaTraffic.error;
+  }
+
+  const metaAwareness = coerceNumericInput(
+    raw.metaAwarenessSpendPlanned,
+    0,
+    "Meta awareness spend",
+  );
+  if (!metaAwareness.ok) {
+    fieldErrors.metaAwarenessSpendPlanned = metaAwareness.error;
   }
 
   const spotifySpend = coerceNumericInput(
@@ -155,6 +169,9 @@ export function coerceNewReleaseFormValues(
     fieldErrors.spotifySpendPlanned = spotifySpend.error;
   }
 
+  const traffic = metaTraffic.ok ? metaTraffic.value : 0;
+  const awareness = metaAwareness.ok ? metaAwareness.value : 0;
+
   const values: NewReleaseFormValues = {
     trackName: raw.trackName,
     artistName: raw.artistName,
@@ -165,8 +182,10 @@ export function coerceNewReleaseFormValues(
     releaseDate: raw.releaseDate,
     releaseType: raw.releaseType,
     spotifyFormat: raw.spotifyFormat,
-    metaSpendPlanned: metaSpend.ok ? metaSpend.value : 0,
-    metaObjective: raw.metaObjective,
+    metaTrafficSpendPlanned: traffic,
+    metaAwarenessSpendPlanned: awareness,
+    metaSpendPlanned: traffic + awareness,
+    metaObjective: deriveMetaObjectiveFromSpends(traffic, awareness),
     spotifySpendPlanned: spotifySpend.ok ? spotifySpend.value : 0,
   };
 
@@ -277,9 +296,20 @@ export function validateNewReleaseForm(
     fieldErrors.spotifyFormat = "Pick a Spotify format.";
   }
 
-  const metaSpendError = validateSpend(values.metaSpendPlanned, "Meta spend");
-  if (metaSpendError) {
-    fieldErrors.metaSpendPlanned = metaSpendError;
+  const metaTrafficError = validateSpend(
+    values.metaTrafficSpendPlanned,
+    "Meta traffic spend",
+  );
+  if (metaTrafficError) {
+    fieldErrors.metaTrafficSpendPlanned = metaTrafficError;
+  }
+
+  const metaAwarenessError = validateSpend(
+    values.metaAwarenessSpendPlanned,
+    "Meta awareness spend",
+  );
+  if (metaAwarenessError) {
+    fieldErrors.metaAwarenessSpendPlanned = metaAwarenessError;
   }
 
   const spotifySpendError = validateSpend(
@@ -290,10 +320,6 @@ export function validateNewReleaseForm(
     fieldErrors.spotifySpendPlanned = spotifySpendError;
   }
 
-  if (!META_OBJECTIVES.includes(values.metaObjective)) {
-    fieldErrors.metaObjective = "Pick a Meta objective.";
-  }
-
   if (
     Number.isFinite(values.metaSpendPlanned) &&
     Number.isFinite(values.spotifySpendPlanned) &&
@@ -302,6 +328,10 @@ export function validateNewReleaseForm(
   ) {
     warnings.push(
       "No paid spend entered. Forecast will be organic-only (no ad lift modeled).",
+    );
+  } else if (values.metaAwarenessSpendPlanned > 0) {
+    warnings.push(
+      "Meta awareness spend is reach-only — it does not add attributed streams.",
     );
   }
 

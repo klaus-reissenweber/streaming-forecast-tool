@@ -1,6 +1,5 @@
 import type {
   Genre,
-  MetaObjective,
   ReleaseType,
   SpotifyFormat,
 } from "@/lib/forecast";
@@ -26,8 +25,10 @@ export function rawValuesFromFormData(formData: FormData): NewReleaseFormRawValu
     releaseDate: String(formData.get("releaseDate") ?? ""),
     releaseType: String(formData.get("releaseType") ?? "single") as ReleaseType,
     spotifyFormat: String(formData.get("spotifyFormat") ?? "marquee") as SpotifyFormat,
-    metaSpendPlanned: String(formData.get("metaSpendPlanned") ?? ""),
-    metaObjective: String(formData.get("metaObjective") ?? "traffic") as MetaObjective,
+    metaTrafficSpendPlanned: String(formData.get("metaTrafficSpendPlanned") ?? ""),
+    metaAwarenessSpendPlanned: String(
+      formData.get("metaAwarenessSpendPlanned") ?? "",
+    ),
     spotifySpendPlanned: String(formData.get("spotifySpendPlanned") ?? ""),
   };
 }

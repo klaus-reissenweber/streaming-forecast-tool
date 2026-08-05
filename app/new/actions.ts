@@ -90,11 +90,40 @@ export async function createRelease(
     });
 
     const supabase = await createClient();
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("releases")
       .insert(row)
       .select("id")
       .single();
+
+    // Split Meta columns require 202608050001; retry without them if absent.
+    if (
+      error &&
+      (error.message?.includes("meta_traffic_spend_planned") ||
+        error.message?.includes("meta_awareness_spend_planned") ||
+        error.code === "PGRST204")
+    ) {
+      if (
+        parsed.values.metaTrafficSpendPlanned > 0 &&
+        parsed.values.metaAwarenessSpendPlanned > 0
+      ) {
+        return {
+          success: false,
+          error:
+            "Split Meta traffic/awareness spend requires migration 202608050001. Apply it, or enter only one Meta spend type.",
+        };
+      }
+      const {
+        meta_traffic_spend_planned: _t,
+        meta_awareness_spend_planned: _a,
+        ...legacyRow
+      } = row;
+      ({ data, error } = await supabase
+        .from("releases")
+        .insert(legacyRow)
+        .select("id")
+        .single());
+    }
 
     if (error || !data?.id) {
       if (error) {

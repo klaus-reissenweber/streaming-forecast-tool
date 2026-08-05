@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { ReleaseCreationForm } from "@/components/new/ReleaseCreationForm";
+import { loadActiveModel } from "@/lib/load-active-model";
 
-export default function NewReleasePage() {
+export default async function NewReleasePage() {
+  const model = await loadActiveModel();
+
   return (
     <main className="mx-auto max-w-3xl px-5 py-8">
       <header className="border-b border-border pb-4">
@@ -30,7 +33,7 @@ export default function NewReleasePage() {
       </header>
 
       <div className="mt-6">
-        <ReleaseCreationForm />
+        <ReleaseCreationForm adModel={model.adModel} />
       </div>
     </main>
   );

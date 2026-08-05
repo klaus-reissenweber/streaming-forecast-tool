@@ -21,6 +21,10 @@
   --color-accent-tint: #f7fce8;
   --color-accent-border: #dfeba3;
   --color-chart-locked: #8fa800;
+  --color-chart-spotify-ads: #1db954;
+  --color-chart-spotify-marquee: #1db954;
+  --color-chart-spotify-showcase: #0d7a3a;
+  --color-chart-meta-ads: #1877f2;
   --color-chart-projected: #1565a8;
   --color-chart-actual: #12151a;
   --color-chart-grid: #eceef2;
@@ -71,6 +75,10 @@
   --color-semantic-neutral: #545b66;
   --color-projected: #1565a8;
   --color-chart-locked: var(--color-chart-locked);
+  --color-chart-spotify-ads: var(--color-chart-spotify-ads);
+  --color-chart-spotify-marquee: var(--color-chart-spotify-marquee);
+  --color-chart-spotify-showcase: var(--color-chart-spotify-showcase);
+  --color-chart-meta-ads: var(--color-chart-meta-ads);
   --color-chart-projected: var(--color-chart-projected);
   --color-chart-actual: var(--color-chart-actual);
   --color-chart-grid: var(--color-chart-grid);

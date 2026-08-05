@@ -2,18 +2,21 @@
 
 import type { ReactNode } from "react";
 import { useMemo } from "react";
+import { computeAdMetaFunnelDisplay } from "@/lib/ad-forecast";
 import { formatCompactNumber, formatPercent, formatUsd } from "@/lib/format";
-import {
-  computeMetaFunnel,
-  type Genre,
-  type MetaObjective,
-} from "@/lib/forecast";
+import type { Genre } from "@/lib/forecast";
 import { useCountUp } from "@/lib/hooks/use-count-up";
+import type { AdModel } from "@/lib/model/ad-model";
 
 export interface MetaFunnelForecastProps {
+  /** Meta traffic spend — the only Meta spend that attributes streams. */
   spend: number;
-  objective: MetaObjective;
+  artistName: string;
   genre: Genre;
+  /** Active model ad_model — CPC/share/streams come from here, not seed constants. */
+  adModel: AdModel;
+  /** Awareness spend is reach-only (shown, not funneled). */
+  awarenessSpend?: number;
 }
 
 const COUNT_UP_STAGGER_MS = 40;
@@ -68,15 +71,21 @@ function MetricCell({
 
 export function MetaFunnelForecast({
   spend,
-  objective,
+  artistName,
   genre,
+  adModel,
+  awarenessSpend = 0,
 }: MetaFunnelForecastProps) {
   const funnel = useMemo(
-    () => computeMetaFunnel(spend, objective, genre),
-    [spend, objective, genre],
+    () => computeAdMetaFunnelDisplay(spend, artistName, genre, adModel),
+    [spend, artistName, genre, adModel],
   );
 
   const hasSpend = spend > 0;
+  const costPerStreamLabel =
+    funnel.costPerStream != null
+      ? `${formatUsd(funnel.costPerStream, 2)} / stream`
+      : "estimate";
 
   return (
     <section className="motion-fade-up min-w-0" aria-label="Meta funnel forecast">
@@ -85,16 +94,25 @@ export function MetaFunnelForecast({
           [META FUNNEL]
         </span>
       </h2>
+      <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.06em] text-muted">
+        Traffic objective only · confidence {funnel.confidence}
+      </p>
+      {awarenessSpend > 0 ? (
+        <p className="mt-1 text-caption text-secondary">
+          Awareness {formatUsd(awarenessSpend, 0)} is reach-only — not included in
+          attributed streams.
+        </p>
+      ) : null}
 
       <div className="mt-4 min-w-0 overflow-hidden rounded-instrument border border-border bg-surface">
         <div className="flex min-w-0 w-full flex-col sm:flex-row sm:items-stretch">
           <MetricCell
-            label="Impressions"
-            sublabel={`${formatUsd(funnel.cpm, 0)} CPM`}
+            label="Link clicks"
+            sublabel={`${formatUsd(funnel.cpc, 2)} CPC`}
             value={
               hasSpend ? (
                 <AnimatedCompactMetric
-                  value={funnel.projectedImpressions}
+                  value={funnel.projectedClicks}
                   delay={0}
                 />
               ) : (
@@ -109,12 +127,12 @@ export function MetaFunnelForecast({
           />
 
           <MetricCell
-            label="Clicks"
-            sublabel={`${formatPercent(funnel.ctr * 100, 1)} CTR · ${formatUsd(funnel.cpc, 2)} CPC`}
+            label="Spotify clicks"
+            sublabel={`${formatPercent(funnel.spotifyClickShare * 100, 0)} share`}
             value={
               hasSpend ? (
                 <AnimatedCompactMetric
-                  value={funnel.projectedClicks}
+                  value={funnel.projectedSpotifyClicks}
                   delay={COUNT_UP_STAGGER_MS}
                 />
               ) : (
@@ -129,12 +147,12 @@ export function MetaFunnelForecast({
           />
 
           <MetricCell
-            label="Conversions"
-            sublabel={`${formatPercent(funnel.clickToStreamRate * 100, 0)} click-to-stream`}
+            label="Streams"
+            sublabel={`${funnel.streamsPerSpotifyClickEffective.toFixed(2)} s/click · ${costPerStreamLabel}`}
             value={
               hasSpend ? (
                 <AnimatedCompactMetric
-                  value={funnel.projectedStreamConversions}
+                  value={funnel.projectedStreams}
                   delay={COUNT_UP_STAGGER_MS * 2}
                 />
               ) : (

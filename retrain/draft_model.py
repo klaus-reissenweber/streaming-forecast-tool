@@ -35,6 +35,7 @@ def build_forecast_model_payload(
     release_type_magnitude: ReleaseTypeMagnitudeFit,
     algo_bands: AlgoBandsFit,
     save_rate_bands: SaveRateBandsFit,
+    ad_model: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if len(stream_curve.dow_multiplier) != 7:
         raise DbError(
@@ -44,7 +45,7 @@ def build_forecast_model_payload(
         name: float(stream_curve.dow_multiplier[index])
         for index, name in enumerate(DOW_NAMES)
     }
-    return {
+    payload: dict[str, Any] = {
         "trend": {
             "median": list(stream_curve.trend_median),
             "p25": list(stream_curve.trend_p25),
@@ -78,6 +79,10 @@ def build_forecast_model_payload(
             ),
         },
     }
+    # Preserve live ad_model until retrain fits it (spec §6).
+    if isinstance(ad_model, dict) and ad_model:
+        payload["ad_model"] = ad_model
+    return payload
 
 
 def build_draft_metadata(

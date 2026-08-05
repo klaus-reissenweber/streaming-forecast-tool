@@ -18,6 +18,11 @@ import {
   type StreamCurveForecast,
 } from "@/lib/forecast";
 import {
+  adSpendPlanFromRelease,
+  buildAdDailyLayer,
+  type AdDailyLayer,
+} from "@/lib/ad-forecast";
+import {
   formatActiveModelSource,
   type ForecastModel,
 } from "@/lib/model/forecast-model";
@@ -65,6 +70,8 @@ export interface ReleaseViewModel {
   /** DB row id / fitted_at, or "fallback" — for prod observability. */
   activeModelSource: string;
   streamCurve: StreamCurveForecast;
+  /** Additive ad layer on top of organic locked curve (spec §4). */
+  adLayer: AdDailyLayer;
   actualStreamsByDay: (number | null)[];
   monitoring: MonitoringSummary;
   flags: readonly ReleaseFlag[];
@@ -132,6 +139,11 @@ export function buildReleaseViewModel(
     release.locked_forecast_streams,
     { releaseDate: release.release_date },
   );
+  const adLayer = buildAdDailyLayer(
+    adSpendPlanFromRelease(release),
+    model.adModel,
+    release.locked_forecast_streams,
+  );
   const { actualStreamsByDay } = chartSeriesFromDailyData(dailyData);
 
   const monitoring =
@@ -178,6 +190,7 @@ export function buildReleaseViewModel(
     modelConfidenceR2: streamsD0R2,
     activeModelSource: formatActiveModelSource(model),
     streamCurve,
+    adLayer,
     actualStreamsByDay,
     monitoring,
     flags,

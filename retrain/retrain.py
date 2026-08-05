@@ -407,14 +407,16 @@ def run(flags: config.RetrainFlags) -> int:
             if not isinstance(streams_d0_raw, RegressionFit):
                 raise RuntimeError("streams_d0 fit missing for --write-draft")
             streams_d0 = streams_d0_raw
+            live_payload = load_active_consolidated_payload(client)
+            live_ad_model = live_payload.get("ad_model")
             payload = build_forecast_model_payload(
                 streams_d0=streams_d0,
                 stream_curve=derived_models["stream_curve"],
                 release_type_magnitude=derived_models["release_type_magnitude"],
                 algo_bands=derived_models["algo_bands"],
                 save_rate_bands=derived_models["save_rate_bands"],
+                ad_model=live_ad_model if isinstance(live_ad_model, dict) else None,
             )
-            live_payload = load_active_consolidated_payload(client)
             live_scorer = scorer_from_payload(live_payload)
             metadata = build_draft_metadata(
                 eligible_rows=training_rows,

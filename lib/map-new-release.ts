@@ -25,6 +25,9 @@ export interface NewReleaseInsertRow {
   locked_forecast_saves: number;
   model_version_used: string;
   status: "active";
+  /** Present when 202608050001 is applied; omitted otherwise by create action. */
+  meta_traffic_spend_planned?: number;
+  meta_awareness_spend_planned?: number;
 }
 
 export function toReleaseForecastInputs(
@@ -37,7 +40,8 @@ export function toReleaseForecastInputs(
     genre: values.genre as ReleaseForecastInputs["genre"],
     releaseType: values.releaseType,
     spotifyFormat: values.spotifyFormat,
-    metaSpendPlanned: values.metaSpendPlanned,
+    // Organic Meta stream math uses traffic only; awareness is reach-only.
+    metaSpendPlanned: values.metaTrafficSpendPlanned,
     metaObjective: values.metaObjective,
     spotifySpendPlanned: values.spotifySpendPlanned,
   };
@@ -64,6 +68,8 @@ export function toNewReleaseInsertRow(
     spotify_format: values.spotifyFormat,
     meta_spend_planned: values.metaSpendPlanned,
     meta_objective: values.metaObjective,
+    meta_traffic_spend_planned: values.metaTrafficSpendPlanned,
+    meta_awareness_spend_planned: values.metaAwarenessSpendPlanned,
     spotify_spend_planned: values.spotifySpendPlanned,
     locked_forecast_streams: forecast.lockedForecastStreams,
     locked_forecast_saves: forecast.lockedForecastSaves,
@@ -83,7 +89,7 @@ export const DEFAULT_NEW_RELEASE_FORM_VALUES: NewReleaseFormRawValues = {
   releaseDate: "",
   releaseType: "single",
   spotifyFormat: "marquee",
-  metaSpendPlanned: 0,
-  metaObjective: "traffic",
+  metaTrafficSpendPlanned: 0,
+  metaAwarenessSpendPlanned: 0,
   spotifySpendPlanned: 0,
 };

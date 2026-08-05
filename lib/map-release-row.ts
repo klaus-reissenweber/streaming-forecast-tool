@@ -1,6 +1,5 @@
 import {
   GENRES,
-  META_OBJECTIVES,
   RELEASE_TYPES,
   SPOTIFY_FORMATS,
 } from "@/lib/constants";
@@ -12,6 +11,10 @@ import type {
   ReleaseType,
   SpotifyFormat,
 } from "@/lib/forecast";
+import {
+  coerceMetaObjective,
+  splitMetaSpendByObjective,
+} from "@/lib/meta-objective";
 
 export type ReleaseStatus = "active" | "closed";
 
@@ -31,6 +34,14 @@ export interface ReleaseRow {
   meta_spend_planned: number | string;
   meta_objective: string;
   spotify_spend_planned: number | string;
+  /** Optional until 202608040002 is applied. */
+  spotify_marquee_spend_planned?: number | string | null;
+  spotify_showcase_spend_planned?: number | string | null;
+  campaign_start_offset_days?: number | string | null;
+  campaign_duration_days?: number | string | null;
+  /** Optional until 202608050001 is applied. */
+  meta_traffic_spend_planned?: number | string | null;
+  meta_awareness_spend_planned?: number | string | null;
   locked_forecast_streams: number;
   locked_forecast_saves: number;
   model_version_used: string;
@@ -64,6 +75,12 @@ export type ReleaseRecord = Omit<
   monthly_listeners_at_release: number;
   meta_spend_planned: number;
   spotify_spend_planned: number;
+  spotify_marquee_spend_planned: number;
+  spotify_showcase_spend_planned: number;
+  campaign_start_offset_days: number;
+  campaign_duration_days: number | null;
+  meta_traffic_spend_planned: number;
+  meta_awareness_spend_planned: number;
 };
 
 /** Row shape returned by Supabase `daily_data` select. */
@@ -220,6 +237,25 @@ function parseNullableTimestamp(value: unknown, field: string): string | null {
   return parseRequiredString(value, field);
 }
 
+function parseOptionalNumeric(
+  value: unknown,
+  field: string,
+  fallback: number,
+  options?: { min?: number },
+): number {
+  if (value === null || value === undefined || value === "") {
+    return fallback;
+  }
+  return parseNumeric(value, field, options);
+}
+
+function parseOptionalIntegerOrNull(value: unknown, field: string): number | null {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+  return parseInteger(value, field, { min: 0 });
+}
+
 /** Validates and narrows a Supabase release row. Throws `ReleaseRowParseError` on failure. */
 export function parseReleaseRow(row: ReleaseRow): ReleaseRecord {
   const releaseId = typeof row.id === "string" ? row.id : undefined;
@@ -246,10 +282,44 @@ export function parseReleaseRow(row: ReleaseRow): ReleaseRecord {
       meta_spend_planned: parseNumeric(row.meta_spend_planned, "meta_spend_planned", {
         min: 0,
       }),
-      meta_objective: parseEnum(row.meta_objective, "meta_objective", META_OBJECTIVES),
+      meta_objective: coerceMetaObjective(row.meta_objective, "traffic"),
       spotify_spend_planned: parseNumeric(
         row.spotify_spend_planned,
         "spotify_spend_planned",
+        { min: 0 },
+      ),
+      spotify_marquee_spend_planned: parseOptionalNumeric(
+        row.spotify_marquee_spend_planned,
+        "spotify_marquee_spend_planned",
+        0,
+        { min: 0 },
+      ),
+      spotify_showcase_spend_planned: parseOptionalNumeric(
+        row.spotify_showcase_spend_planned,
+        "spotify_showcase_spend_planned",
+        0,
+        { min: 0 },
+      ),
+      campaign_start_offset_days: parseOptionalNumeric(
+        row.campaign_start_offset_days,
+        "campaign_start_offset_days",
+        0,
+        { min: 0 },
+      ),
+      campaign_duration_days: parseOptionalIntegerOrNull(
+        row.campaign_duration_days,
+        "campaign_duration_days",
+      ),
+      meta_traffic_spend_planned: parseOptionalNumeric(
+        row.meta_traffic_spend_planned,
+        "meta_traffic_spend_planned",
+        0,
+        { min: 0 },
+      ),
+      meta_awareness_spend_planned: parseOptionalNumeric(
+        row.meta_awareness_spend_planned,
+        "meta_awareness_spend_planned",
+        0,
         { min: 0 },
       ),
       locked_forecast_streams: parseInteger(
@@ -307,6 +377,18 @@ export function parseDailyDataRow(row: DailyDataRow): DailyDataPoint {
 export function releaseRowToForecastInputs(
   record: ReleaseRecord,
 ): ReleaseForecastInputs {
+  let trafficSpend = record.meta_traffic_spend_planned;
+  if (
+    trafficSpend === 0 &&
+    record.meta_awareness_spend_planned === 0 &&
+    record.meta_spend_planned > 0
+  ) {
+    trafficSpend = splitMetaSpendByObjective(
+      record.meta_spend_planned,
+      record.meta_objective,
+    ).trafficSpend;
+  }
+
   return {
     // Creation snapshot — never live/current ML.
     monthlyListeners: record.monthly_listeners_at_release,
@@ -315,7 +397,8 @@ export function releaseRowToForecastInputs(
     genre: record.genre,
     releaseType: record.release_type,
     spotifyFormat: record.spotify_format,
-    metaSpendPlanned: record.meta_spend_planned,
+    // Traffic only — awareness is reach-only (0 attributed streams).
+    metaSpendPlanned: trafficSpend,
     metaObjective: record.meta_objective,
     spotifySpendPlanned: record.spotify_spend_planned,
   };
