@@ -3,16 +3,15 @@
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { createRelease } from "@/app/new/actions";
+import { AdSpendLiveForecast } from "@/components/new/AdSpendLiveForecast";
 import { MonthlyListenersField } from "@/components/new/MonthlyListenersField";
 import { ToggleGroup } from "@/components/new/ToggleGroup";
-import { MetaFunnelForecast } from "@/components/release/MetaFunnelForecast";
 import {
   EDITORIAL_TIER_DEFINITIONS,
   EDITORIAL_TIER_TOGGLE_OPTIONS,
   GENRES,
   RELEASE_TYPE_LABELS,
   RELEASE_TYPES,
-  SPOTIFY_FORMATS,
 } from "@/lib/constants";
 import type { EditorialTier, Genre } from "@/lib/forecast";
 import { DEFAULT_NEW_RELEASE_FORM_VALUES } from "@/lib/map-new-release";
@@ -27,11 +26,6 @@ const FEATURE_OPTIONS = [
   { value: "solo", label: "Solo release" },
   { value: "feature", label: "Feature / collab" },
 ] as const;
-
-const SPOTIFY_FORMAT_LABELS: Record<(typeof SPOTIFY_FORMATS)[number], string> = {
-  marquee: "Marquee",
-  showcase: "Showcase",
-};
 
 const TEXT_INPUT_CLASS =
   "rounded-instrument border border-border bg-surface px-3 py-2 text-body-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent";
@@ -154,8 +148,8 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
   }
 
   const editorialTier = values.editorialTier as EditorialTier;
-  const genre = values.genre as Genre;
-  const metaTrafficSpend = validation.values.metaTrafficSpendPlanned;
+  const genre = (values.genre || "house") as Genre;
+  const coerced = validation.values;
 
   return (
     <form
@@ -193,9 +187,9 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
           <ToggleGroup
             name="genre"
             label="Genre"
-            options={GENRES.map((genre) => ({ value: genre, label: genre }))}
+            options={GENRES.map((g) => ({ value: g, label: g }))}
             value={values.genre}
-            onChange={(genre) => setField("genre", genre as Genre)}
+            onChange={(next) => setField("genre", next as Genre)}
             disabled={pending}
           />
         </div>
@@ -263,38 +257,46 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
             disabled={pending}
           />
 
-          <ToggleGroup
-            name="spotifyFormat"
-            label="Spotify format"
-            options={SPOTIFY_FORMATS.map((format) => ({
-              value: format,
-              label: SPOTIFY_FORMAT_LABELS[format],
-            }))}
-            value={values.spotifyFormat}
-            onChange={(spotifyFormat) => setField("spotifyFormat", spotifyFormat)}
-            disabled={pending}
-          />
+          <div className="grid gap-4 sm:grid-cols-2 sm:max-w-xl">
+            <label className="flex flex-col gap-1">
+              <span className="text-body-sm font-medium text-foreground">
+                Spotify Marquee spend (USD)
+              </span>
+              <input
+                className={NUMERIC_INPUT_CLASS}
+                inputMode="decimal"
+                value={values.spotifyMarqueeSpendPlanned}
+                onChange={(event) =>
+                  setField("spotifyMarqueeSpendPlanned", event.target.value)
+                }
+                disabled={pending}
+                placeholder="0"
+              />
+              <span className="text-caption text-muted">
+                Front-loaded · both formats can run together
+              </span>
+            </label>
 
-          <label className="flex flex-col gap-1 sm:max-w-xs">
-            <span className="text-body-sm font-medium text-foreground">
-              Spotify spend (USD)
-            </span>
-            <input
-              className={NUMERIC_INPUT_CLASS}
-              inputMode="decimal"
-              value={values.spotifySpendPlanned}
-              onChange={(event) =>
-                setField("spotifySpendPlanned", event.target.value)
-              }
-              disabled={pending}
-              placeholder="0"
-            />
-          </label>
-        </div>
-      </FormSection>
+            <label className="flex flex-col gap-1">
+              <span className="text-body-sm font-medium text-foreground">
+                Spotify Showcase spend (USD)
+              </span>
+              <input
+                className={NUMERIC_INPUT_CLASS}
+                inputMode="decimal"
+                value={values.spotifyShowcaseSpendPlanned}
+                onChange={(event) =>
+                  setField("spotifyShowcaseSpendPlanned", event.target.value)
+                }
+                disabled={pending}
+                placeholder="0"
+              />
+              <span className="text-caption text-muted">
+                Even over ~14 days · independent of Marquee
+              </span>
+            </label>
+          </div>
 
-      <FormSection label="Meta campaign">
-        <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2 sm:max-w-xl">
             <label className="flex flex-col gap-1">
               <span className="text-body-sm font-medium text-foreground">
@@ -330,18 +332,20 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
                 placeholder="0"
               />
               <span className="text-caption text-muted">
-                Reach-only · zero attributed streams
+                Reach / impressions only · 0 streams
               </span>
             </label>
           </div>
 
           {values.genre ? (
-            <MetaFunnelForecast
-              spend={metaTrafficSpend}
+            <AdSpendLiveForecast
               artistName={values.artistName}
               genre={genre}
+              marqueeSpend={coerced.spotifyMarqueeSpendPlanned}
+              showcaseSpend={coerced.spotifyShowcaseSpendPlanned}
+              metaTrafficSpend={coerced.metaTrafficSpendPlanned}
+              metaAwarenessSpend={coerced.metaAwarenessSpendPlanned}
               adModel={adModel}
-              awarenessSpend={validation.values.metaAwarenessSpendPlanned}
             />
           ) : null}
         </div>

@@ -5,6 +5,7 @@
 import {
   allocateDailyStreams,
   buildAdDailyLayer,
+  computeAdAwarenessDisplay,
   computeAdAttributedTotals,
   computeAdMetaFunnelDisplay,
   DEFAULT_MARQUEE_DURATION_DAYS,
@@ -80,6 +81,13 @@ const awarenessOnly = computeAdAttributedTotals(
 assert(awarenessOnly.meta === 0, "awareness → 0 attributed streams");
 assert(awarenessOnly.metaAwarenessSpend === 1000, "awareness spend retained");
 assert(awarenessOnly.grandTotal === 0, "awareness not in attributed total");
+
+const awarenessUi = computeAdAwarenessDisplay(1000, {
+  ...adModel,
+  metaAwareness: { cpm: 3.7, costPerReach: 0.0053, confidence: "estimate" },
+});
+assert(Math.abs(awarenessUi.projectedImpressions - (1000 / 3.7) * 1000) < 1e-6, "awareness imps");
+assert(Math.abs(awarenessUi.projectedReach - 1000 / 0.0053) < 1e-6, "awareness reach");
 
 const funnelUi = computeAdMetaFunnelDisplay(400, "Elderbrook", "downtempo", adModel);
 assert(Math.abs(funnelUi.cpc - 0.4) < 1e-9, "UI CPC from adModel");

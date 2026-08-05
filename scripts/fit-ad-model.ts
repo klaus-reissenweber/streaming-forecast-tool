@@ -23,6 +23,7 @@ import {
   normalizeArtistKey,
   type AdFormat,
   type AdGenre,
+  type MetaAwarenessFitRow,
   type MetaCampaignFitRow,
   type SpotifyCampaignFitRow,
 } from "@/lib/model/ad-model";
@@ -42,6 +43,10 @@ const DRY_RUN = process.argv.includes("--dry-run");
 const SEED_DIR = path.join(process.cwd(), "seed", "ad");
 const LINKFIRE_SERVICES_CSV = path.join(SEED_DIR, "linkfire-services.csv");
 const LINKFIRE_SUMMARY_CSV = path.join(SEED_DIR, "linkfire-summary.csv");
+const MASTER_RELEASE_CAMPAIGNS_CSV = path.join(
+  SEED_DIR,
+  "master-release-campaigns.csv",
+);
 
 type CsvRow = Record<string, string>;
 
@@ -315,6 +320,17 @@ function printReview(detail: ReturnType<typeof fitAdModel>): void {
   }
 
   console.log(
+    "\n=== Meta awareness (confidence: estimate) — master-release-campaigns.csv ===",
+  );
+  console.log(
+    `  cpm:                           ${fmt(model.metaAwareness.cpm)}  (n=${model.sampleSizes.metaAwareness}; median spend/imps×1000)`,
+  );
+  console.log(
+    `  cost_per_reach:                ${fmt(model.metaAwareness.costPerReach, 6)}  (n=${metaReview.awarenessCostPerReachValues.length}; median spend/reach)`,
+  );
+  console.log(`  confidence:                    ${model.metaAwareness.confidence}`);
+
+  console.log(
     `\n=== Meta SPL-scaling review ($${META_REVIEW_SPEND} Meta spend) ===`,
   );
   console.log(
@@ -346,9 +362,27 @@ function printReview(detail: ReturnType<typeof fitAdModel>): void {
   );
 }
 
+function parseCsvNumber(raw: string | undefined): number | null {
+  if (raw == null) return null;
+  const cleaned = raw.trim().replace(/[$,]/g, "");
+  if (cleaned === "" || cleaned === "—") return null;
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : null;
+}
+
+function loadAwarenessFitRows(): MetaAwarenessFitRow[] {
+  const rows = parseCsv(readFileSync(MASTER_RELEASE_CAMPAIGNS_CSV, "utf8"));
+  return rows.map((r) => ({
+    spendUsd: parseCsvNumber(r["Amount spent"]),
+    impressions: parseCsvNumber(r.Impressions),
+    reach: parseCsvNumber(r.Reach),
+  }));
+}
+
 async function loadFitInputs(): Promise<{
   spotify: SpotifyCampaignFitRow[];
   meta: MetaCampaignFitRow[];
+  awareness: MetaAwarenessFitRow[];
   artistGenreByKey: Map<string, AdGenre>;
 }> {
   const sb = createServiceClient();
@@ -416,7 +450,12 @@ async function loadFitInputs(): Promise<{
     };
   });
 
-  return { spotify, meta, artistGenreByKey };
+  return {
+    spotify,
+    meta,
+    awareness: loadAwarenessFitRows(),
+    artistGenreByKey,
+  };
 }
 
 async function writeAdModelToActivePayload(

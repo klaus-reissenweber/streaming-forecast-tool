@@ -1,7 +1,6 @@
 import type {
   Genre,
   ReleaseType,
-  SpotifyFormat,
 } from "@/lib/forecast";
 import type { NewReleaseFormRawValues } from "@/lib/validate-new-release";
 
@@ -24,11 +23,15 @@ export function rawValuesFromFormData(formData: FormData): NewReleaseFormRawValu
     editorialTier: String(formData.get("editorialTier") ?? "0"),
     releaseDate: String(formData.get("releaseDate") ?? ""),
     releaseType: String(formData.get("releaseType") ?? "single") as ReleaseType,
-    spotifyFormat: String(formData.get("spotifyFormat") ?? "marquee") as SpotifyFormat,
+    spotifyMarqueeSpendPlanned: String(
+      formData.get("spotifyMarqueeSpendPlanned") ?? "",
+    ),
+    spotifyShowcaseSpendPlanned: String(
+      formData.get("spotifyShowcaseSpendPlanned") ?? "",
+    ),
     metaTrafficSpendPlanned: String(formData.get("metaTrafficSpendPlanned") ?? ""),
     metaAwarenessSpendPlanned: String(
       formData.get("metaAwarenessSpendPlanned") ?? "",
     ),
-    spotifySpendPlanned: String(formData.get("spotifySpendPlanned") ?? ""),
   };
 }

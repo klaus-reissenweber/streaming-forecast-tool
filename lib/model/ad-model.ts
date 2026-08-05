@@ -9,6 +9,9 @@ export const AD_SPL_SHRINKAGE_K = 5;
 export const AD_SPL_GLOBAL_FALLBACK = 2.65;
 export const AD_META_SPOTIFY_CLICK_SHARE_DEFAULT = 0.45;
 export const AD_META_STREAMS_PER_SPOTIFY_CLICK = 1.2;
+/** Fit from master-release-campaigns.csv (n=168 usable spend+imps+reach). */
+export const AD_META_AWARENESS_CPM = 3.7;
+export const AD_META_AWARENESS_COST_PER_REACH = 0.0053;
 
 export type AdFormat = "marquee" | "showcase";
 export type AdGenre =
@@ -36,6 +39,12 @@ export type AdModel = {
     streamsPerSpotifyClickBase: number;
     confidence: "estimate";
   };
+  /** Awareness / reach-only Meta rates (0 attributed streams). */
+  metaAwareness: {
+    cpm: number;
+    costPerReach: number;
+    confidence: "estimate";
+  };
   sampleSizes: {
     spotifyUsable: number;
     cplMarquee: number;
@@ -43,6 +52,7 @@ export type AdModel = {
     splArtists: number;
     metaCpc: number;
     metaSpotifyClickShare: number;
+    metaAwareness: number;
   };
 };
 
@@ -59,6 +69,11 @@ export const SEED_AD_MODEL: AdModel = {
     streamsPerSpotifyClickBase: AD_META_STREAMS_PER_SPOTIFY_CLICK,
     confidence: "estimate",
   },
+  metaAwareness: {
+    cpm: AD_META_AWARENESS_CPM,
+    costPerReach: AD_META_AWARENESS_COST_PER_REACH,
+    confidence: "estimate",
+  },
   sampleSizes: {
     spotifyUsable: 0,
     cplMarquee: 0,
@@ -66,7 +81,14 @@ export const SEED_AD_MODEL: AdModel = {
     splArtists: 0,
     metaCpc: 0,
     metaSpotifyClickShare: 0,
+    metaAwareness: 0,
   },
+};
+
+export type MetaAwarenessFitRow = {
+  spendUsd: number | null;
+  impressions: number | null;
+  reach: number | null;
 };
 
 export type SpotifyCampaignFitRow = {
@@ -144,6 +166,8 @@ export type AdModelFitDetail = {
     excludedAutoRouters: string[];
     /** Rows skipped because objective ≠ traffic (after normalize). */
     excludedNonTraffic: number;
+    awarenessCpmValues: number[];
+    awarenessCostPerReachValues: number[];
   };
 };
 
@@ -203,7 +227,13 @@ function asGenre(raw: string | null | undefined): AdGenre | null {
 
 export function parseAdModel(raw: unknown): AdModel {
   if (!isRecord(raw)) {
-    return { ...SEED_AD_MODEL, spotifyCpl: { ...SEED_AD_MODEL.spotifyCpl }, metaFunnel: { ...SEED_AD_MODEL.metaFunnel }, sampleSizes: { ...SEED_AD_MODEL.sampleSizes } };
+    return {
+      ...SEED_AD_MODEL,
+      spotifyCpl: { ...SEED_AD_MODEL.spotifyCpl },
+      metaFunnel: { ...SEED_AD_MODEL.metaFunnel },
+      metaAwareness: { ...SEED_AD_MODEL.metaAwareness },
+      sampleSizes: { ...SEED_AD_MODEL.sampleSizes },
+    };
   }
 
   const cplRaw = isRecord(raw.spotify_cpl) ? raw.spotify_cpl : {};
@@ -214,6 +244,7 @@ export function parseAdModel(raw: unknown): AdModel {
     ? raw.spotify_spl_by_genre
     : {};
   const funnelRaw = isRecord(raw.meta_funnel) ? raw.meta_funnel : {};
+  const awarenessRaw = isRecord(raw.meta_awareness) ? raw.meta_awareness : {};
   const samplesRaw = isRecord(raw.sample_sizes) ? raw.sample_sizes : {};
 
   const spotifySplByArtist: Record<string, number> = {};
@@ -269,6 +300,17 @@ export function parseAdModel(raw: unknown): AdModel {
       ),
       confidence: "estimate",
     },
+    metaAwareness: {
+      cpm: requireFinite(
+        awarenessRaw.cpm ?? AD_META_AWARENESS_CPM,
+        "meta_awareness.cpm",
+      ),
+      costPerReach: requireFinite(
+        awarenessRaw.cost_per_reach ?? AD_META_AWARENESS_COST_PER_REACH,
+        "meta_awareness.cost_per_reach",
+      ),
+      confidence: "estimate",
+    },
     sampleSizes: {
       spotifyUsable: Number(samplesRaw.spotify_usable ?? 0),
       cplMarquee: Number(samplesRaw.cpl_marquee ?? 0),
@@ -276,6 +318,7 @@ export function parseAdModel(raw: unknown): AdModel {
       splArtists: Number(samplesRaw.spl_artists ?? 0),
       metaCpc: Number(samplesRaw.meta_cpc ?? 0),
       metaSpotifyClickShare: Number(samplesRaw.meta_spotify_click_share ?? 0),
+      metaAwareness: Number(samplesRaw.meta_awareness ?? 0),
     },
   };
 }
@@ -297,6 +340,11 @@ export function adModelToPayload(model: AdModel): Record<string, unknown> {
       streams_per_spotify_click_base: model.metaFunnel.streamsPerSpotifyClickBase,
       confidence: "estimate",
     },
+    meta_awareness: {
+      cpm: model.metaAwareness.cpm,
+      cost_per_reach: model.metaAwareness.costPerReach,
+      confidence: "estimate",
+    },
     sample_sizes: {
       spotify_usable: model.sampleSizes.spotifyUsable,
       cpl_marquee: model.sampleSizes.cplMarquee,
@@ -304,6 +352,7 @@ export function adModelToPayload(model: AdModel): Record<string, unknown> {
       spl_artists: model.sampleSizes.splArtists,
       meta_cpc: model.sampleSizes.metaCpc,
       meta_spotify_click_share: model.sampleSizes.metaSpotifyClickShare,
+      meta_awareness: model.sampleSizes.metaAwareness,
     },
   };
 }
@@ -315,6 +364,8 @@ export function adModelToPayload(model: AdModel): Record<string, unknown> {
 export function fitAdModel(options: {
   spotify: SpotifyCampaignFitRow[];
   meta: MetaCampaignFitRow[];
+  /** Optional Meta awareness rows (spend + impressions + reach). */
+  awareness?: MetaAwarenessFitRow[];
   artistGenreByKey: Map<string, AdGenre>;
   shrinkageK?: number;
   globalSplFallback?: number;
@@ -421,6 +472,27 @@ export function fitAdModel(options: {
     .map((r) => r.spotifyClickShare)
     .filter((v): v is number => v != null && Number.isFinite(v) && v > 0);
 
+  const awarenessCpmValues: number[] = [];
+  const awarenessCostPerReachValues: number[] = [];
+  for (const row of options.awareness ?? []) {
+    if (
+      row.spendUsd != null &&
+      row.spendUsd > 0 &&
+      row.impressions != null &&
+      row.impressions > 0
+    ) {
+      awarenessCpmValues.push((row.spendUsd / row.impressions) * 1000);
+    }
+    if (
+      row.spendUsd != null &&
+      row.spendUsd > 0 &&
+      row.reach != null &&
+      row.reach > 0
+    ) {
+      awarenessCostPerReachValues.push(row.spendUsd / row.reach);
+    }
+  }
+
   const model: AdModel = {
     spotifyCpl,
     spotifySplByArtist,
@@ -436,6 +508,17 @@ export function fitAdModel(options: {
       streamsPerSpotifyClickBase: AD_META_STREAMS_PER_SPOTIFY_CLICK,
       confidence: "estimate",
     },
+    metaAwareness: {
+      cpm:
+        awarenessCpmValues.length > 0
+          ? median(awarenessCpmValues)
+          : AD_META_AWARENESS_CPM,
+      costPerReach:
+        awarenessCostPerReachValues.length > 0
+          ? median(awarenessCostPerReachValues)
+          : AD_META_AWARENESS_COST_PER_REACH,
+      confidence: "estimate",
+    },
     sampleSizes: {
       spotifyUsable: usable.length,
       cplMarquee: cplByFormat.marquee.length,
@@ -443,6 +526,10 @@ export function fitAdModel(options: {
       splArtists: artistRaw.length,
       metaCpc: cpcValues.length,
       metaSpotifyClickShare: shareValues.length,
+      metaAwareness: Math.min(
+        awarenessCpmValues.length,
+        awarenessCostPerReachValues.length,
+      ),
     },
   };
 
@@ -454,6 +541,8 @@ export function fitAdModel(options: {
       clickShareValues: shareValues,
       excludedAutoRouters,
       excludedNonTraffic,
+      awarenessCpmValues,
+      awarenessCostPerReachValues,
     },
   };
 }

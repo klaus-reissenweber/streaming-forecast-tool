@@ -78,6 +78,15 @@ export type AdMetaFunnelDisplay = {
   cplShowcase: number;
 };
 
+/** Awareness reach-only readout from adModel.metaAwareness (0 attributed streams). */
+export type AdAwarenessDisplay = {
+  cpm: number;
+  costPerReach: number;
+  projectedImpressions: number;
+  projectedReach: number;
+  confidence: AdModel["metaAwareness"]["confidence"];
+};
+
 function clampInt(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, Math.trunc(n)));
 }
@@ -205,6 +214,27 @@ export function computeAdMetaFunnelDisplay(
     splSource: totals.splSource,
     cplMarquee: adModel.spotifyCpl.marquee,
     cplShowcase: adModel.spotifyCpl.showcase,
+  };
+}
+
+/**
+ * Awareness impressions/reach from adModel.metaAwareness.
+ * impressions = spend/cpm×1000; reach = spend/cost_per_reach. Streams always 0.
+ */
+export function computeAdAwarenessDisplay(
+  spend: number,
+  adModel: AdModel,
+): AdAwarenessDisplay {
+  const { cpm, costPerReach, confidence } = adModel.metaAwareness;
+  const safeSpend = Math.max(0, spend);
+  return {
+    cpm,
+    costPerReach,
+    projectedImpressions:
+      safeSpend > 0 && cpm > 0 ? (safeSpend / cpm) * 1000 : 0,
+    projectedReach:
+      safeSpend > 0 && costPerReach > 0 ? safeSpend / costPerReach : 0,
+    confidence,
   };
 }
 

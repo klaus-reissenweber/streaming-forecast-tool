@@ -96,13 +96,8 @@ export async function createRelease(
       .select("id")
       .single();
 
-    // Split Meta columns require 202608050001; retry without them if absent.
-    if (
-      error &&
-      (error.message?.includes("meta_traffic_spend_planned") ||
-        error.message?.includes("meta_awareness_spend_planned") ||
-        error.code === "PGRST204")
-    ) {
+    // Optional ad-spend columns may be absent until migrations land.
+    if (error && error.code === "PGRST204") {
       if (
         parsed.values.metaTrafficSpendPlanned > 0 &&
         parsed.values.metaAwarenessSpendPlanned > 0
@@ -116,6 +111,8 @@ export async function createRelease(
       const {
         meta_traffic_spend_planned: _t,
         meta_awareness_spend_planned: _a,
+        spotify_marquee_spend_planned: _m,
+        spotify_showcase_spend_planned: _s,
         ...legacyRow
       } = row;
       ({ data, error } = await supabase

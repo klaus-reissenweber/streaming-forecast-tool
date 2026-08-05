@@ -25,6 +25,8 @@ export interface NewReleaseInsertRow {
   locked_forecast_saves: number;
   model_version_used: string;
   status: "active";
+  spotify_marquee_spend_planned?: number;
+  spotify_showcase_spend_planned?: number;
   /** Present when 202608050001 is applied; omitted otherwise by create action. */
   meta_traffic_spend_planned?: number;
   meta_awareness_spend_planned?: number;
@@ -71,6 +73,8 @@ export function toNewReleaseInsertRow(
     meta_traffic_spend_planned: values.metaTrafficSpendPlanned,
     meta_awareness_spend_planned: values.metaAwarenessSpendPlanned,
     spotify_spend_planned: values.spotifySpendPlanned,
+    spotify_marquee_spend_planned: values.spotifyMarqueeSpendPlanned,
+    spotify_showcase_spend_planned: values.spotifyShowcaseSpendPlanned,
     locked_forecast_streams: forecast.lockedForecastStreams,
     locked_forecast_saves: forecast.lockedForecastSaves,
     model_version_used: forecast.modelVersionId,
@@ -88,8 +92,8 @@ export const DEFAULT_NEW_RELEASE_FORM_VALUES: NewReleaseFormRawValues = {
   editorialTier: 0,
   releaseDate: "",
   releaseType: "single",
-  spotifyFormat: "marquee",
+  spotifyMarqueeSpendPlanned: 0,
+  spotifyShowcaseSpendPlanned: 0,
   metaTrafficSpendPlanned: 0,
   metaAwarenessSpendPlanned: 0,
-  spotifySpendPlanned: 0,
 };

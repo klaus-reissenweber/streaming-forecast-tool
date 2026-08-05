@@ -84,13 +84,19 @@
         "streams_per_spotify_click_base": 1.2,
         "confidence": "estimate"
       },
+      "meta_awareness": {
+        "cpm": 3.7,
+        "cost_per_reach": 0.0053,
+        "confidence": "estimate"
+      },
       "sample_sizes": {
         "spotify_usable": 0,
         "cpl_marquee": 0,
         "cpl_showcase": 0,
         "spl_artists": 0,
         "meta_cpc": 0,
-        "meta_spotify_click_share": 0
+        "meta_spotify_click_share": 0,
+        "meta_awareness": 168
       }
     }
   },

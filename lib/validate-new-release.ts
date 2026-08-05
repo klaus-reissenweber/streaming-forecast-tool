@@ -1,7 +1,6 @@
 import {
   GENRES,
   RELEASE_TYPES,
-  SPOTIFY_FORMATS,
 } from "@/lib/constants";
 import type {
   EditorialTier,
@@ -22,7 +21,12 @@ export interface NewReleaseFormValues {
   editorialTier: EditorialTier;
   releaseDate: string;
   releaseType: ReleaseType;
+  /** Derived from which Spotify spend fields are set (legacy organic path). */
   spotifyFormat: SpotifyFormat;
+  spotifyMarqueeSpendPlanned: number;
+  spotifyShowcaseSpendPlanned: number;
+  /** marquee + showcase (legacy total). */
+  spotifySpendPlanned: number;
   /** Meta traffic spend — click→stream funnel. */
   metaTrafficSpendPlanned: number;
   /** Meta awareness spend — reach-only, zero attributed streams. */
@@ -30,7 +34,6 @@ export interface NewReleaseFormValues {
   /** traffic + awareness (legacy total for organic / channel-mix). */
   metaSpendPlanned: number;
   metaObjective: MetaObjective;
-  spotifySpendPlanned: number;
 }
 
 /**
@@ -46,10 +49,10 @@ export interface NewReleaseFormRawValues {
   editorialTier: EditorialTier | number | string;
   releaseDate: string;
   releaseType: ReleaseType;
-  spotifyFormat: SpotifyFormat;
+  spotifyMarqueeSpendPlanned: number | string;
+  spotifyShowcaseSpendPlanned: number | string;
   metaTrafficSpendPlanned: number | string;
   metaAwarenessSpendPlanned: number | string;
-  spotifySpendPlanned: number | string;
 }
 
 export type NewReleaseFieldKey = keyof NewReleaseFormValues;
@@ -160,17 +163,30 @@ export function coerceNewReleaseFormValues(
     fieldErrors.metaAwarenessSpendPlanned = metaAwareness.error;
   }
 
-  const spotifySpend = coerceNumericInput(
-    raw.spotifySpendPlanned,
+  const marqueeSpend = coerceNumericInput(
+    raw.spotifyMarqueeSpendPlanned,
     0,
-    "Spotify spend",
+    "Spotify Marquee spend",
   );
-  if (!spotifySpend.ok) {
-    fieldErrors.spotifySpendPlanned = spotifySpend.error;
+  if (!marqueeSpend.ok) {
+    fieldErrors.spotifyMarqueeSpendPlanned = marqueeSpend.error;
+  }
+
+  const showcaseSpend = coerceNumericInput(
+    raw.spotifyShowcaseSpendPlanned,
+    0,
+    "Spotify Showcase spend",
+  );
+  if (!showcaseSpend.ok) {
+    fieldErrors.spotifyShowcaseSpendPlanned = showcaseSpend.error;
   }
 
   const traffic = metaTraffic.ok ? metaTraffic.value : 0;
   const awareness = metaAwareness.ok ? metaAwareness.value : 0;
+  const marquee = marqueeSpend.ok ? marqueeSpend.value : 0;
+  const showcase = showcaseSpend.ok ? showcaseSpend.value : 0;
+  const spotifyFormat: SpotifyFormat =
+    showcase > 0 && marquee === 0 ? "showcase" : "marquee";
 
   const values: NewReleaseFormValues = {
     trackName: raw.trackName,
@@ -181,12 +197,14 @@ export function coerceNewReleaseFormValues(
     editorialTier: coerceEditorialTier(raw.editorialTier),
     releaseDate: raw.releaseDate,
     releaseType: raw.releaseType,
-    spotifyFormat: raw.spotifyFormat,
+    spotifyFormat,
+    spotifyMarqueeSpendPlanned: marquee,
+    spotifyShowcaseSpendPlanned: showcase,
+    spotifySpendPlanned: marquee + showcase,
     metaTrafficSpendPlanned: traffic,
     metaAwarenessSpendPlanned: awareness,
     metaSpendPlanned: traffic + awareness,
     metaObjective: deriveMetaObjectiveFromSpends(traffic, awareness),
-    spotifySpendPlanned: spotifySpend.ok ? spotifySpend.value : 0,
   };
 
   return { values, fieldErrors };
@@ -292,8 +310,20 @@ export function validateNewReleaseForm(
     fieldErrors.releaseType = "Pick a release type.";
   }
 
-  if (!SPOTIFY_FORMATS.includes(values.spotifyFormat)) {
-    fieldErrors.spotifyFormat = "Pick a Spotify format.";
+  const marqueeError = validateSpend(
+    values.spotifyMarqueeSpendPlanned,
+    "Spotify Marquee spend",
+  );
+  if (marqueeError) {
+    fieldErrors.spotifyMarqueeSpendPlanned = marqueeError;
+  }
+
+  const showcaseError = validateSpend(
+    values.spotifyShowcaseSpendPlanned,
+    "Spotify Showcase spend",
+  );
+  if (showcaseError) {
+    fieldErrors.spotifyShowcaseSpendPlanned = showcaseError;
   }
 
   const metaTrafficError = validateSpend(
@@ -310,14 +340,6 @@ export function validateNewReleaseForm(
   );
   if (metaAwarenessError) {
     fieldErrors.metaAwarenessSpendPlanned = metaAwarenessError;
-  }
-
-  const spotifySpendError = validateSpend(
-    values.spotifySpendPlanned,
-    "Spotify spend",
-  );
-  if (spotifySpendError) {
-    fieldErrors.spotifySpendPlanned = spotifySpendError;
   }
 
   if (
