@@ -406,3 +406,36 @@ body {
 .instrument-health-rule {
   transition: background-color 200ms var(--ease-in-out);
 }
+
+/* ─── Public ad report: print / Save as PDF ─── */
+@media print {
+  @page {
+    size: letter;
+    margin: 0.6in;
+  }
+
+  body {
+    background: #fff !important;
+    color: #12151a !important;
+  }
+
+  .ad-report {
+    max-width: none !important;
+  }
+
+  .ad-report .rounded-instrument {
+    break-inside: avoid;
+  }
+
+  .ad-report table {
+    break-inside: auto;
+  }
+
+  .ad-report tr {
+    break-inside: avoid;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+}

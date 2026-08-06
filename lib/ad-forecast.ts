@@ -65,8 +65,13 @@ export type AdDailyLayer = {
 /** Meta funnel readout driven by active adModel (not catalog META_DELIVERY constants). */
 export type AdMetaFunnelDisplay = {
   cpc: number;
+  /** Meta CPM used for traffic impressions (from adModel.metaAwareness.cpm). */
+  cpm: number;
   spotifyClickShare: number;
   streamsPerSpotifyClickEffective: number;
+  projectedImpressions: number;
+  /** Reach estimate via metaAwareness.costPerReach (same Meta delivery rate). */
+  projectedReach: number;
   projectedClicks: number;
   projectedSpotifyClicks: number;
   projectedStreams: number;
@@ -197,14 +202,24 @@ export function computeAdMetaFunnelDisplay(
     adModel,
   );
   const cpc = adModel.metaFunnel.cpc;
+  const cpm = adModel.metaAwareness.cpm;
+  const costPerReach = adModel.metaAwareness.costPerReach;
   const spotifyClickShare = adModel.metaFunnel.spotifyClickShare;
-  const projectedClicks = spend > 0 && cpc > 0 ? spend / cpc : 0;
+  const safeSpend = Math.max(0, spend);
+  const projectedImpressions =
+    safeSpend > 0 && cpm > 0 ? (safeSpend / cpm) * 1000 : 0;
+  const projectedReach =
+    safeSpend > 0 && costPerReach > 0 ? safeSpend / costPerReach : 0;
+  const projectedClicks = safeSpend > 0 && cpc > 0 ? safeSpend / cpc : 0;
   const projectedSpotifyClicks = projectedClicks * spotifyClickShare;
 
   return {
     cpc,
+    cpm,
     spotifyClickShare,
     streamsPerSpotifyClickEffective: totals.metaStreamsPerSpotifyClickEffective,
+    projectedImpressions,
+    projectedReach,
     projectedClicks,
     projectedSpotifyClicks,
     projectedStreams: totals.meta,

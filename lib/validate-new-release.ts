@@ -351,10 +351,6 @@ export function validateNewReleaseForm(
     warnings.push(
       "No paid spend entered. Forecast will be organic-only (no ad lift modeled).",
     );
-  } else if (values.metaAwarenessSpendPlanned > 0) {
-    warnings.push(
-      "Meta awareness spend is reach-only — it does not add attributed streams.",
-    );
   }
 
   const valid =

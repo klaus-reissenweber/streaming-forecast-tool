@@ -79,7 +79,7 @@ def build_forecast_model_payload(
             ),
         },
     }
-    # Preserve live ad_model until retrain fits it (spec §6).
+    # Fitted (or live-fallback) ad_model — same promote path as curve/tiers.
     if isinstance(ad_model, dict) and ad_model:
         payload["ad_model"] = ad_model
     return payload

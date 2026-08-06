@@ -8,8 +8,8 @@ import { coerceMetaObjective } from "@/lib/meta-objective";
 export const AD_SPL_SHRINKAGE_K = 5;
 export const AD_SPL_GLOBAL_FALLBACK = 2.65;
 export const AD_META_SPOTIFY_CLICK_SHARE_DEFAULT = 0.45;
-export const AD_META_STREAMS_PER_SPOTIFY_CLICK = 1.2;
-/** Fit from master-release-campaigns.csv (n=168 usable spend+imps+reach). */
+export const AD_META_STREAMS_PER_SPOTIFY_CLICK = 1.0;
+/** Cold-start awareness defaults (refit from ad_meta_campaigns impressions/reach). */
 export const AD_META_AWARENESS_CPM = 3.7;
 export const AD_META_AWARENESS_COST_PER_REACH = 0.0053;
 
@@ -33,7 +33,7 @@ export type AdModel = {
     cpc: number;
     spotifyClickShare: number;
     /**
-     * Tunable global base (~1.2). Forecast-time effective value scales by
+     * Tunable global base (~1.0). Forecast-time effective value scales by
      * resolved SPL / spotifySplGlobal — not a per-artist stored constant.
      */
     streamsPerSpotifyClickBase: number;
@@ -130,21 +130,24 @@ export const AUTO_ROUTER_RELEASE_KEYS = new Set([
   "fall back to nothing",
 ]);
 
-/** Heuristic twin of the named auto-routers (CTR≈100, bounce≈0, streams=0). */
+/**
+ * Spotify-first auto-routers bias click-share toward 1.0.
+ * Exclude when CTR ≥ 95% and on-page streams are 0 (or named keys).
+ */
 export function isLinkfireAutoRouter(options: {
   releaseKey?: string | null;
   ctrPct?: number | null;
+  /** @deprecated bounce no longer required; kept for call-site compat. */
   bounceRatePct?: number | null;
   streams?: number | null;
 }): boolean {
   const key = (options.releaseKey ?? "").trim().toLowerCase();
   if (key && AUTO_ROUTER_RELEASE_KEYS.has(key)) return true;
   const ctr = options.ctrPct;
-  const bounce = options.bounceRatePct;
   const streams = options.streams;
-  if (ctr == null || bounce == null) return false;
+  if (ctr == null) return false;
   const zeroStreams = streams == null || streams === 0;
-  return ctr >= 99 && bounce <= 1 && zeroStreams;
+  return ctr >= 95 && zeroStreams;
 }
 
 export type AdModelFitDetail = {

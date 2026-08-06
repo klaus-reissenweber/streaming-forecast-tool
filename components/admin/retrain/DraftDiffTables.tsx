@@ -113,6 +113,12 @@ export function DraftDiffTables({ diff }: { diff: ModelDiff }) {
           digits={0}
           compact
         />
+        <DiffTable
+          title="Ad model"
+          rows={diff.adModel}
+          digits={4}
+          compact
+        />
       </div>
     </section>
   );

@@ -13,6 +13,10 @@ import { ReleasePageHeader } from "@/components/release/ReleasePageHeader";
 import { StreamCurveChart } from "@/components/release/StreamCurveChart";
 import { ALGO_BAND_DISPLAY } from "@/lib/algo-positioning-display";
 import { buildReleaseViewModel } from "@/lib/build-release-view-model";
+import {
+  loadAdReportByReleaseId,
+  reportPublicUrl,
+} from "@/lib/ad-report/load";
 import { loadActiveModel } from "@/lib/load-active-model";
 import { loadForecastData } from "@/lib/load-forecast-data";
 import { loadDailyData, loadRelease } from "@/lib/load-release";
@@ -47,11 +51,21 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
   }
 
   const dailyData = await loadDailyData(id);
-  const [model, { adRates, coefficients }] = await Promise.all([
+  const [model, { adRates, coefficients }, existingReport] = await Promise.all([
     loadActiveModel(),
     loadForecastData(),
+    loadAdReportByReleaseId(id).catch(() => null),
   ]);
   logActiveModelSource(model, `release/${id}`);
+  const siteOrigin =
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
+    "http://localhost:3000";
+  const reportPath = existingReport
+    ? `/report/${existingReport.slug}`
+    : null;
+  const reportUrl = existingReport
+    ? reportPublicUrl(existingReport.slug, siteOrigin)
+    : null;
   const viewModel = buildReleaseViewModel(
     release,
     dailyData,
@@ -88,6 +102,8 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
         releaseDateDisplay={viewModel.header.releaseDateDisplay}
         editorialTier={viewModel.header.editorialTier}
         status={viewModel.header.status}
+        reportPath={reportPath}
+        reportUrl={reportUrl}
       />
 
       <div className="mt-6">

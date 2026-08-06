@@ -1,3 +1,11 @@
+/** Full thousands formatting (e.g. 1163 → "1,163") — distinguishes nearby values. */
+export function formatCount(value: number): string {
+  if (!Number.isFinite(value)) {
+    return "n/a";
+  }
+  return Math.round(value).toLocaleString("en-US");
+}
+
 /** Compact display for large counts (e.g. 451000 → "451K"). */
 export function formatCompactNumber(value: number): string {
   if (!Number.isFinite(value)) {

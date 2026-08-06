@@ -32,7 +32,8 @@ create table if not exists public.ad_spotify_campaigns (
   constraint ad_spotify_campaigns_format_check check (
     format in ('marquee', 'showcase')
   ),
-  constraint ad_spotify_campaigns_campaign_uid_key unique (campaign_uid)
+  -- Same campaign can have Marquee + Showcase rows (see seed pairs).
+  constraint ad_spotify_campaigns_campaign_uid_format_key unique (campaign_uid, format)
 );
 
 create index if not exists ad_spotify_campaigns_artist_idx

@@ -35,10 +35,25 @@ const NUMERIC_INPUT_CLASS = `${TEXT_INPUT_CLASS} font-mono tabular-nums`;
 function FormSection({
   label,
   children,
+  tone = "primary",
 }: {
   label: string;
   children: ReactNode;
+  /** Paid advertising is visually subordinate to the organic lock forecast. */
+  tone?: "primary" | "secondary";
 }) {
+  if (tone === "secondary") {
+    return (
+      <section className="mt-6 rounded-instrument border border-border bg-canvas-subtle p-4 sm:p-5">
+        <h2 className="mb-1 text-body-sm font-medium text-secondary">{label}</h2>
+        <p className="mb-4 text-caption text-muted">
+          Optional paid lift — separate from the organic streaming forecast
+        </p>
+        {children}
+      </section>
+    );
+  }
+
   return (
     <section className="border-t border-border pt-6 first:border-t-0 first:pt-0">
       <h2 className="mb-4 font-mono text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
@@ -243,24 +258,12 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
         </label>
       </FormSection>
 
-      <FormSection label="Paid campaign">
+      <FormSection label="Paid advertising" tone="secondary">
         <div className="space-y-4">
-          <ToggleGroup
-            name="releaseType"
-            label="Release type"
-            options={RELEASE_TYPES.map((type) => ({
-              value: type,
-              label: RELEASE_TYPE_LABELS[type],
-            }))}
-            value={values.releaseType}
-            onChange={(releaseType) => setField("releaseType", releaseType)}
-            disabled={pending}
-          />
-
-          <div className="grid gap-4 sm:grid-cols-2 sm:max-w-xl">
+          <div className="grid gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-1">
               <span className="text-body-sm font-medium text-foreground">
-                Spotify Marquee spend (USD)
+                Spotify Marquee (USD)
               </span>
               <input
                 className={NUMERIC_INPUT_CLASS}
@@ -272,14 +275,11 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
                 disabled={pending}
                 placeholder="0"
               />
-              <span className="text-caption text-muted">
-                Front-loaded · both formats can run together
-              </span>
             </label>
 
             <label className="flex flex-col gap-1">
               <span className="text-body-sm font-medium text-foreground">
-                Spotify Showcase spend (USD)
+                Spotify Showcase (USD)
               </span>
               <input
                 className={NUMERIC_INPUT_CLASS}
@@ -291,16 +291,11 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
                 disabled={pending}
                 placeholder="0"
               />
-              <span className="text-caption text-muted">
-                Even over ~14 days · independent of Marquee
-              </span>
             </label>
-          </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 sm:max-w-xl">
             <label className="flex flex-col gap-1">
               <span className="text-body-sm font-medium text-foreground">
-                Meta traffic spend (USD)
+                Meta traffic (USD)
               </span>
               <input
                 className={NUMERIC_INPUT_CLASS}
@@ -312,14 +307,11 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
                 disabled={pending}
                 placeholder="0"
               />
-              <span className="text-caption text-muted">
-                Click funnel → attributed streams
-              </span>
             </label>
 
             <label className="flex flex-col gap-1">
               <span className="text-body-sm font-medium text-foreground">
-                Meta awareness spend (USD)
+                Meta awareness (USD)
               </span>
               <input
                 className={NUMERIC_INPUT_CLASS}
@@ -331,9 +323,6 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
                 disabled={pending}
                 placeholder="0"
               />
-              <span className="text-caption text-muted">
-                Reach / impressions only · 0 streams
-              </span>
             </label>
           </div>
 
@@ -351,8 +340,20 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
         </div>
       </FormSection>
 
-      <FormSection label="Lock forecast">
+      <FormSection label="Streaming forecast">
         <div className="space-y-4">
+          <ToggleGroup
+            name="releaseType"
+            label="Release type"
+            options={RELEASE_TYPES.map((type) => ({
+              value: type,
+              label: RELEASE_TYPE_LABELS[type],
+            }))}
+            value={values.releaseType}
+            onChange={(releaseType) => setField("releaseType", releaseType)}
+            disabled={pending}
+          />
+
           {errorItems.length > 0 ? (
             <MessageBox
               tone="error"
@@ -364,24 +365,24 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
           {validation.warnings.length > 0 ? (
             <MessageBox tone="warn" title="Heads up" items={validation.warnings} />
           ) : null}
-        </div>
 
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          className={
-            "mt-5 w-full rounded-instrument px-4 py-3 text-body-sm font-semibold transition " +
-            (canSubmit
-              ? "bg-foreground text-canvas hover:bg-foreground/90"
-              : "cursor-not-allowed bg-bracket-bg text-muted")
-          }
-        >
-          {pending
-            ? "Locking forecast…"
-            : canSubmit
-              ? "Create release & lock forecast"
-              : "Fix the items above to continue"}
-        </button>
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className={
+              "w-full rounded-instrument px-4 py-3 text-body-sm font-semibold transition " +
+              (canSubmit
+                ? "bg-foreground text-canvas hover:bg-foreground/90"
+                : "cursor-not-allowed bg-bracket-bg text-muted")
+            }
+          >
+            {pending
+              ? "Locking forecast…"
+              : canSubmit
+                ? "Create release & lock forecast"
+                : "Fix the items above to continue"}
+          </button>
+        </div>
       </FormSection>
     </form>
   );

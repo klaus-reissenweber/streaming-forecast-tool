@@ -32,6 +32,7 @@ from draft_model import (
     build_forecast_model_payload,
     insert_draft_forecast_model,
 )
+from fit_ad_model import fit_ad_model_payload
 from forward_bias import scorer_from_payload
 from fetch import ClosedReleasesBundle, FetchError, fetch_closed_releases_with_daily_data
 from fit import (
@@ -409,13 +410,50 @@ def run(flags: config.RetrainFlags) -> int:
             streams_d0 = streams_d0_raw
             live_payload = load_active_consolidated_payload(client)
             live_ad_model = live_payload.get("ad_model")
+            ad_fit_meta: dict[str, Any] = {"ok": False}
+            fitted_ad_model: dict[str, Any] | None = None
+            try:
+                ad_fit = fit_ad_model_payload()
+                fitted_ad_model = ad_fit["ad_model"]
+                ad_fit_meta = {
+                    "ok": True,
+                    "sample_sizes": ad_fit.get("sample_sizes") or {},
+                    "excluded_auto_routers": ad_fit.get(
+                        "excluded_auto_routers"
+                    )
+                    or [],
+                    "excluded_non_traffic": ad_fit.get(
+                        "excluded_non_traffic"
+                    )
+                    or 0,
+                    "source": "db_ad_tables",
+                }
+                print(
+                    "OK: fitted ad_model from ad_* tables "
+                    f"(cpl_marquee_n={ad_fit_meta['sample_sizes'].get('cplMarquee')}, "
+                    f"meta_cpc_n={ad_fit_meta['sample_sizes'].get('metaCpc')})"
+                )
+            except Exception as ad_exc:  # noqa: BLE001 — soft fallback
+                ad_fit_meta = {
+                    "ok": False,
+                    "error": str(ad_exc),
+                    "fallback": "live_ad_model",
+                }
+                print(
+                    f"WARNING: ad_model fit failed — preserving live block: {ad_exc}"
+                )
+            ad_model_for_draft = (
+                fitted_ad_model
+                if isinstance(fitted_ad_model, dict)
+                else (live_ad_model if isinstance(live_ad_model, dict) else None)
+            )
             payload = build_forecast_model_payload(
                 streams_d0=streams_d0,
                 stream_curve=derived_models["stream_curve"],
                 release_type_magnitude=derived_models["release_type_magnitude"],
                 algo_bands=derived_models["algo_bands"],
                 save_rate_bands=derived_models["save_rate_bands"],
-                ad_model=live_ad_model if isinstance(live_ad_model, dict) else None,
+                ad_model=ad_model_for_draft,
             )
             live_scorer = scorer_from_payload(live_payload)
             metadata = build_draft_metadata(
@@ -428,6 +466,7 @@ def run(flags: config.RetrainFlags) -> int:
                 live_scorer=live_scorer,
                 job_id=flags.job_id,
             )
+            metadata["ad_model_fit"] = ad_fit_meta
             fitted_at = utc_now_iso()
             draft_id = insert_draft_forecast_model(
                 client,

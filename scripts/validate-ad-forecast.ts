@@ -26,7 +26,7 @@ const adModel: AdModel = {
   metaFunnel: {
     cpc: 0.4,
     spotifyClickShare: 0.5,
-    streamsPerSpotifyClickBase: 1.2,
+    streamsPerSpotifyClickBase: 1.0,
     confidence: "estimate",
   },
 };
@@ -46,8 +46,8 @@ const totals = computeAdAttributedTotals(
 );
 
 // marquee: (500/0.5)*4 = 4000; showcase: (700/0.35)*4 = 8000
-// effective s/click = 1.2 * (4/2.66); meta = (400/0.4)*0.5*effective
-const expectedEffective = 1.2 * (4 / 2.66);
+// effective s/click = 1.0 * (4/2.66); meta = (400/0.4)*0.5*effective
+const expectedEffective = 1.0 * (4 / 2.66);
 const expectedMeta = (400 / 0.4) * 0.5 * expectedEffective;
 assert(Math.abs(totals.spotifyMarquee - 4000) < 1e-6, "marquee streams");
 assert(Math.abs(totals.spotifyShowcase - 8000) < 1e-6, "showcase streams");
@@ -89,9 +89,16 @@ const awarenessUi = computeAdAwarenessDisplay(1000, {
 assert(Math.abs(awarenessUi.projectedImpressions - (1000 / 3.7) * 1000) < 1e-6, "awareness imps");
 assert(Math.abs(awarenessUi.projectedReach - 1000 / 0.0053) < 1e-6, "awareness reach");
 
-const funnelUi = computeAdMetaFunnelDisplay(400, "Elderbrook", "downtempo", adModel);
+const funnelUi = computeAdMetaFunnelDisplay(400, "Elderbrook", "downtempo", {
+  ...adModel,
+  metaAwareness: { cpm: 3.7, costPerReach: 0.0053, confidence: "estimate" },
+});
 assert(Math.abs(funnelUi.cpc - 0.4) < 1e-9, "UI CPC from adModel");
 assert(Math.abs(funnelUi.projectedStreams - expectedMeta) < 1e-6, "UI meta streams");
+assert(
+  Math.abs(funnelUi.projectedImpressions - (400 / 3.7) * 1000) < 1e-6,
+  "UI traffic impressions",
+);
 assert(Math.abs(funnelUi.cplMarquee - 0.5) < 1e-9, "UI cpl marquee");
 assert(Math.abs(funnelUi.cplShowcase - 0.35) < 1e-9, "UI cpl showcase");
 assert(Math.abs(funnelUi.splUsed - 4) < 1e-9, "UI resolved SPL");
@@ -131,7 +138,8 @@ const layer = buildAdDailyLayer(
 assert(layer.marqueeDaily.every((v) => v === 0), "no marquee");
 assert(layer.showcaseDaily.every((v) => v === 0), "no showcase");
 assert(layer.metaDaily[0] === 0 && layer.metaDaily[1] === 0 && layer.metaDaily[2] === 0, "offset");
-assert(layer.metaDaily.slice(3, 10).reduce((a, b) => a + b, 0) === 600, "meta window");
+// (400/0.4)*0.5*1.0 = 500 with base 1.0 and global SPL
+assert(layer.metaDaily.slice(3, 10).reduce((a, b) => a + b, 0) === 500, "meta window");
 assert(layer.week1WithAds === 100_000 + layer.week1AdTotal, "wk1 with ads");
 
 const splitLayer = buildAdDailyLayer(

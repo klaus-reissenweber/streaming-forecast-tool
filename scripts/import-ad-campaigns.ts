@@ -16,6 +16,8 @@ const SEED_DIR = path.join(process.cwd(), "seed", "ad");
 const SPOTIFY_CSV = path.join(SEED_DIR, "model-spotify-campaigns.csv");
 const MASTER_CSV = path.join(SEED_DIR, "model-release-master.csv");
 const LINKFIRE_SERVICES_CSV = path.join(SEED_DIR, "linkfire-services.csv");
+const LINKFIRE_SUMMARY_CSV = path.join(SEED_DIR, "linkfire-summary.csv");
+const META_DELIVERY_CSV = path.join(SEED_DIR, "master-release-campaigns.csv");
 
 const BATCH = 100;
 
@@ -116,32 +118,56 @@ function formatFromCsv(raw: string): "marquee" | "showcase" | null {
   return null;
 }
 
-/** Spotify + Spotify Pre Release share as a 0–1 fraction, keyed by release_key. */
+/**
+ * Spotify + Spotify Pre-Release share as a 0–1 fraction, keyed by release_key.
+ *
+ * Denominator must be the release total (including Linkfire's "N Others"
+ * aggregate). Prefer Linkfire's reported Share % (already vs release total);
+ * fall back to click-through counts: spotify CT / (named + Others CT).
+ * Never divide by the sum of named services alone — that inflates share.
+ */
 function buildSpotifyClickShareByReleaseKey(
   masterRows: CsvRow[],
   serviceRows: CsvRow[],
 ): Map<string, { share: number; endDate: string | null }> {
   type Agg = {
     spotifyClicks: number;
-    allClicks: number;
+    /** Named/listed services only (excludes Others). */
+    namedClicks: number;
+    /** Linkfire "N Others" aggregate bucket click-throughs. */
+    othersClicks: number;
+    /** Sum of Spotify + Spotify Pre-Release Share % (0–100 scale). */
+    spotifySharePct: number;
     endDate: string | null;
   };
   const byArtistRelease = new Map<string, Agg>();
 
   for (const r of serviceRows) {
-    if ((r["Is aggregate row"] ?? "").toLowerCase() === "yes") continue;
     const service = (r.Service ?? "").trim().toLowerCase();
-    if (!service || service.includes("others")) continue;
+    if (!service) continue;
     const clicks = num(r["Click-throughs"]) ?? 0;
+    const sharePct = num(r["Share %"]) ?? 0;
     const key = `${norm(r.Artist ?? "")}|${norm(r["Release / Link"] ?? "")}`;
     const agg = byArtistRelease.get(key) ?? {
       spotifyClicks: 0,
-      allClicks: 0,
+      namedClicks: 0,
+      othersClicks: 0,
+      spotifySharePct: 0,
       endDate: null,
     };
-    agg.allClicks += clicks;
+
+    // Others aggregate is part of the release total — keep its CT, skip as a "service".
+    if (service.includes("others")) {
+      agg.othersClicks += clicks;
+      byArtistRelease.set(key, agg);
+      continue;
+    }
+    if ((r["Is aggregate row"] ?? "").toLowerCase() === "yes") continue;
+
+    agg.namedClicks += clicks;
     if (service === "spotify" || service === "spotify pre release") {
       agg.spotifyClicks += clicks;
+      agg.spotifySharePct += sharePct;
     }
     const end = dateOrNull(r["Window end"]);
     if (end) agg.endDate = end;
@@ -168,9 +194,22 @@ function buildSpotifyClickShareByReleaseKey(
       best = agg;
       break;
     }
-    if (!best || best.allClicks <= 0) continue;
+    if (!best || best.spotifyClicks <= 0) continue;
+
+    // Prefer Share % (vs release total). Else CT / (named + Others).
+    let share: number | null = null;
+    if (best.spotifySharePct > 0) {
+      share = best.spotifySharePct / 100;
+    } else {
+      const totalClicks = best.namedClicks + best.othersClicks;
+      if (totalClicks > 0) {
+        share = best.spotifyClicks / totalClicks;
+      }
+    }
+    if (share == null || !(share > 0)) continue;
+
     out.set(releaseKey, {
-      share: best.spotifyClicks / best.allClicks,
+      share,
       endDate: best.endDate,
     });
   }
@@ -221,20 +260,126 @@ function hasMetaOrLinkfire(r: CsvRow): boolean {
   return false;
 }
 
+type LinkfireSummary = {
+  ctrPct: number | null;
+  streams: number | null;
+};
+
+/** Match Linkfire summary CTR/streams onto release_key via artist+release labels. */
+function buildLinkfireSummaryByReleaseKey(
+  masterRows: CsvRow[],
+  summaryRows: CsvRow[],
+): Map<string, LinkfireSummary> {
+  const out = new Map<string, LinkfireSummary>();
+  for (const s of summaryRows) {
+    const artist = norm(s.Artist ?? "");
+    const release = norm(s["Release / Link"] ?? "");
+    if (!artist || !release) continue;
+    let rk: string | null = null;
+    for (const m of masterRows) {
+      if (!m.release_key) continue;
+      const ma = norm(m.artist ?? "");
+      const mr = norm(m.release ?? "");
+      const releaseHit =
+        release === mr || release.includes(mr) || mr.includes(release);
+      const artistHit =
+        artist === ma ||
+        artist.includes(ma.split(" ")[0] ?? "") ||
+        ma.includes(artist.split(" ")[0] ?? "");
+      if (releaseHit && artistHit) {
+        rk = m.release_key;
+        break;
+      }
+    }
+    if (!rk) continue;
+    out.set(rk, {
+      ctrPct: num(s["CTR %"]),
+      streams: num(s.Streams),
+    });
+  }
+  return out;
+}
+
+function slugPart(raw: string): string {
+  return raw
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 80);
+}
+
+/**
+ * Ads Manager export rows → awareness objective with impressions/reach.
+ * release_key is a stable synthetic key (unique constraint).
+ */
+function mapAwarenessDeliveryRows(rows: CsvRow[]): Record<string, unknown>[] {
+  const out: Record<string, unknown>[] = [];
+  const seen = new Set<string>();
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i]!;
+    const spend = num(r["Amount spent"]);
+    const impressions = num(r.Impressions);
+    const reach = num(r.Reach);
+    if (
+      spend == null ||
+      spend <= 0 ||
+      impressions == null ||
+      impressions <= 0 ||
+      reach == null ||
+      reach <= 0
+    ) {
+      continue;
+    }
+    const start = dateOrNull(r["Reporting starts"]);
+    const end = dateOrNull(r["Reporting ends"] ?? r.Ends);
+    const name = (r["Campaign name"] ?? "").trim();
+    let releaseKey = `awareness:${slugPart(name) || "campaign"}:${start ?? "na"}:${i}`;
+    while (seen.has(releaseKey)) {
+      releaseKey = `${releaseKey}+`;
+    }
+    seen.add(releaseKey);
+    out.push({
+      release_key: releaseKey,
+      campaign_uid: releaseKey,
+      campaign_name: name || null,
+      objective: "awareness",
+      spend_usd: spend,
+      link_clicks: num(r["Link clicks"]),
+      landing_page_views: num(r["Landing page views"]),
+      cpc: num(r["CPC (link click)"]),
+      linkfire_visits: null,
+      linkfire_clickthroughs: null,
+      spotify_click_share: null,
+      impressions,
+      reach,
+      linkfire_ctr_pct: null,
+      linkfire_streams: null,
+      start_date: start,
+      end_date: end,
+    });
+  }
+  return out;
+}
+
 function mapMetaRow(
   r: CsvRow,
   shareLookup: Map<string, { share: number; endDate: string | null }>,
+  summaryLookup: Map<string, LinkfireSummary>,
 ): Record<string, unknown> | null {
   if (!r.release_key) return null;
   if (!hasMetaOrLinkfire(r)) return null;
 
   const joined = shareLookup.get(r.release_key);
+  const summary = summaryLookup.get(r.release_key);
   const start =
     dateOrNull(r.first_campaign_date) ?? dateOrNull(r.release_date);
   const end = joined?.endDate ?? null;
 
   return {
     release_key: r.release_key,
+    campaign_uid: r.release_key,
     campaign_name: null,
     // Release-master Meta aggregates are link-click (traffic) campaigns.
     objective: "traffic",
@@ -245,9 +390,36 @@ function mapMetaRow(
     linkfire_visits: num(r.linkfire_visits),
     linkfire_clickthroughs: num(r.linkfire_clickthroughs),
     spotify_click_share: joined?.share ?? null,
+    impressions: null,
+    reach: num(r.meta_reach),
+    linkfire_ctr_pct: summary?.ctrPct ?? num(r.linkfire_ctr_pct),
+    linkfire_streams: summary?.streams ?? null,
     start_date: start,
     end_date: end,
   };
+}
+
+/** Drop columns not yet migrated so import still works on older schemas. */
+function stripUnknownMetaColumns(
+  rows: Record<string, unknown>[],
+  errorMessage: string,
+): Record<string, unknown>[] {
+  const optional = [
+    "campaign_uid",
+    "impressions",
+    "reach",
+    "linkfire_ctr_pct",
+    "linkfire_streams",
+    "derived_fields",
+    "source_partner",
+  ];
+  const drop = optional.filter((col) => errorMessage.includes(`'${col}'`));
+  if (drop.length === 0) return rows;
+  return rows.map((row) => {
+    const next = { ...row };
+    for (const col of drop) delete next[col];
+    return next;
+  });
 }
 
 async function replaceTable(
@@ -266,11 +438,46 @@ async function replaceTable(
     throw new Error(`${table} delete: ${delError.message}`);
   }
 
-  for (let i = 0; i < rows.length; i += BATCH) {
-    const chunk = rows.slice(i, i + BATCH);
-    const { error } = await supabase
-      .from(table)
-      .upsert(chunk, { onConflict });
+  let payload = rows;
+  let conflict = onConflict;
+
+  // Resolve schema drift on first batch (missing migrated columns).
+  {
+    let attempt = 0;
+    while (attempt < 6) {
+      const { error } = await supabase
+        .from(table)
+        .upsert(payload.slice(0, Math.min(BATCH, payload.length)), {
+          onConflict: conflict,
+        });
+      if (!error) break;
+      if (table !== "ad_meta_campaigns") {
+        throw new Error(`${table} upsert @0: ${error.message}`);
+      }
+      const stripped = stripUnknownMetaColumns(payload, error.message);
+      const changed =
+        stripped.length === payload.length &&
+        stripped.some((row, idx) => {
+          const prev = payload[idx] ?? {};
+          return Object.keys(prev).length !== Object.keys(row).length;
+        });
+      if (!changed) {
+        throw new Error(`${table} upsert @0: ${error.message}`);
+      }
+      payload = stripped;
+      if (!("campaign_uid" in (payload[0] ?? {}))) {
+        conflict = "release_key";
+      }
+      console.warn(`${table}: dropped missing columns — ${error.message}`);
+      attempt += 1;
+    }
+  }
+
+  for (let i = BATCH; i < payload.length; i += BATCH) {
+    const chunk = payload.slice(i, i + BATCH);
+    const { error } = await supabase.from(table).upsert(chunk, {
+      onConflict: conflict,
+    });
     if (error) {
       throw new Error(`${table} upsert @${i}: ${error.message}`);
     }
@@ -298,20 +505,29 @@ async function main(): Promise<number> {
   const spotifyCsv = parseCsv(readFileSync(SPOTIFY_CSV, "utf8"));
   const masterCsv = parseCsv(readFileSync(MASTER_CSV, "utf8"));
   const linkfireCsv = parseCsv(readFileSync(LINKFIRE_SERVICES_CSV, "utf8"));
+  const summaryCsv = parseCsv(readFileSync(LINKFIRE_SUMMARY_CSV, "utf8"));
+  const deliveryCsv = parseCsv(readFileSync(META_DELIVERY_CSV, "utf8"));
 
   const shareLookup = buildSpotifyClickShareByReleaseKey(masterCsv, linkfireCsv);
+  const summaryLookup = buildLinkfireSummaryByReleaseKey(masterCsv, summaryCsv);
 
   const spotifyRows = spotifyCsv
     .map(mapSpotifyRow)
     .filter((r): r is Record<string, unknown> => r != null);
-  const metaRows = masterCsv
-    .map((r) => mapMetaRow(r, shareLookup))
+  const trafficRows = masterCsv
+    .map((r) => mapMetaRow(r, shareLookup, summaryLookup))
     .filter((r): r is Record<string, unknown> => r != null);
+  const awarenessRows = mapAwarenessDeliveryRows(deliveryCsv);
+  const metaRows = [...trafficRows, ...awarenessRows];
 
   console.log(`Parsed spotify CSV rows: ${spotifyCsv.length} → ${spotifyRows.length} to insert`);
-  console.log(`Parsed master Meta/Linkfire rows: ${metaRows.length} to insert`);
+  console.log(`Parsed traffic Meta/Linkfire rows: ${trafficRows.length}`);
+  console.log(`Parsed awareness delivery rows: ${awarenessRows.length}`);
   console.log(
     `Linkfire spotify_click_share joined for ${shareLookup.size} release_keys`,
+  );
+  console.log(
+    `Linkfire CTR/streams joined for ${summaryLookup.size} release_keys`,
   );
 
   const spotifyCount = await replaceTable(
@@ -322,7 +538,8 @@ async function main(): Promise<number> {
   const metaCount = await replaceTable(
     "ad_meta_campaigns",
     metaRows,
-    "release_key",
+    // Prefer campaign_uid when migrated; replaceTable falls back to release_key.
+    "campaign_uid",
   );
 
   console.log("---");

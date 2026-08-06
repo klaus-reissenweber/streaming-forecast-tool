@@ -81,7 +81,7 @@
       "meta_funnel": {
         "cpc": 0.15,
         "spotify_click_share": 0.45,
-        "streams_per_spotify_click_base": 1.2,
+        "streams_per_spotify_click_base": 1.0,
         "confidence": "estimate"
       },
       "meta_awareness": {

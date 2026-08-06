@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CloseReleaseButton } from "@/components/release/CloseReleaseButton";
+import { ReleaseReportActions } from "@/components/release/ReleaseReportActions";
 import { EDITORIAL_TIER_DEFINITIONS } from "@/lib/constants";
 import type { EditorialTier, Genre } from "@/lib/forecast";
 import type { ReleaseStatus } from "@/lib/map-release-row";
@@ -12,6 +13,8 @@ export interface ReleasePageHeaderProps {
   releaseDateDisplay: string;
   editorialTier: EditorialTier;
   status: ReleaseStatus;
+  reportPath?: string | null;
+  reportUrl?: string | null;
 }
 
 function formatGenreLabel(genre: Genre): string {
@@ -46,6 +49,8 @@ export function ReleasePageHeader({
   releaseDateDisplay,
   editorialTier,
   status,
+  reportPath = null,
+  reportUrl = null,
 }: ReleasePageHeaderProps) {
   const tierLabel = EDITORIAL_TIER_DEFINITIONS[editorialTier].label;
   const badge = statusBadge(status);
@@ -70,7 +75,18 @@ export function ReleasePageHeader({
           {status === "active" ? (
             <CloseReleaseButton releaseId={releaseId} />
           ) : null}
+          <ReleaseReportActions
+            releaseId={releaseId}
+            reportPath={reportPath}
+            reportUrl={reportUrl}
+          />
           <nav className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium">
+            <Link
+              href={`/release/${releaseId}/ad-upload`}
+              className="text-accent-readable hover:text-accent-hover hover:underline"
+            >
+              Upload ad results
+            </Link>
             <Link
               href="/"
               className="text-accent-readable hover:text-accent-hover hover:underline"

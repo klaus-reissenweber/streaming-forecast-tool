@@ -82,10 +82,6 @@ export function MetaFunnelForecast({
   );
 
   const hasSpend = spend > 0;
-  const costPerStreamLabel =
-    funnel.costPerStream != null
-      ? `${formatUsd(funnel.costPerStream, 2)} / stream`
-      : "estimate";
 
   return (
     <section className="motion-fade-up min-w-0" aria-label="Meta funnel forecast">
@@ -94,25 +90,25 @@ export function MetaFunnelForecast({
           [META FUNNEL]
         </span>
       </h2>
-      <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.06em] text-muted">
-        Traffic objective only · confidence {funnel.confidence}
+      <p className="mt-1 text-caption leading-snug text-muted">
+        Also builds reach and a retargetable audience — cost-per-stream understates
+        its value.
       </p>
       {awarenessSpend > 0 ? (
         <p className="mt-1 text-caption text-secondary">
-          Awareness {formatUsd(awarenessSpend, 0)} is reach-only — not included in
-          attributed streams.
+          Awareness {formatUsd(awarenessSpend, 0)} — impressions and reach.
         </p>
       ) : null}
 
       <div className="mt-4 min-w-0 overflow-hidden rounded-instrument border border-border bg-surface">
         <div className="flex min-w-0 w-full flex-col sm:flex-row sm:items-stretch">
           <MetricCell
-            label="Link clicks"
+            label="Streams"
             sublabel={`${formatUsd(funnel.cpc, 2)} CPC`}
             value={
               hasSpend ? (
                 <AnimatedCompactMetric
-                  value={funnel.projectedClicks}
+                  value={funnel.projectedStreams}
                   delay={0}
                 />
               ) : (
@@ -127,12 +123,12 @@ export function MetaFunnelForecast({
           />
 
           <MetricCell
-            label="Spotify clicks"
-            sublabel={`${formatPercent(funnel.spotifyClickShare * 100, 0)} share`}
+            label="Clicks"
+            sublabel={`${formatPercent(funnel.spotifyClickShare * 100, 0)} Spotify share`}
             value={
               hasSpend ? (
                 <AnimatedCompactMetric
-                  value={funnel.projectedSpotifyClicks}
+                  value={funnel.projectedClicks}
                   delay={COUNT_UP_STAGGER_MS}
                 />
               ) : (
@@ -147,12 +143,12 @@ export function MetaFunnelForecast({
           />
 
           <MetricCell
-            label="Streams"
-            sublabel={`${funnel.streamsPerSpotifyClickEffective.toFixed(2)} s/click · ${costPerStreamLabel}`}
+            label="Impressions"
+            sublabel={`${formatUsd(funnel.cpm, 2)} CPM`}
             value={
               hasSpend ? (
                 <AnimatedCompactMetric
-                  value={funnel.projectedStreams}
+                  value={funnel.projectedImpressions}
                   delay={COUNT_UP_STAGGER_MS * 2}
                 />
               ) : (

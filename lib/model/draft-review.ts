@@ -5,6 +5,8 @@
 import { FORWARD_BIAS_MIN_IMPROVEMENT } from "@/lib/constants";
 import { composeStreamCurvePct } from "@/lib/forecast";
 import type { ActiveModel, DowKey } from "@/lib/model/active-model";
+import type { AdModel } from "@/lib/model/ad-model";
+import { AD_META_STREAMS_PER_SPOTIFY_CLICK } from "@/lib/model/ad-model";
 import type { ForecastModel } from "@/lib/model/forecast-model";
 
 const DOW_KEYS: DowKey[] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -24,6 +26,21 @@ const GENRE_KEYS = [
 ] as const;
 const TIER_KEYS = ["developing", "mid", "established"] as const;
 const BAND_PCTS = ["p25", "p50", "p75", "p90"] as const;
+
+/** Soft bands for ad_model review (warn only — same override discipline as curve). */
+const AD_CPL_MIN = 0.05;
+const AD_CPL_MAX = 2.0;
+const AD_SPL_MIN = 1.0;
+const AD_CPC_MIN = 0.01;
+const AD_CPC_MAX = 5.0;
+const AD_CPM_MIN = 0.5;
+const AD_CPM_MAX = 50.0;
+const AD_COST_PER_REACH_MIN = 0.0005;
+const AD_COST_PER_REACH_MAX = 0.05;
+const AD_CLICK_SHARE_MIN = 0.05;
+const AD_CLICK_SHARE_MAX = 0.95;
+const AD_SAMPLE_WARN_N = 5;
+const AD_LARGE_MOVE_REL = 0.35;
 
 /** Sample calendar dates for composed-curve preview. */
 export const PREVIEW_FRIDAY = "2026-05-29";
@@ -57,6 +74,8 @@ export type ModelDiff = {
   releaseTypeMagnitude: DiffRow[];
   saveRateBands: DiffRow[];
   saveCountBands: DiffRow[];
+  /** Fitted ad_model scalars + genre priors + sample sizes. */
+  adModel: DiffRow[];
 };
 
 export type GuardrailSeverity = "hard" | "soft";
@@ -200,7 +219,98 @@ export function buildModelDiff(
     releaseTypeMagnitude,
     saveRateBands,
     saveCountBands,
+    adModel: buildAdModelDiff(draft.adModel, active.adModel),
   };
+}
+
+/** Old-vs-new for every ad constant reviewed on approve (not per-artist SPL map). */
+export function buildAdModelDiff(draft: AdModel, active: AdModel): DiffRow[] {
+  const rows: DiffRow[] = [
+    row("spotify_cpl.marquee", active.spotifyCpl.marquee, draft.spotifyCpl.marquee),
+    row(
+      "spotify_cpl.showcase",
+      active.spotifyCpl.showcase,
+      draft.spotifyCpl.showcase,
+    ),
+    row(
+      "spotify_spl_global",
+      active.spotifySplGlobal,
+      draft.spotifySplGlobal,
+    ),
+    row(
+      "spotify_spl_shrinkage_k",
+      active.spotifySplShrinkageK,
+      draft.spotifySplShrinkageK,
+    ),
+  ];
+
+  for (const genre of GENRE_KEYS) {
+    rows.push(
+      row(
+        `spotify_spl_by_genre.${genre}`,
+        active.spotifySplByGenre[genre] ?? active.spotifySplGlobal,
+        draft.spotifySplByGenre[genre] ?? draft.spotifySplGlobal,
+      ),
+    );
+  }
+
+  rows.push(
+    row("meta_funnel.cpc", active.metaFunnel.cpc, draft.metaFunnel.cpc),
+    row(
+      "meta_funnel.spotify_click_share",
+      active.metaFunnel.spotifyClickShare,
+      draft.metaFunnel.spotifyClickShare,
+    ),
+    row(
+      "meta_funnel.streams_per_spotify_click_base",
+      active.metaFunnel.streamsPerSpotifyClickBase,
+      draft.metaFunnel.streamsPerSpotifyClickBase,
+    ),
+    row("meta_awareness.cpm", active.metaAwareness.cpm, draft.metaAwareness.cpm),
+    row(
+      "meta_awareness.cost_per_reach",
+      active.metaAwareness.costPerReach,
+      draft.metaAwareness.costPerReach,
+    ),
+    row(
+      "sample.cpl_marquee",
+      active.sampleSizes.cplMarquee,
+      draft.sampleSizes.cplMarquee,
+    ),
+    row(
+      "sample.cpl_showcase",
+      active.sampleSizes.cplShowcase,
+      draft.sampleSizes.cplShowcase,
+    ),
+    row(
+      "sample.spl_artists",
+      active.sampleSizes.splArtists,
+      draft.sampleSizes.splArtists,
+    ),
+    row("sample.meta_cpc", active.sampleSizes.metaCpc, draft.sampleSizes.metaCpc),
+    row(
+      "sample.meta_spotify_click_share",
+      active.sampleSizes.metaSpotifyClickShare,
+      draft.sampleSizes.metaSpotifyClickShare,
+    ),
+    row(
+      "sample.meta_awareness",
+      active.sampleSizes.metaAwareness,
+      draft.sampleSizes.metaAwareness,
+    ),
+    row(
+      "sample.spotify_usable",
+      active.sampleSizes.spotifyUsable,
+      draft.sampleSizes.spotifyUsable,
+    ),
+    row(
+      "spotify_spl_by_artist.count",
+      Object.keys(active.spotifySplByArtist).length,
+      Object.keys(draft.spotifySplByArtist).length,
+    ),
+  );
+
+  return rows;
 }
 
 /**
@@ -517,6 +627,158 @@ function evaluateLargeParameterMove(
   };
 }
 
+function inBand(value: number, lo: number, hi: number): boolean {
+  return Number.isFinite(value) && value >= lo && value <= hi;
+}
+
+function adRelMove(active: number, draft: number): number {
+  if (!Number.isFinite(active) || !Number.isFinite(draft)) return 0;
+  if (active === 0) return Math.abs(draft) > 0 ? 1 : 0;
+  return Math.abs(draft - active) / Math.abs(active);
+}
+
+/** Soft: CPL/CPC/CPM in-band, SPL priors ≥ 1, fixed base=1.0, large ad moves. */
+export function evaluateAdModelBands(draft: ActiveModel): GuardrailCheck {
+  const ad = draft.adModel;
+  const issues: string[] = [];
+
+  if (!inBand(ad.spotifyCpl.marquee, AD_CPL_MIN, AD_CPL_MAX)) {
+    issues.push(`cpl.marquee=${fmtNum(ad.spotifyCpl.marquee, 3)}`);
+  }
+  if (!inBand(ad.spotifyCpl.showcase, AD_CPL_MIN, AD_CPL_MAX)) {
+    issues.push(`cpl.showcase=${fmtNum(ad.spotifyCpl.showcase, 3)}`);
+  }
+  if (!(ad.spotifySplGlobal >= AD_SPL_MIN)) {
+    issues.push(`spl_global=${fmtNum(ad.spotifySplGlobal, 2)} (<${AD_SPL_MIN})`);
+  }
+  for (const genre of GENRE_KEYS) {
+    const prior = ad.spotifySplByGenre[genre];
+    if (prior != null && !(prior >= AD_SPL_MIN)) {
+      issues.push(`spl.${genre}=${fmtNum(prior, 2)}`);
+    }
+  }
+  if (!inBand(ad.metaFunnel.cpc, AD_CPC_MIN, AD_CPC_MAX)) {
+    issues.push(`cpc=${fmtNum(ad.metaFunnel.cpc, 3)}`);
+  }
+  if (
+    !inBand(
+      ad.metaFunnel.spotifyClickShare,
+      AD_CLICK_SHARE_MIN,
+      AD_CLICK_SHARE_MAX,
+    )
+  ) {
+    issues.push(`click_share=${fmtNum(ad.metaFunnel.spotifyClickShare, 2)}`);
+  }
+  if (
+    Math.abs(
+      ad.metaFunnel.streamsPerSpotifyClickBase - AD_META_STREAMS_PER_SPOTIFY_CLICK,
+    ) > 1e-9
+  ) {
+    issues.push(
+      `streams_per_spotify_click_base=${fmtNum(ad.metaFunnel.streamsPerSpotifyClickBase, 2)} (want ${AD_META_STREAMS_PER_SPOTIFY_CLICK})`,
+    );
+  }
+  if (!inBand(ad.metaAwareness.cpm, AD_CPM_MIN, AD_CPM_MAX)) {
+    issues.push(`cpm=${fmtNum(ad.metaAwareness.cpm, 2)}`);
+  }
+  if (
+    !inBand(
+      ad.metaAwareness.costPerReach,
+      AD_COST_PER_REACH_MIN,
+      AD_COST_PER_REACH_MAX,
+    )
+  ) {
+    issues.push(
+      `cost_per_reach=${fmtNum(ad.metaAwareness.costPerReach, 5)}`,
+    );
+  }
+
+  const passed = issues.length === 0;
+  return {
+    id: "ad_model_bands",
+    severity: "soft",
+    label: "Ad model rates in sane bands",
+    passed,
+    value: passed ? "CPL/SPL/CPC/CPM in band; base=1.0" : issues.join("; "),
+    detail: passed
+      ? undefined
+      : "Soft only — lean on priors / review before promote",
+  };
+}
+
+/** Soft: warn when a format/objective fit has fewer than ~5 campaigns. */
+export function evaluateAdModelSampleSize(draft: ActiveModel): GuardrailCheck {
+  const s = draft.adModel.sampleSizes;
+  const thin: string[] = [];
+  if (s.cplMarquee < AD_SAMPLE_WARN_N) {
+    thin.push(`marquee n=${s.cplMarquee}`);
+  }
+  if (s.cplShowcase < AD_SAMPLE_WARN_N) {
+    thin.push(`showcase n=${s.cplShowcase}`);
+  }
+  if (s.metaCpc < AD_SAMPLE_WARN_N) {
+    thin.push(`meta_cpc n=${s.metaCpc}`);
+  }
+  if (s.metaSpotifyClickShare < AD_SAMPLE_WARN_N) {
+    thin.push(`click_share n=${s.metaSpotifyClickShare}`);
+  }
+  if (s.metaAwareness < AD_SAMPLE_WARN_N) {
+    thin.push(`awareness n=${s.metaAwareness}`);
+  }
+
+  const passed = thin.length === 0;
+  return {
+    id: "ad_model_sample",
+    severity: "soft",
+    label: "Ad fit sample counts",
+    passed,
+    value: passed
+      ? `all buckets ≥ ${AD_SAMPLE_WARN_N}`
+      : `${thin.join("; ")} — lean on prior`,
+    detail: passed
+      ? undefined
+      : `Soft warning when n < ${AD_SAMPLE_WARN_N} for a format/objective`,
+  };
+}
+
+/** Soft: large relative moves on fitted ad constants vs active. */
+export function evaluateAdModelLargeMove(
+  draft: ActiveModel,
+  active: ActiveModel,
+  diff: ModelDiff,
+): GuardrailCheck {
+  const skipPrefix = "sample.";
+  const skipExact = new Set([
+    "spotify_spl_by_artist.count",
+    "spotify_spl_shrinkage_k",
+    "meta_funnel.streams_per_spotify_click_base",
+  ]);
+  const movers: string[] = [];
+  for (const row of diff.adModel) {
+    if (row.label.startsWith(skipPrefix) || skipExact.has(row.label)) {
+      continue;
+    }
+    if (adRelMove(row.active, row.draft) > AD_LARGE_MOVE_REL) {
+      movers.push(
+        `${row.label} Δ=${((adRelMove(row.active, row.draft) * 100).toFixed(0))}%`,
+      );
+    }
+  }
+  void draft;
+  void active;
+  const passed = movers.length === 0;
+  return {
+    id: "ad_model_large_move",
+    severity: "soft",
+    label: "Large ad_model moves vs active",
+    passed,
+    value: passed
+      ? `no moves > ${(AD_LARGE_MOVE_REL * 100).toFixed(0)}%`
+      : movers.slice(0, 8).join("; ") +
+        (movers.length > 8 ? ` (+${movers.length - 8} more)` : ""),
+  };
+}
+
 export function parseRawGuardrails(
   rawMetadata: Record<string, unknown> | null,
 ): DraftRawGuardrails | null {
@@ -594,6 +856,9 @@ export function buildDraftReview(
     evaluateNewest10Bias(draft),
     evaluateSaveRateNotCollapsed(draft),
     evaluateLargeParameterMove(draft, active, diff),
+    evaluateAdModelBands(draft),
+    evaluateAdModelSampleSize(draft),
+    evaluateAdModelLargeMove(draft, active, diff),
   ];
 
   return {

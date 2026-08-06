@@ -43,6 +43,10 @@ export type AdMetaCampaignRow = {
   linkfire_visits: number | null;
   linkfire_clickthroughs: number | null;
   spotify_click_share: number | null;
+  impressions: number | null;
+  reach: number | null;
+  linkfire_ctr_pct: number | null;
+  linkfire_streams: number | null;
   start_date: string | null;
   end_date: string | null;
 };
@@ -51,7 +55,7 @@ const SPOTIFY_SELECT =
   "id, artist, release_key, campaign_uid, format, release_type, country, segment_targeting, spend_usd, reach, clicks, converted_listeners, active_streams_per_listener, est_attributed_streams, conversion_rate_pct, release_date, start_date, end_date, days_release_to_campaign, campaign_days, usable_for_modeling, exclusion_reason";
 
 const META_SELECT =
-  "id, release_key, campaign_name, objective, spend_usd, link_clicks, landing_page_views, cpc, linkfire_visits, linkfire_clickthroughs, spotify_click_share, start_date, end_date";
+  "id, release_key, campaign_name, objective, spend_usd, link_clicks, landing_page_views, cpc, linkfire_visits, linkfire_clickthroughs, spotify_click_share, impressions, reach, linkfire_ctr_pct, linkfire_streams, start_date, end_date";
 
 export async function loadAdSpotifyCampaigns(options?: {
   usableOnly?: boolean;
