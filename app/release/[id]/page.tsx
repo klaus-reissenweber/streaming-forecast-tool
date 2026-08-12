@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { AlgoPositioningModule } from "@/components/release/AlgoPositioningModule";
-import { ChannelMixRecommendation } from "@/components/release/ChannelMixRecommendation";
+import { ChannelMixForecast } from "@/components/release/ChannelMixForecast";
 import { DailyEntrySection } from "@/components/release/DailyEntrySection";
 import { FlagsPanel } from "@/components/release/FlagsPanel";
 import { GenrePlaybook } from "@/components/release/GenrePlaybook";
 import { HealthBanner } from "@/components/release/HealthBanner";
 import { LockedForecastBanner } from "@/components/release/LockedForecastBanner";
-import { MetaFunnelForecast } from "@/components/release/MetaFunnelForecast";
 import { MetricCards } from "@/components/release/MetricCards";
 import { ReleasePageHeader } from "@/components/release/ReleasePageHeader";
 import { StreamCurveChart } from "@/components/release/StreamCurveChart";
@@ -163,14 +162,10 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
         <section className="mt-8 space-y-8" aria-label="Reference modules">
           <AlgoPositioningModule positioning={viewModel.algoPositioning} />
 
-          <ChannelMixRecommendation mix={viewModel.channelMix} />
-
-          <MetaFunnelForecast
-            spend={viewModel.adLayer.plan.metaTrafficSpend}
-            artistName={release.artist_name}
+          <ChannelMixForecast
+            plan={viewModel.adLayer.plan}
             genre={release.genre}
             adModel={model.adModel}
-            awarenessSpend={viewModel.adLayer.plan.metaAwarenessSpend}
           />
 
           <GenrePlaybook genre={viewModel.header.genre} />

@@ -14,11 +14,19 @@ import traceback
 import config
 import retrain as retrain_mod
 from db import get_db_client
-from jobs import claim_queued_job, complete_job, fail_job
+from jobs import (
+    claim_queued_job,
+    complete_job,
+    fail_job,
+    reap_stale_running_jobs,
+)
 
 
 def main() -> int:
     client = get_db_client()
+    # Always run before claim / empty-queue exit so a dead worker cannot
+    # permanently block new enqueues (actions.ts rejects if any running).
+    reap_stale_running_jobs(client)
     job = claim_queued_job(client)
     if job is None:
         print("No queued retrain job — exiting.")

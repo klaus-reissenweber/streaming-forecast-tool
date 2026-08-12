@@ -7,7 +7,7 @@ import {
   computeAdAttributedTotals,
   computeAdMetaFunnelDisplay,
 } from "@/lib/ad-forecast";
-import { formatCount } from "@/lib/format";
+import { formatCount, formatUsd } from "@/lib/format";
 import type { Genre } from "@/lib/forecast";
 import { useCountUp } from "@/lib/hooks/use-count-up";
 import type { AdModel } from "@/lib/model/ad-model";
@@ -21,6 +21,8 @@ export interface AdSpendLiveForecastProps {
   metaAwarenessSpend: number;
   /** Active model — CPL/SPL/CPC/CPM all from here. */
   adModel: AdModel;
+  /** Omit the top border used under the /new spend form. */
+  bare?: boolean;
 }
 
 const COUNT_UP_STAGGER_MS = 40;
@@ -63,15 +65,24 @@ function MetricCell({
 function ForecastCard({
   title,
   note,
+  spendLabel,
   children,
 }: {
   title: string;
   note?: string;
+  spendLabel?: string;
   children: ReactNode;
 }) {
   return (
     <section className="min-w-0" aria-label={title}>
-      <h3 className="text-body-sm font-medium text-secondary">{title}</h3>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <h3 className="text-body-sm font-medium text-secondary">{title}</h3>
+        {spendLabel ? (
+          <p className="font-mono text-caption tabular-nums text-muted">
+            {spendLabel}
+          </p>
+        ) : null}
+      </div>
       {note ? (
         <p className="mt-1 text-caption leading-snug text-muted">{note}</p>
       ) : null}
@@ -90,6 +101,11 @@ function Divider() {
   );
 }
 
+function cpsLabel(spend: number, streams: number): string {
+  if (!(spend > 0) || !(streams > 0)) return "—";
+  return formatUsd(spend / streams, 2);
+}
+
 export function AdSpendLiveForecast({
   artistName,
   genre,
@@ -98,6 +114,7 @@ export function AdSpendLiveForecast({
   metaTrafficSpend,
   metaAwarenessSpend,
   adModel,
+  bare = false,
 }: AdSpendLiveForecastProps) {
   const totals = useMemo(
     () =>
@@ -150,6 +167,13 @@ export function AdSpendLiveForecast({
     return null;
   }
 
+  const spotifySpend = marqueeSpend + showcaseSpend;
+  const spotifyCps = cpsLabel(spotifySpend, totals.spotifyTotal);
+  const metaCps =
+    metaFunnel.costPerStream != null
+      ? formatUsd(metaFunnel.costPerStream, 2)
+      : cpsLabel(metaTrafficSpend, metaFunnel.projectedStreams);
+
   const totalImpressions =
     (hasMetaTraffic ? metaFunnel.projectedImpressions : 0) +
     (hasAwareness ? awareness.projectedImpressions : 0);
@@ -159,10 +183,22 @@ export function AdSpendLiveForecast({
   const totalClicks = hasMetaTraffic ? metaFunnel.projectedClicks : 0;
   const totalStreams = totals.grandTotal;
 
+  const spotifySpendParts = [
+    marqueeSpend > 0 ? `Marquee ${formatUsd(marqueeSpend, 0)}` : null,
+    showcaseSpend > 0 ? `Showcase ${formatUsd(showcaseSpend, 0)}` : null,
+  ].filter(Boolean);
+
   return (
-    <div className="mt-5 space-y-4 border-t border-border/80 pt-5">
+    <div
+      className={
+        bare ? "space-y-4" : "mt-5 space-y-4 border-t border-border/80 pt-5"
+      }
+    >
       {hasSpotify ? (
-        <ForecastCard title="Spotify ads">
+        <ForecastCard
+          title="Spotify ads"
+          spendLabel={spotifySpendParts.join(" · ") || undefined}
+        >
           {marqueeSpend > 0 ? (
             <MetricCell
               label="Marquee streams"
@@ -181,30 +217,19 @@ export function AdSpendLiveForecast({
               }
             />
           ) : null}
-          {marqueeSpend > 0 && showcaseSpend > 0 ? (
-            <>
-              <Divider />
-              <MetricCell
-                label="Streams"
-                value={
-                  <AnimatedCount
-                    value={totals.spotifyTotal}
-                    delay={COUNT_UP_STAGGER_MS * 2}
-                  />
-                }
-              />
-            </>
-          ) : null}
+          <Divider />
+          <MetricCell label="CPS" value={spotifyCps} />
         </ForecastCard>
       ) : null}
 
       {hasMetaTraffic ? (
         <ForecastCard
           title="Meta traffic"
-          note="Also builds reach and a retargetable audience — cost-per-stream understates its value."
+          spendLabel={formatUsd(metaTrafficSpend, 0)}
+          note="Streams are an estimate. Also builds reach and a retargetable audience — CPS understates its value."
         >
           <MetricCell
-            label="Streams"
+            label="Streams (estimate)"
             value={
               <AnimatedCount
                 value={metaFunnel.projectedStreams}
@@ -232,11 +257,16 @@ export function AdSpendLiveForecast({
               />
             }
           />
+          <Divider />
+          <MetricCell label="CPS" value={metaCps} />
         </ForecastCard>
       ) : null}
 
       {hasAwareness ? (
-        <ForecastCard title="Meta awareness">
+        <ForecastCard
+          title="Meta awareness"
+          spendLabel={formatUsd(metaAwarenessSpend, 0)}
+        >
           <MetricCell
             label="Impressions"
             value={

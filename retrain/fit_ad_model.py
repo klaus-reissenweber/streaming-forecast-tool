@@ -26,11 +26,39 @@ def _env_for_fit() -> dict[str, str]:
     return env
 
 
+def _parse_emit_json_payload(stdout: str) -> Any:
+    """
+    Extract the --emit-json object from tsx/npx stdout.
+
+    Prefer whole-stdout JSON; otherwise scan non-empty lines in reverse for the
+    first line that parses as JSON (npx/tsx may print noise around the payload).
+    """
+    text = (stdout or "").strip()
+    if not text:
+        raise RuntimeError("ad_model fit emitted no JSON")
+
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    for line in reversed([ln for ln in text.splitlines() if ln.strip()]):
+        try:
+            return json.loads(line)
+        except json.JSONDecodeError:
+            continue
+
+    raise RuntimeError(
+        f"ad_model fit JSON parse error: no valid JSON in stdout; "
+        f"raw={text[:500]!r}"
+    )
+
+
 def fit_ad_model_payload() -> dict[str, Any]:
     """
     Run scripts/fit-ad-model.ts --emit-json and return the ad_model dict.
 
-    Raises RuntimeError on fit failure (caller may fall back to live copy).
+    Raises RuntimeError on non-zero exit or invalid/missing JSON payload.
     """
     script = REPO_ROOT / "scripts" / "fit-ad-model.ts"
     if not script.is_file():
@@ -62,16 +90,7 @@ def fit_ad_model_payload() -> dict[str, Any]:
             f"(exit={completed.returncode}): {stderr or stdout or 'no output'}"
         )
 
-    # Last non-empty line should be the JSON payload (tsx may warn on stderr).
-    lines = [line for line in stdout.splitlines() if line.strip()]
-    if not lines:
-        raise RuntimeError("ad_model fit emitted no JSON")
-    try:
-        payload = json.loads(lines[-1])
-    except json.JSONDecodeError as exc:
-        raise RuntimeError(
-            f"ad_model fit JSON parse error: {exc}; raw={stdout[:500]!r}"
-        ) from exc
+    payload = _parse_emit_json_payload(stdout)
 
     if not isinstance(payload, dict) or not payload.get("ok"):
         err = payload.get("error") if isinstance(payload, dict) else payload

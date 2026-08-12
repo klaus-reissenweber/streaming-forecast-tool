@@ -2,8 +2,6 @@ import {
   formatLockTimestamp,
   formatReleaseDate,
 } from "@/lib/format";
-import type { ChannelMixRecommendation } from "@/lib/channel-mix";
-import { recommendChannelMix } from "@/lib/channel-mix";
 import { computeFlagsForRelease } from "@/lib/flags";
 import type { ReleaseFlag } from "@/lib/flags";
 import type {
@@ -65,7 +63,6 @@ export interface ReleaseViewModel {
     status: ReleaseRecord["status"];
   };
   algoPositioning: AlgoPositioningResult;
-  channelMix: ChannelMixRecommendation;
   modelConfidenceR2: number;
   /** DB row id / fitted_at, or "fallback" — for prod observability. */
   activeModelSource: string;
@@ -104,7 +101,7 @@ function computeImpliedSaveRate(streams: number, saves: number): number {
 export function buildReleaseViewModel(
   release: ReleaseRecord,
   dailyData: DailyDataPoint[],
-  adRates: AdRates,
+  _adRates: AdRates,
   streamsD0R2: number,
   model: ActiveModel,
 ): ReleaseViewModel {
@@ -133,14 +130,14 @@ export function buildReleaseViewModel(
     tier,
     forecastModel.saveCountBands,
   );
-  const channelMix = recommendChannelMix(inputs, adRates, forecastModel);
+  const adPlan = adSpendPlanFromRelease(release);
   const streamCurve = buildStreamCurve(
     forecastModel,
     release.locked_forecast_streams,
     { releaseDate: release.release_date },
   );
   const adLayer = buildAdDailyLayer(
-    adSpendPlanFromRelease(release),
+    adPlan,
     model.adModel,
     release.locked_forecast_streams,
   );
@@ -186,7 +183,6 @@ export function buildReleaseViewModel(
       status: release.status,
     },
     algoPositioning,
-    channelMix,
     modelConfidenceR2: streamsD0R2,
     activeModelSource: formatActiveModelSource(model),
     streamCurve,

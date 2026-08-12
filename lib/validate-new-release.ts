@@ -31,7 +31,7 @@ export interface NewReleaseFormValues {
   metaTrafficSpendPlanned: number;
   /** Meta awareness spend — reach-only, zero attributed streams. */
   metaAwarenessSpendPlanned: number;
-  /** traffic + awareness (legacy total for organic / channel-mix). */
+  /** traffic + awareness (legacy total). */
   metaSpendPlanned: number;
   metaObjective: MetaObjective;
 }
