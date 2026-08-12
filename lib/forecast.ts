@@ -1,8 +1,6 @@
 import {
   META_CLICK_TO_STREAM_CONVERSION,
   META_DELIVERY_PER_OBJECTIVE,
-  META_OBJECTIVE_MULTIPLIERS,
-  META_RATES_BY_GENRE,
   STREAM_CURVE_BASELINE,
   TIER_ML_THRESHOLDS,
   type CurvePercentile,
@@ -221,20 +219,6 @@ const LOG_DAY_COEFFICIENT_KEYS: Record<ForecastDay, `log_d${ForecastDay}`> = {
   7: "log_d7",
 };
 
-const SPOTIFY_RATE_FALLBACK_MULTIPLIER: Partial<
-  Record<SpotifyCpsReleaseType, number>
-> = {
-  ep: 0.5,
-  album: 0.25,
-};
-
-/** Catalog release_type does not drive CPS yet — always use single rates. */
-function spotifyCpsReleaseType(
-  _releaseType: ReleaseType,
-): SpotifyCpsReleaseType {
-  return "single";
-}
-
 // --- Helpers ---
 
 export function artistTierFromMonthlyListeners(
@@ -287,12 +271,6 @@ function featureValue(isFeature: boolean): number {
   return isFeature ? 1 : 0;
 }
 
-function isValidSpotifyRate(
-  rate: number | null | undefined,
-): rate is number {
-  return rate != null && rate > 0;
-}
-
 function predictLogStreams(
   model: RegressionModel,
   inputs: ReleaseForecastInputs,
@@ -312,51 +290,6 @@ function predictLogStreams(
   }
 
   return mu;
-}
-
-function lookupSpotifyCps(
-  adRates: AdRates,
-  releaseType: ReleaseType,
-  format: SpotifyFormat,
-  tier: ArtistTier,
-): number {
-  const cpsType = spotifyCpsReleaseType(releaseType);
-  const direct = adRates.spotify_rates[cpsType][format][tier];
-  if (isValidSpotifyRate(direct)) {
-    return direct;
-  }
-
-  const fallbackMultiplier = SPOTIFY_RATE_FALLBACK_MULTIPLIER[cpsType];
-  if (fallbackMultiplier === undefined) {
-    throw new Error(
-      `No Spotify CPS rate for ${cpsType}/${format}/${tier} and no fallback is defined for this release type.`,
-    );
-  }
-
-  const singleRate = adRates.spotify_rates.single[format][tier];
-  if (!isValidSpotifyRate(singleRate)) {
-    throw new Error(
-      `No Spotify CPS rate for ${cpsType}/${format}/${tier} and single/${format}/${tier} fallback is also missing.`,
-    );
-  }
-
-  return singleRate * fallbackMultiplier;
-}
-
-function metaCps(genre: Genre, objective: MetaObjective, adRates?: AdRates): number {
-  const baseRate =
-    adRates?.meta_rates_by_genre?.[genre] ?? META_RATES_BY_GENRE[genre];
-  const multiplier =
-    adRates?.meta_objective_multipliers?.[objective] ??
-    META_OBJECTIVE_MULTIPLIERS[objective];
-  return baseRate * multiplier;
-}
-
-function estimatedStreamsFromSpend(spend: number, costPerStream: number): number {
-  if (spend <= 0 || costPerStream <= 0) {
-    return 0;
-  }
-  return Math.round(spend / costPerStream);
 }
 
 // --- Core forecasts ---
@@ -483,61 +416,6 @@ export function predictSaves(
   }
 
   return result;
-}
-
-export function predictAdImpact(
-  inputs: Pick<
-    ReleaseForecastInputs,
-    | "monthlyListeners"
-    | "genre"
-    | "releaseType"
-    | "spotifyFormat"
-    | "spotifySpendPlanned"
-    | "metaSpendPlanned"
-    | "metaObjective"
-  >,
-  adRates: AdRates,
-  model?: Pick<ForecastModel, "config">,
-): AdImpactForecast {
-  const tier = artistTierFromMonthlyListeners(
-    inputs.monthlyListeners,
-    model?.config.tierMlThresholds,
-  );
-
-  const spotifyCps = lookupSpotifyCps(
-    adRates,
-    inputs.releaseType,
-    inputs.spotifyFormat,
-    tier,
-  );
-  const metaCpsValue = metaCps(inputs.genre, inputs.metaObjective, adRates);
-
-  const spotify: AdChannelImpact = {
-    channel: "spotify",
-    spend: inputs.spotifySpendPlanned,
-    costPerStream: spotifyCps,
-    estimatedStreams: estimatedStreamsFromSpend(
-      inputs.spotifySpendPlanned,
-      spotifyCps,
-    ),
-  };
-
-  const meta: AdChannelImpact = {
-    channel: "meta",
-    spend: inputs.metaSpendPlanned,
-    costPerStream: metaCpsValue,
-    estimatedStreams: estimatedStreamsFromSpend(
-      inputs.metaSpendPlanned,
-      metaCpsValue,
-    ),
-  };
-
-  return {
-    tier,
-    spotify,
-    meta,
-    totalEstimatedStreams: spotify.estimatedStreams + meta.estimatedStreams,
-  };
 }
 
 export function predictPaidDelivery(
@@ -753,7 +631,6 @@ export function computeLockedForecast(
 ): {
   streams: StreamsForecast;
   saves: SavesForecast;
-  adImpact: AdImpactForecast;
   metaDelivery: PaidDeliveryForecast;
   algoPositioning: AlgoPositioningResult;
   streamCurve: StreamCurveForecast;
@@ -780,7 +657,6 @@ export function computeLockedForecast(
       week1Streams > 0 ? (week1Saves / week1Streams) * 100 : rawSaves.impliedSaveRate,
   };
 
-  const adImpact = predictAdImpact(inputs, adRates, model);
   const metaDelivery = predictPaidDelivery(
     inputs.metaSpendPlanned,
     inputs.metaObjective,
@@ -802,7 +678,6 @@ export function computeLockedForecast(
   return {
     streams,
     saves,
-    adImpact,
     metaDelivery,
     algoPositioning,
     streamCurve,
