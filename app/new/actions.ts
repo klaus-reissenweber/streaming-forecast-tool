@@ -124,11 +124,20 @@ export async function createRelease(
 
     if (error || !data?.id) {
       if (error) {
+        console.error("Release insert failed:", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        });
         return {
           success: false,
           error: releaseSaveErrorMessage(error),
         };
       }
+      console.error("Release insert failed: no row id returned", {
+        data,
+      });
       return {
         success: false,
         error: RELEASE_SAVE_ERROR_FATAL,
@@ -141,6 +150,7 @@ export async function createRelease(
       throw err;
     }
 
+    console.error("Release create unexpected error:", err);
     return {
       success: false,
       error: RELEASE_SAVE_ERROR_FATAL,
