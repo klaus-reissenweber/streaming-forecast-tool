@@ -27,6 +27,10 @@ import {
   loadSourceProfile,
   saveSourceProfile,
 } from "@/lib/ad-upload/source-profiles";
+import {
+  manualDraftsToCanonicalRows,
+  type ManualCampaignDraft,
+} from "@/lib/ad-upload/manual-rows";
 import { upsertCanonicalRows } from "@/lib/ad-upload/upsert";
 import { generateOrRefreshAdReport } from "@/lib/ad-report/generate";
 import { requireAllowedUser } from "@/lib/auth/require-allowed-user";
@@ -252,6 +256,90 @@ export async function previewAdUploadGaps(input: {
       release.genre,
     );
     return { success: true, rows, gaps, platform };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+/**
+ * Manual entry → same canonical + applyGapFill + upsertCanonicalRows path
+ * as file upload (no parallel write).
+ */
+export async function confirmManualAdResults(input: {
+  releaseId: string;
+  platform: "spotify" | "meta";
+  partnerLabel?: string;
+  objective?: "awareness" | "traffic" | "streaming" | null;
+  drafts: ManualCampaignDraft[];
+}): Promise<ConfirmUploadResult> {
+  const auth = await requireAllowedUser();
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  if (!isValidReleaseId(input.releaseId)) {
+    return { success: false, error: "Invalid release id." };
+  }
+  const release = await loadRelease(input.releaseId);
+  if (!release) return { success: false, error: "Release not found." };
+
+  if (input.platform !== "spotify" && input.platform !== "meta") {
+    return { success: false, error: "Platform must be Spotify or Meta." };
+  }
+  if (!Array.isArray(input.drafts) || input.drafts.length === 0) {
+    return { success: false, error: "Add at least one campaign row." };
+  }
+
+  try {
+    const releaseKey = releaseKeyFromTrackName(release.track_name);
+    const canonical = manualDraftsToCanonicalRows({
+      platform: input.platform,
+      drafts: input.drafts,
+      artist: release.artist_name,
+      releaseKey,
+      objective: input.objective ?? "traffic",
+    });
+    // Completeness gate → usable_for_modeling (same as upload).
+    const rows = applyGapFill(canonical, input.platform, {});
+    const partner =
+      input.partnerLabel?.trim() || "Manual entry";
+
+    const result = await upsertCanonicalRows({
+      rows,
+      platform: input.platform,
+      sourcePartner: partner,
+    });
+
+    let reportUrl: string | null = null;
+    let reportPath: string | null = null;
+    const warnings = [...result.errors];
+    try {
+      const report = await generateOrRefreshAdReport(input.releaseId);
+      reportUrl = report.url;
+      reportPath = report.path;
+      revalidatePath(report.path);
+    } catch (reportErr) {
+      warnings.push(
+        `Ad rows saved, but report refresh failed: ${
+          reportErr instanceof Error ? reportErr.message : String(reportErr)
+        }`,
+      );
+    }
+
+    revalidatePath(`/release/${input.releaseId}`);
+    revalidatePath(`/release/${input.releaseId}/ad-upload`);
+
+    return {
+      success: true,
+      spotifyUpserted: result.spotifyUpserted,
+      metaUpserted: result.metaUpserted,
+      skipped: result.skipped,
+      warnings,
+      profileSaved: false,
+      reportUrl,
+      reportPath,
+    };
   } catch (err) {
     return {
       success: false,

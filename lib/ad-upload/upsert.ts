@@ -146,6 +146,9 @@ export type UpsertAdUploadResult = {
 const SPOTIFY_OPTIONAL_COLS = [
   "derived_fields",
   "source_partner",
+  "saves",
+  "streams_per_listener",
+  "active_streams_per_listener",
 ] as const;
 
 function stripCols(
@@ -265,6 +268,7 @@ export async function upsertCanonicalRows(options: {
       const stripable = [
         "linkfire_spotify_clicks",
         "linkfire_visits",
+        "linkfire_streams",
         "derived_fields",
         "source_partner",
         "impressions",

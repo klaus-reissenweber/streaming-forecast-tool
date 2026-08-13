@@ -10,8 +10,13 @@ import {
   applyGapFill,
   computeGapNeeds,
 } from "@/lib/ad-upload/gap-fill";
+import {
+  manualDraftsToCanonicalRows,
+  emptyManualDraft,
+} from "@/lib/ad-upload/manual-rows";
 import { parseCsvBuffer } from "@/lib/ad-upload/parse-tabular";
 import { heuristicColumnMappings } from "@/lib/ad-upload/propose-mapping";
+import { toSpotifyRow } from "@/lib/ad-upload/upsert";
 import { SEED_AD_MODEL } from "@/lib/model/ad-model";
 
 function assert(cond: boolean, msg: string): void {
@@ -121,7 +126,72 @@ function main(): void {
     "lf spotify clicks",
   );
 
+  // Manual entry → same canonical / gap-fill / upsert payload path.
+  const manualMeta = manualDraftsToCanonicalRows({
+    platform: "meta",
+    drafts: [
+      {
+        ...emptyManualDraft(),
+        campaign_name: "Traffic A",
+        spend: "250",
+        impressions: "10000",
+        clicks: "400",
+        streams: "1800",
+        linkfire_spotify_clicks: "220",
+      },
+    ],
+    artist: "Artist",
+    releaseKey: "track a",
+    objective: "traffic",
+  });
+  const metaFilled = applyGapFill(manualMeta, "meta", {});
+  assert(metaFilled[0]!.spend === 250, "manual meta spend");
+  assert(metaFilled[0]!.attributed_streams === 1800, "manual meta streams");
+  assert(metaFilled[0]!.linkfire_spotify_clicks === 220, "manual lf clicks");
+  assert(metaFilled[0]!.usable_for_modeling, "manual meta usable with clicks");
+
+  const manualSpotify = manualDraftsToCanonicalRows({
+    platform: "spotify",
+    drafts: [
+      {
+        ...emptyManualDraft(),
+        campaign_name: "Marquee A",
+        format: "marquee",
+        spend: "100",
+        reach: "50000",
+        clicks: "1200",
+        converted_listeners: "400",
+        est_attributed_streams: "500",
+        saves: "80",
+      },
+    ],
+    artist: "LSDREAM",
+    releaseKey: "track",
+  });
+  assert(
+    manualSpotify[0]!.attributed_streams === 500,
+    "est_attributed_streams → canonical attributed_streams",
+  );
+  assert(manualSpotify[0]!.reach === 50000, "manual spotify reach");
+  assert(manualSpotify[0]!.saves === 80, "manual spotify saves");
+  const spotifyFilled = applyGapFill(manualSpotify, "spotify", {});
+  assert(spotifyFilled[0]!.usable_for_modeling, "complete spotify usable");
+  const write = toSpotifyRow(spotifyFilled[0]!, "Manual entry");
+  assert(!write.error, "manual spotify writeable with spend+format");
+  assert(
+    Number(write.row!.est_attributed_streams) === 500,
+    "manual write uses est_attributed_streams DB column",
+  );
+  assert(Number(write.row!.saves) === 80, "manual write includes saves");
+  assert(
+    write.row!.est_attributed_streams != null &&
+      write.row!.streams_per_listener == null,
+    "attributed streams not derived from streams_per_listener",
+  );
+  assert(write.row!.format === "marquee", "format preserved for uid,format key");
+
   console.log("PASS: ad-upload mapping + gap-fill");
 }
 
 main();
+

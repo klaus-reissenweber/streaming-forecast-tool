@@ -14,11 +14,16 @@ export type AdReportChannelSnapshot = {
   label: string;
   spend: number;
   /** Primary stream output (measured Spotify; estimated Meta traffic). */
-  streams: number;
+  streams: number | null;
   streamsLabel: "measured" | "estimate" | "n/a";
-  impressions: number;
-  reach: number;
-  clicks: number;
+  /** Null when the metric was not captured (never show a bare 0). */
+  impressions: number | null;
+  reach: number | null;
+  clicks: number | null;
+  convertedListeners: number | null;
+  saves: number | null;
+  linkfireVisits: number | null;
+  linkfireSpotifyClicks: number | null;
   /** spend / streams when streams > 0. */
   costPerStream: number | null;
   hasDerivedValues: boolean;
@@ -36,8 +41,12 @@ export type AdReportCampaignRow = {
   impressions: number | null;
   reach: number | null;
   clicks: number | null;
+  convertedListeners: number | null;
+  saves: number | null;
+  streamsPerListener: number | null;
   /** Measured Linkfire Spotify clicks when present (Meta traffic). */
   linkfireSpotifyClicks: number | null;
+  linkfireVisits: number | null;
   /** Predicted Spotify clicks from (spend/cpc)×click_share (Meta traffic). */
   predictedSpotifyClicks: number | null;
   costPerStream: number | null;
@@ -89,13 +98,21 @@ export type AdReportMetricsSnapshot = {
     actualDaysEntered: number;
     delta: number | null;
     pctOfForecast: number | null;
+    /** Locked week-1 saves forecast from the release. */
+    forecastSaves: number;
+    /** Sum of Spotify campaign saves when any campaign captured saves. */
+    actualSaves: number | null;
+    savesDelta: number | null;
+    savesPctOfForecast: number | null;
   };
   paid: {
     totalSpend: number;
     attributedStreams: number;
-    impressions: number;
-    reach: number;
-    clicks: number;
+    /** Null when no campaign captured the metric (never bare 0). */
+    impressions: number | null;
+    reach: number | null;
+    clicks: number | null;
+    saves: number | null;
     blendedCostPerStream: number | null;
   };
   channels: AdReportChannelSnapshot[];

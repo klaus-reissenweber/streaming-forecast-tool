@@ -1,6 +1,12 @@
-import { AdReportCharts } from "@/components/report/AdReportCharts";
+import {
+  ForecastVsActualChart,
+  SpendByChannelChart,
+} from "@/components/report/AdReportCharts";
 import { SaveAsPdfButton } from "@/components/report/SaveAsPdfButton";
-import type { AdReportMetricsSnapshot } from "@/lib/ad-report/types";
+import type {
+  AdReportChannelSnapshot,
+  AdReportMetricsSnapshot,
+} from "@/lib/ad-report/types";
 import {
   formatCompactNumber,
   formatCount,
@@ -30,10 +36,69 @@ function fmtCountOrDash(v: number | null | undefined): string {
   return formatCount(v);
 }
 
-function streamsSuffix(label: "measured" | "estimate" | "n/a" | null): string {
-  if (label === "estimate") return " (estimate)";
-  if (label === "measured") return "";
-  return "";
+/** Show captured metrics only — never a bare 0 for uncaptured fields. */
+function MetricValue({
+  value,
+  estimate,
+}: {
+  value: number | null | undefined;
+  estimate?: boolean;
+}) {
+  if (value == null || !Number.isFinite(value)) {
+    return <span className="text-muted">—</span>;
+  }
+  return (
+    <span className="inline-flex flex-col items-start">
+      <span className="tabular-nums">
+        {formatCount(value)}
+        {estimate ? (
+          <sup
+            className="ml-0.5 text-[0.65em] font-normal text-muted"
+            title="Modeled estimate"
+          >
+            *
+          </sup>
+        ) : null}
+      </span>
+      {estimate ? (
+        <span className="text-[10px] leading-tight text-muted">estimate</span>
+      ) : null}
+    </span>
+  );
+}
+
+function ChannelMetric({
+  label,
+  value,
+  estimate,
+  money,
+}: {
+  label: string;
+  value: number | null | undefined;
+  estimate?: boolean;
+  money?: boolean;
+}) {
+  if (value == null || !Number.isFinite(value)) return null;
+  return (
+    <div>
+      <dt className="text-muted">{label}</dt>
+      <dd className="font-mono text-foreground">
+        {money ? (
+          formatUsd(value, label === "Spend" ? 0 : 2)
+        ) : (
+          <MetricValue value={value} estimate={estimate} />
+        )}
+      </dd>
+    </div>
+  );
+}
+
+function isSpotifyChannel(id: AdReportChannelSnapshot["id"]): boolean {
+  return id === "marquee" || id === "showcase";
+}
+
+function isMetaChannel(id: AdReportChannelSnapshot["id"]): boolean {
+  return id === "meta_traffic" || id === "meta_awareness";
 }
 
 export function AdReportDashboard({
@@ -56,6 +121,41 @@ export function AdReportDashboard({
   } = snapshot;
   const deltaPositive =
     headline.delta != null ? headline.delta >= 0 : null;
+  const savesDeltaPositive =
+    headline.savesDelta != null ? headline.savesDelta >= 0 : null;
+
+  const forecastSaves = headline.forecastSaves ?? null;
+  const actualSaves = headline.actualSaves ?? null;
+
+  const paidKpis: Array<{ label: string; value: string }> = [
+    { label: "Spend", value: formatUsd(paid.totalSpend, 0) },
+    {
+      label: "Attr. streams",
+      value: formatCount(paid.attributedStreams),
+    },
+  ];
+  if (paid.impressions != null) {
+    paidKpis.push({
+      label: "Impressions",
+      value: formatCount(paid.impressions),
+    });
+  }
+  if (paid.reach != null) {
+    paidKpis.push({ label: "Reach", value: formatCount(paid.reach) });
+  }
+  if (paid.clicks != null) {
+    paidKpis.push({ label: "Clicks", value: formatCount(paid.clicks) });
+  }
+  if (paid.saves != null) {
+    paidKpis.push({ label: "Saves", value: formatCount(paid.saves) });
+  }
+  paidKpis.push({
+    label: "Blended CPS",
+    value: fmtUsdOrDash(paid.blendedCostPerStream, 2),
+  });
+
+  const spotifyChannels = channels.filter((ch) => isSpotifyChannel(ch.id));
+  const metaChannels = channels.filter((ch) => isMetaChannel(ch.id));
 
   return (
     <div className="ad-report mx-auto max-w-5xl px-5 py-8 print:max-w-none print:px-0 print:py-0">
@@ -83,12 +183,12 @@ export function AdReportDashboard({
         </div>
       </header>
 
-      {/* Headline: forecast vs actual */}
+      {/* Headline: forecast vs actual streams */}
       <section
         className="mt-8 rounded-instrument border border-border bg-surface p-6 sm:p-8"
         aria-label="Streaming forecast vs actual"
       >
-        <p className="text-label text-muted">Streaming forecast vs actual</p>
+        <p className="text-label text-muted">Forecast vs actual streams</p>
         <div className="mt-4 grid gap-6 sm:grid-cols-3">
           <div>
             <p className="text-xs uppercase tracking-wide text-muted">
@@ -146,24 +246,76 @@ export function AdReportDashboard({
         <MetricFoot />
       </section>
 
+      {/* Saves: locked forecast vs Spotify campaign saves when captured */}
+      {forecastSaves != null ? (
+        <section
+          className="mt-6 rounded-instrument border border-border bg-surface p-6"
+          aria-label="Saves forecast vs actual"
+        >
+          <p className="text-label text-muted">Forecast vs actual saves</p>
+          <div className="mt-4 grid gap-6 sm:grid-cols-3">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted">
+                Locked forecast
+              </p>
+              <p className="mt-1 font-serif text-3xl font-semibold tabular-nums text-foreground">
+                {formatCompactNumber(forecastSaves)}
+              </p>
+              <p className="mt-1 text-body-sm text-secondary">
+                {formatCount(forecastSaves)} saves
+              </p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted">
+                Campaign actual
+              </p>
+              <p className="mt-1 font-serif text-3xl font-semibold tabular-nums text-foreground">
+                {actualSaves == null ? "—" : formatCompactNumber(actualSaves)}
+              </p>
+              <p className="mt-1 text-body-sm text-secondary">
+                {actualSaves == null
+                  ? "No Spotify saves captured"
+                  : `${formatCount(actualSaves)} saves`}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted">
+                vs forecast
+              </p>
+              <p
+                className={`mt-1 font-serif text-3xl font-semibold tabular-nums ${
+                  savesDeltaPositive == null
+                    ? "text-muted"
+                    : savesDeltaPositive
+                      ? "text-semantic-positive"
+                      : "text-semantic-negative"
+                }`}
+              >
+                {headline.savesPctOfForecast == null
+                  ? "—"
+                  : formatPercent(headline.savesPctOfForecast, 0)}
+              </p>
+              <p className="mt-1 text-body-sm text-secondary">
+                {headline.savesDelta == null
+                  ? "Awaiting campaign saves"
+                  : `${headline.savesDelta >= 0 ? "+" : ""}${formatCount(headline.savesDelta)} saves`}
+              </p>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      <section className="mt-6" aria-label="Forecast vs actual chart">
+        <ForecastVsActualChart
+          forecastVsActualDaily={snapshot.charts.forecastVsActualDaily}
+        />
+      </section>
+
       {/* Paid KPIs */}
       <section className="mt-6" aria-label="Paid KPIs">
         <h2 className="font-serif text-section text-foreground">Paid KPIs</h2>
         <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {[
-            { label: "Spend", value: formatUsd(paid.totalSpend, 0) },
-            {
-              label: "Attr. streams",
-              value: formatCount(paid.attributedStreams),
-            },
-            { label: "Impressions", value: formatCount(paid.impressions) },
-            { label: "Reach", value: formatCount(paid.reach) },
-            { label: "Clicks", value: formatCount(paid.clicks) },
-            {
-              label: "Blended CPS",
-              value: fmtUsdOrDash(paid.blendedCostPerStream, 2),
-            },
-          ].map((m) => (
+          {paidKpis.map((m) => (
             <div
               key={m.label}
               className="rounded-instrument border border-border bg-surface px-3 py-3"
@@ -175,6 +327,12 @@ export function AdReportDashboard({
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="mt-6" aria-label="Spend by channel">
+        <SpendByChannelChart
+          spendByChannel={snapshot.charts.spendByChannel}
+        />
       </section>
 
       {metaFunnelComparison ? (
@@ -198,34 +356,33 @@ export function AdReportDashboard({
             </div>
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <dt className="text-muted">Est. streams</dt>
-              <dd className="font-mono tabular-nums text-foreground">
-                {formatCount(metaFunnelComparison.estimatedStreams)}
-                <span className="ml-1 text-muted">
-                  {metaFunnelComparison.streamsFromMeasuredClicks
-                    ? "(estimate · measured clicks × SPL)"
-                    : "(estimate · funnel)"}
-                </span>
+              <dd className="font-mono text-foreground">
+                <MetricValue
+                  value={metaFunnelComparison.estimatedStreams}
+                  estimate
+                />
               </dd>
             </div>
             <p className="text-caption text-muted">
               Predicted clicks = (spend ÷ CPC{" "}
               {formatUsd(metaFunnelComparison.cpc, 2)}) × click share{" "}
               {formatPercent(metaFunnelComparison.spotifyClickShare * 100, 0)}
+              {metaFunnelComparison.streamsFromMeasuredClicks
+                ? " · streams from measured clicks × SPL"
+                : " · streams from funnel"}
             </p>
           </dl>
         </section>
       ) : null}
 
-      {/* Per-channel */}
-      <section className="mt-8" aria-label="Per-channel breakdown">
-        <h2 className="font-serif text-section text-foreground">
-          Per-channel breakdown
-        </h2>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          {channels.length === 0 ? (
-            <p className="text-body-sm text-muted">No channel activity.</p>
-          ) : (
-            channels.map((ch) => (
+      {/* Spotify channels — field set: spend, reach, clicks, listeners, streams, saves, CPS */}
+      {spotifyChannels.length > 0 ? (
+        <section className="mt-8" aria-label="Spotify channels">
+          <h2 className="font-serif text-section text-foreground">
+            Spotify
+          </h2>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {spotifyChannels.map((ch) => (
               <article
                 key={ch.id}
                 className="rounded-instrument border border-border bg-surface p-4"
@@ -241,54 +398,75 @@ export function AdReportDashboard({
                   ) : null}
                 </div>
                 <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-body-sm">
-                  <div>
-                    <dt className="text-muted">Spend</dt>
-                    <dd className="font-mono tabular-nums text-foreground">
-                      {formatUsd(ch.spend, 0)}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-muted">
-                      Streams
-                      {ch.streamsLabel === "estimate" ? " · estimate" : ""}
-                      {ch.streamsLabel === "n/a" ? " · n/a" : ""}
-                    </dt>
-                    <dd className="font-mono tabular-nums text-foreground">
-                      {ch.streamsLabel === "n/a"
-                        ? "—"
-                        : formatCount(ch.streams)}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-muted">Impressions</dt>
-                    <dd className="font-mono tabular-nums text-foreground">
-                      {ch.impressions > 0 ? formatCount(ch.impressions) : "—"}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-muted">Reach</dt>
-                    <dd className="font-mono tabular-nums text-foreground">
-                      {ch.reach > 0 ? formatCount(ch.reach) : "—"}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-muted">Clicks</dt>
-                    <dd className="font-mono tabular-nums text-foreground">
-                      {ch.clicks > 0 ? formatCount(ch.clicks) : "—"}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-muted">CPS</dt>
-                    <dd className="font-mono tabular-nums text-foreground">
-                      {fmtUsdOrDash(ch.costPerStream, 2)}
-                    </dd>
-                  </div>
+                  <ChannelMetric label="Spend" value={ch.spend} money />
+                  <ChannelMetric label="Streams" value={ch.streams} />
+                  <ChannelMetric label="Reach" value={ch.reach} />
+                  <ChannelMetric label="Clicks" value={ch.clicks} />
+                  <ChannelMetric
+                    label="Converted listeners"
+                    value={ch.convertedListeners}
+                  />
+                  <ChannelMetric label="Saves" value={ch.saves} />
+                  <ChannelMetric
+                    label="Cost per stream"
+                    value={ch.costPerStream}
+                    money
+                  />
                 </dl>
               </article>
-            ))
-          )}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {/* Meta channels — field set: spend, impressions, clicks, streams, linkfire, CPS */}
+      {metaChannels.length > 0 ? (
+        <section className="mt-8" aria-label="Meta channels">
+          <h2 className="font-serif text-section text-foreground">Meta</h2>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {metaChannels.map((ch) => (
+              <article
+                key={ch.id}
+                className="rounded-instrument border border-border bg-surface p-4"
+              >
+                <div className="flex items-baseline justify-between gap-2">
+                  <h3 className="font-serif text-sm font-semibold text-foreground">
+                    {ch.label}
+                  </h3>
+                  {ch.hasDerivedValues ? (
+                    <span className="bracket-tag bracket-tag--warning">
+                      DERIVED
+                    </span>
+                  ) : null}
+                </div>
+                <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-body-sm">
+                  <ChannelMetric label="Spend" value={ch.spend} money />
+                  <ChannelMetric
+                    label="Streams"
+                    value={ch.streamsLabel === "n/a" ? null : ch.streams}
+                    estimate={ch.streamsLabel === "estimate"}
+                  />
+                  <ChannelMetric label="Impressions" value={ch.impressions} />
+                  <ChannelMetric label="Clicks" value={ch.clicks} />
+                  <ChannelMetric
+                    label="Linkfire visits"
+                    value={ch.linkfireVisits}
+                  />
+                  <ChannelMetric
+                    label="Linkfire Spotify clicks"
+                    value={ch.linkfireSpotifyClicks}
+                  />
+                  <ChannelMetric
+                    label="Cost per stream"
+                    value={ch.costPerStream}
+                    money
+                  />
+                </dl>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {/* Per-campaign table */}
       <section className="mt-8" aria-label="Per-campaign table">
@@ -303,19 +481,16 @@ export function AdReportDashboard({
                 <th className="px-3 py-2 font-normal">Channel</th>
                 <th className="px-3 py-2 font-normal text-right">Spend</th>
                 <th className="px-3 py-2 font-normal text-right">Streams</th>
-                <th className="px-3 py-2 font-normal text-right">Impr.</th>
                 <th className="px-3 py-2 font-normal text-right">Reach</th>
                 <th className="px-3 py-2 font-normal text-right">Clicks</th>
+                <th className="px-3 py-2 font-normal text-right">Saves</th>
                 <th className="px-3 py-2 font-normal text-right">CPS</th>
               </tr>
             </thead>
             <tbody>
               {campaigns.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={8}
-                    className="px-3 py-4 text-muted"
-                  >
+                  <td colSpan={8} className="px-3 py-4 text-muted">
                     No campaigns in snapshot.
                   </td>
                 </tr>
@@ -346,20 +521,20 @@ export function AdReportDashboard({
                     <td className="px-3 py-2 text-right font-mono tabular-nums">
                       {formatUsd(c.spend, 0)}
                     </td>
-                    <td className="px-3 py-2 text-right font-mono tabular-nums">
-                      {fmtCountOrDash(c.streams)}
-                      {c.streamsLabel
-                        ? streamsSuffix(c.streamsLabel)
-                        : ""}
-                    </td>
-                    <td className="px-3 py-2 text-right font-mono tabular-nums">
-                      {fmtCountOrDash(c.impressions)}
+                    <td className="px-3 py-2 text-right font-mono">
+                      <MetricValue
+                        value={c.streams}
+                        estimate={c.streamsLabel === "estimate"}
+                      />
                     </td>
                     <td className="px-3 py-2 text-right font-mono tabular-nums">
                       {fmtCountOrDash(c.reach)}
                     </td>
                     <td className="px-3 py-2 text-right font-mono tabular-nums">
                       {fmtCountOrDash(c.clicks)}
+                    </td>
+                    <td className="px-3 py-2 text-right font-mono tabular-nums">
+                      {fmtCountOrDash(c.saves)}
                     </td>
                     <td className="px-3 py-2 text-right font-mono tabular-nums">
                       {fmtUsdOrDash(c.costPerStream, 2)}
@@ -372,18 +547,12 @@ export function AdReportDashboard({
         </div>
       </section>
 
-      <section className="mt-8" aria-label="Charts">
-        <AdReportCharts
-          spendByChannel={snapshot.charts.spendByChannel}
-          forecastVsActualDaily={snapshot.charts.forecastVsActualDaily}
-        />
-      </section>
-
       <footer className="mt-10 border-t border-border pt-4 text-xs text-muted print:mt-6">
         <p>
           Red Light Creative · Instrument Edition · Read-only performance
-          snapshot. Meta streams are modeled estimates; Spotify attributed
-          streams are measured. Derived (benchmark-filled) values are flagged.
+          snapshot. <sup>*</sup> Meta streams are modeled estimates; Spotify
+          attributed streams are measured. Derived (benchmark-filled) values are
+          flagged. Reach and saves appear only when captured.
         </p>
       </footer>
     </div>

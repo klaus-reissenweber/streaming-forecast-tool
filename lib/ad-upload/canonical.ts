@@ -3,8 +3,11 @@
  * Everything maps into these fields before gap-fill + upsert.
  *
  * Upload surface (all optional except spend):
- *   Meta:     spend, impressions, clicks, linkfire_visits, linkfire_spotify_clicks
- *   Spotify:  spend, attributed_streams (→ est_attributed_streams)
+ *   Meta:     spend, impressions, clicks, attributed_streams,
+ *             linkfire_visits, linkfire_spotify_clicks
+ *   Spotify:  spend, reach, clicks, converted_listeners,
+ *             attributed_streams (→ est_attributed_streams), saves,
+ *             streams_per_listener (optional; independent of attributed_streams)
  * Completeness for usable_for_modeling is enforced separately in gap-fill.
  */
 
@@ -17,6 +20,8 @@ export const CANONICAL_FIELDS = [
   "linkfire_spotify_clicks",
   "converted_listeners",
   "attributed_streams",
+  "streams_per_listener",
+  "saves",
   "format",
   "objective",
   "campaign_name",
@@ -33,13 +38,19 @@ export const META_UPLOAD_FIELDS = [
   "spend",
   "impressions",
   "clicks",
+  "attributed_streams",
   "linkfire_visits",
   "linkfire_spotify_clicks",
 ] as const satisfies readonly CanonicalField[];
 
 export const SPOTIFY_UPLOAD_FIELDS = [
   "spend",
+  "reach",
+  "clicks",
+  "converted_listeners",
   "attributed_streams",
+  "saves",
+  "streams_per_listener",
 ] as const satisfies readonly CanonicalField[];
 
 export type AdUploadPlatform = "spotify" | "meta" | "unknown";
@@ -70,6 +81,8 @@ export type CanonicalRow = {
   linkfire_spotify_clicks: number | null;
   converted_listeners: number | null;
   attributed_streams: number | null;
+  streams_per_listener: number | null;
+  saves: number | null;
   format: AdUploadFormat | null;
   objective: AdUploadObjective | null;
   campaign_name: string | null;
@@ -104,6 +117,8 @@ export function emptyCanonicalRow(sourceRowIndex: number): CanonicalRow {
     linkfire_spotify_clicks: null,
     converted_listeners: null,
     attributed_streams: null,
+    streams_per_listener: null,
+    saves: null,
     format: null,
     objective: null,
     campaign_name: null,

@@ -85,6 +85,15 @@ function printReview(detail: ReturnType<typeof fitAdModel>): void {
     "  cpc, spotify_click_share, or any fitted constant (configs differ).",
   );
   console.log(
+    "  NOTE: Spotify saves / streams_per_listener / reach / clicks are",
+  );
+  console.log(
+    "  per-campaign report metrics only — not pooled into global CPL/SPL",
+  );
+  console.log(
+    "  (SPL stays est_attributed_streams ÷ converted_listeners).",
+  );
+  console.log(
     `  cpc:                           ${fmt(model.metaFunnel.cpc)}  (n=${model.sampleSizes.metaCpc}; = median of spend_usd/link_clicks)`,
   );
   console.log(

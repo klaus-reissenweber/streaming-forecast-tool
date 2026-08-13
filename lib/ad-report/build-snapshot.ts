@@ -44,9 +44,18 @@ function asStringArray(v: unknown): string[] {
   return v.map(String).filter(Boolean);
 }
 
-function cps(spend: number, streams: number): number | null {
-  if (!(streams > 0) || !(spend >= 0)) return null;
+function cps(spend: number, streams: number | null): number | null {
+  if (streams == null || !(streams > 0) || !(spend >= 0)) return null;
   return spend / streams;
+}
+
+/** Add a captured metric into a running total; ignore null/absent. */
+function addCaptured(
+  current: number | null,
+  value: number | null,
+): number | null {
+  if (value == null) return current;
+  return (current ?? 0) + value;
 }
 
 type SpotifyRow = Record<string, unknown>;
@@ -61,20 +70,32 @@ async function loadAdRowsForRelease(releaseKey: string): Promise<{
     sb
       .from("ad_spotify_campaigns")
       .select(
-        "artist, release_key, campaign_uid, format, spend_usd, reach, clicks, converted_listeners, est_attributed_streams, start_date, end_date, usable_for_modeling, derived_fields, source_partner",
+        "artist, release_key, campaign_uid, format, spend_usd, reach, clicks, converted_listeners, streams_per_listener, active_streams_per_listener, est_attributed_streams, saves, start_date, end_date, usable_for_modeling, derived_fields, source_partner",
       )
       .eq("release_key", releaseKey),
     sb
       .from("ad_meta_campaigns")
       .select(
-        "release_key, campaign_uid, campaign_name, objective, spend_usd, link_clicks, impressions, reach, linkfire_visits, linkfire_spotify_clicks, start_date, end_date, derived_fields, source_partner",
+        "release_key, campaign_uid, campaign_name, objective, spend_usd, link_clicks, impressions, reach, linkfire_visits, linkfire_spotify_clicks, linkfire_streams, start_date, end_date, derived_fields, source_partner",
       )
       .eq("release_key", releaseKey),
   ]);
 
+  let spotify = (spotifyRes.data ?? []) as SpotifyRow[];
   if (spotifyRes.error) {
-    throw new Error(`ad_spotify_campaigns: ${spotifyRes.error.message}`);
+    // Pre-migration: saves / streams_per_listener may be missing.
+    const lean = await sb
+      .from("ad_spotify_campaigns")
+      .select(
+        "artist, release_key, campaign_uid, format, spend_usd, reach, clicks, converted_listeners, active_streams_per_listener, est_attributed_streams, start_date, end_date, usable_for_modeling, derived_fields, source_partner",
+      )
+      .eq("release_key", releaseKey);
+    if (lean.error) {
+      throw new Error(`ad_spotify_campaigns: ${lean.error.message}`);
+    }
+    spotify = (lean.data ?? []) as SpotifyRow[];
   }
+
   if (metaRes.error) {
     // Pre-migration schemas may lack some columns — retry leaner select.
     const lean = await sb
@@ -87,13 +108,13 @@ async function loadAdRowsForRelease(releaseKey: string): Promise<{
       throw new Error(`ad_meta_campaigns: ${lean.error.message}`);
     }
     return {
-      spotify: (spotifyRes.data ?? []) as SpotifyRow[],
+      spotify,
       meta: (lean.data ?? []) as MetaRow[],
     };
   }
 
   return {
-    spotify: (spotifyRes.data ?? []) as SpotifyRow[],
+    spotify,
     meta: (metaRes.data ?? []) as MetaRow[],
   };
 }
@@ -131,11 +152,15 @@ function emptyChannel(
     id,
     label,
     spend: 0,
-    streams: 0,
+    streams: null,
     streamsLabel,
-    impressions: 0,
-    reach: 0,
-    clicks: 0,
+    impressions: null,
+    reach: null,
+    clicks: null,
+    convertedListeners: null,
+    saves: null,
+    linkfireVisits: null,
+    linkfireSpotifyClicks: null,
     costPerStream: null,
     hasDerivedValues: false,
   };
@@ -173,6 +198,8 @@ export async function buildAdReportSnapshot(
       ? null
       : (actualStreams / forecastStreams) * 100;
 
+  const forecastSaves = release.locked_forecast_saves;
+
   const channels: Record<AdReportChannelId, AdReportChannelSnapshot> = {
     marquee: emptyChannel("marquee", "Marquee", "measured"),
     showcase: emptyChannel("showcase", "Showcase", "measured"),
@@ -181,22 +208,36 @@ export async function buildAdReportSnapshot(
   };
 
   const campaigns: AdReportCampaignRow[] = [];
+  let actualSavesSum: number | null = null;
 
   for (const row of spotify) {
     const format = String(row.format ?? "").toLowerCase();
     const channelId: AdReportChannelId =
       format === "showcase" ? "showcase" : "marquee";
     const spend = num(row.spend_usd);
-    const streams = num(row.est_attributed_streams);
+    const streamsRaw = numOrNull(row.est_attributed_streams);
+    const reach = numOrNull(row.reach);
+    const clicks = numOrNull(row.clicks);
+    const convertedListeners = numOrNull(row.converted_listeners);
+    const saves = numOrNull(row.saves);
+    const streamsPerListener =
+      numOrNull(row.streams_per_listener) ??
+      numOrNull(row.active_streams_per_listener);
     const derived = asStringArray(row.derived_fields);
     const usable = Boolean(row.usable_for_modeling);
 
     const ch = channels[channelId];
     ch.spend += spend;
-    ch.streams += streams;
-    ch.reach += num(row.reach);
-    ch.clicks += num(row.clicks);
+    ch.streams = addCaptured(ch.streams, streamsRaw);
+    ch.reach = addCaptured(ch.reach, reach);
+    ch.clicks = addCaptured(ch.clicks, clicks);
+    ch.convertedListeners = addCaptured(ch.convertedListeners, convertedListeners);
+    ch.saves = addCaptured(ch.saves, saves);
     if (derived.length > 0) ch.hasDerivedValues = true;
+
+    if (saves != null) {
+      actualSavesSum = (actualSavesSum ?? 0) + saves;
+    }
 
     campaigns.push({
       platform: "spotify",
@@ -207,14 +248,18 @@ export async function buildAdReportSnapshot(
       format: format || null,
       objective: null,
       spend,
-      streams,
+      streams: streamsRaw,
       streamsLabel: "measured",
       impressions: null,
-      reach: numOrNull(row.reach),
-      clicks: numOrNull(row.clicks),
+      reach,
+      clicks,
+      convertedListeners,
+      saves,
+      streamsPerListener,
       linkfireSpotifyClicks: null,
+      linkfireVisits: null,
       predictedSpotifyClicks: null,
-      costPerStream: cps(spend, streams),
+      costPerStream: cps(spend, streamsRaw),
       usableForModeling: usable,
       derivedFields: derived,
       startDate: strOrNull(row.start_date),
@@ -230,19 +275,24 @@ export async function buildAdReportSnapshot(
     const channelId: AdReportChannelId =
       objective === "awareness" ? "meta_awareness" : "meta_traffic";
     const spend = num(row.spend_usd);
-    const impressions = num(row.impressions);
-    const reach = num(row.reach);
-    const clicks = num(row.link_clicks);
-    const derived = asStringArray(row.derived_fields);
+    const impressions = numOrNull(row.impressions);
+    const reach = numOrNull(row.reach);
+    const clicks = numOrNull(row.link_clicks);
+    const linkfireVisits = numOrNull(row.linkfire_visits);
     const measuredSpotifyClicks = numOrNull(row.linkfire_spotify_clicks);
+    const enteredStreams = numOrNull(row.linkfire_streams);
+    const derived = asStringArray(row.derived_fields);
 
-    // Meta streams are not measured on the campaign row — leave 0 / n/a for awareness;
-    // traffic streams stay estimate-only (0 in snapshot unless we model later).
     const ch = channels[channelId];
     ch.spend += spend;
-    ch.impressions += impressions;
-    ch.reach += reach;
-    ch.clicks += clicks;
+    ch.impressions = addCaptured(ch.impressions, impressions);
+    ch.reach = addCaptured(ch.reach, reach);
+    ch.clicks = addCaptured(ch.clicks, clicks);
+    ch.linkfireVisits = addCaptured(ch.linkfireVisits, linkfireVisits);
+    ch.linkfireSpotifyClicks = addCaptured(
+      ch.linkfireSpotifyClicks,
+      measuredSpotifyClicks,
+    );
     if (derived.length > 0) ch.hasDerivedValues = true;
 
     campaigns.push({
@@ -255,13 +305,17 @@ export async function buildAdReportSnapshot(
       format: null,
       objective,
       spend,
-      streams: channelId === "meta_traffic" ? 0 : null,
+      streams: channelId === "meta_traffic" ? enteredStreams ?? 0 : null,
       streamsLabel: channelId === "meta_traffic" ? "estimate" : null,
-      impressions: impressions > 0 ? impressions : numOrNull(row.impressions),
-      reach: reach > 0 ? reach : numOrNull(row.reach),
-      clicks: clicks > 0 ? clicks : numOrNull(row.link_clicks),
+      impressions,
+      reach,
+      clicks,
+      convertedListeners: null,
+      saves: null,
+      streamsPerListener: null,
       linkfireSpotifyClicks:
         channelId === "meta_traffic" ? measuredSpotifyClicks : null,
+      linkfireVisits,
       predictedSpotifyClicks: null,
       costPerStream: null,
       usableForModeling: true,
@@ -271,8 +325,10 @@ export async function buildAdReportSnapshot(
     });
   }
 
-  // Meta traffic streams: measured Linkfire Spotify clicks × SPL effective when
-  // present; otherwise funnel estimate from Meta link_clicks × share × SPL.
+  // Meta traffic streams priority:
+  // 1) partner-entered streams (linkfire_streams)
+  // 2) measured Linkfire Spotify clicks × SPL effective
+  // 3) funnel estimate from Meta link_clicks × share × SPL
   let metaFunnelComparison: AdReportMetaFunnelComparison | null = null;
   {
     const { spl } = resolveSpl(
@@ -289,6 +345,7 @@ export async function buildAdReportSnapshot(
     let measuredTotal = 0;
     let hasAnyMeasured = false;
     let predictedTotal = 0;
+    let hasAnyStreams = false;
 
     for (const camp of campaigns) {
       if (camp.channel !== "meta_traffic") continue;
@@ -297,8 +354,16 @@ export async function buildAdReportSnapshot(
       camp.predictedSpotifyClicks = predicted > 0 ? predicted : null;
       predictedTotal += predicted;
 
+      const entered = camp.streams != null && camp.streams > 0 ? camp.streams : null;
       const measured = camp.linkfireSpotifyClicks;
-      if (measured != null && measured > 0) {
+      if (entered != null) {
+        // Partner-entered streams win; do not also apply click×SPL.
+        camp.streams = entered;
+        camp.streamsLabel = "estimate";
+        camp.costPerStream = cps(camp.spend, entered);
+        channelStreams += entered;
+        hasAnyStreams = true;
+      } else if (measured != null && measured > 0) {
         hasAnyMeasured = true;
         measuredTotal += measured;
         const est = Math.round(measured * perClick);
@@ -306,19 +371,24 @@ export async function buildAdReportSnapshot(
         camp.streamsLabel = "estimate";
         camp.costPerStream = cps(camp.spend, est);
         channelStreams += est;
+        hasAnyStreams = true;
       } else if (camp.clicks != null && camp.clicks > 0) {
         const est = Math.round(camp.clicks * share * perClick);
         camp.streams = est;
         camp.streamsLabel = "estimate";
         camp.costPerStream = cps(camp.spend, est);
         channelStreams += est;
+        hasAnyStreams = true;
+      } else {
+        camp.streams = null;
+        camp.costPerStream = null;
       }
     }
 
-    if (traffic.spend > 0 || traffic.clicks > 0 || hasAnyMeasured) {
-      traffic.streams = channelStreams;
+    if (traffic.spend > 0 || traffic.clicks != null || hasAnyMeasured || hasAnyStreams) {
+      traffic.streams = hasAnyStreams ? channelStreams : null;
       traffic.streamsLabel = "estimate";
-      traffic.costPerStream = cps(traffic.spend, channelStreams);
+      traffic.costPerStream = cps(traffic.spend, traffic.streams);
       metaFunnelComparison = {
         predictedSpotifyClicks: Math.round(predictedTotal),
         measuredSpotifyClicks: hasAnyMeasured ? measuredTotal : null,
@@ -338,14 +408,36 @@ export async function buildAdReportSnapshot(
   }
 
   const channelList = Object.values(channels).filter(
-    (ch) => ch.spend > 0 || ch.streams > 0 || ch.impressions > 0 || ch.reach > 0,
+    (ch) =>
+      ch.spend > 0 ||
+      (ch.streams != null && ch.streams > 0) ||
+      ch.impressions != null ||
+      ch.reach != null ||
+      ch.clicks != null ||
+      ch.saves != null,
   );
 
   const totalSpend = channelList.reduce((s, ch) => s + ch.spend, 0);
-  const attributedStreams = channelList.reduce((s, ch) => s + ch.streams, 0);
-  const impressions = channelList.reduce((s, ch) => s + ch.impressions, 0);
-  const reach = channelList.reduce((s, ch) => s + ch.reach, 0);
-  const clicks = channelList.reduce((s, ch) => s + ch.clicks, 0);
+  const attributedStreams = channelList.reduce(
+    (s, ch) => s + (ch.streams ?? 0),
+    0,
+  );
+  const impressions = channelList.reduce<number | null>(
+    (s, ch) => addCaptured(s, ch.impressions),
+    null,
+  );
+  const reach = channelList.reduce<number | null>(
+    (s, ch) => addCaptured(s, ch.reach),
+    null,
+  );
+  const clicks = channelList.reduce<number | null>(
+    (s, ch) => addCaptured(s, ch.clicks),
+    null,
+  );
+  const paidSaves = channelList.reduce<number | null>(
+    (s, ch) => addCaptured(s, ch.saves),
+    null,
+  );
 
   const actualByDay: (number | null)[] = Array.from({ length: 28 }, () => null);
   for (const row of dailyData) {
@@ -362,6 +454,13 @@ export async function buildAdReportSnapshot(
     }));
 
   const window = channelWindow(spotify, meta);
+
+  const savesDelta =
+    actualSavesSum == null ? null : actualSavesSum - forecastSaves;
+  const savesPctOfForecast =
+    actualSavesSum == null || !(forecastSaves > 0)
+      ? null
+      : (actualSavesSum / forecastSaves) * 100;
 
   return {
     version: 1,
@@ -381,6 +480,10 @@ export async function buildAdReportSnapshot(
       actualDaysEntered,
       delta,
       pctOfForecast,
+      forecastSaves,
+      actualSaves: actualSavesSum,
+      savesDelta,
+      savesPctOfForecast,
     },
     paid: {
       totalSpend,
@@ -388,6 +491,7 @@ export async function buildAdReportSnapshot(
       impressions,
       reach,
       clicks,
+      saves: paidSaves,
       blendedCostPerStream: cps(totalSpend, attributedStreams),
     },
     channels: channelList,

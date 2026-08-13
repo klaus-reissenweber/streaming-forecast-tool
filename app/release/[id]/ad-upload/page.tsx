@@ -55,11 +55,11 @@ export default async function AdUploadPage({ params }: PageProps) {
           </Link>
         </p>
         <h1 className="mt-2 font-serif text-release-title font-semibold text-foreground">
-          Upload ad results
+          Ad results
         </h1>
         <p className="mt-1 text-body-sm text-secondary">
-          Partner/label exports in any layout — mapped into the ad model tables
-          for this release.
+          Enter campaign numbers manually, or upload a partner export — both
+          write into the same ad model tables for this release.
         </p>
       </div>
       <AdResultsUploadWizard

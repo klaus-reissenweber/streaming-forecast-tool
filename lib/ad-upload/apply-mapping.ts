@@ -74,6 +74,8 @@ function setField(
     case "linkfire_spotify_clicks":
     case "converted_listeners":
     case "attributed_streams":
+    case "streams_per_listener":
+    case "saves":
       row[field] = parseNumber(raw);
       break;
     case "format":

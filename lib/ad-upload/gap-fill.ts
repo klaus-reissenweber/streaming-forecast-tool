@@ -204,7 +204,9 @@ export function applyGapFill(
           action.field === "linkfire_visits" ||
           action.field === "linkfire_spotify_clicks" ||
           action.field === "converted_listeners" ||
-          action.field === "attributed_streams"
+          action.field === "attributed_streams" ||
+          action.field === "streams_per_listener" ||
+          action.field === "saves"
         ) {
           next[action.field] = value;
           if (

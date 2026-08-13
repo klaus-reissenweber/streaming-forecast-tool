@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   confirmAdResultsUpload,
+  confirmManualAdResults,
   parseAdResultsUpload,
   previewAdUploadGaps,
 } from "@/app/release/[id]/ad-upload/actions";
@@ -25,9 +26,15 @@ import {
   type GapFillAction,
   type GapNeed,
 } from "@/lib/ad-upload/gap-fill";
+import {
+  emptyManualDraft,
+  manualDraftsHaveSpend,
+  type ManualCampaignDraft,
+} from "@/lib/ad-upload/manual-rows";
 import { formatCount } from "@/lib/format";
 
-type Step = "upload" | "mapping" | "gaps" | "done";
+type EntryMode = "manual" | "upload";
+type Step = "entry" | "mapping" | "gaps" | "done";
 
 const FIELD_LABELS: Record<CanonicalField, string> = {
   spend: "Spend (required)",
@@ -37,7 +44,9 @@ const FIELD_LABELS: Record<CanonicalField, string> = {
   linkfire_visits: "Linkfire visits",
   linkfire_spotify_clicks: "Linkfire Spotify clicks",
   converted_listeners: "Converted listeners",
-  attributed_streams: "Attributed streams",
+  attributed_streams: "Streams",
+  streams_per_listener: "Streams per listener",
+  saves: "Saves",
   format: "Format",
   objective: "Objective",
   campaign_name: "Campaign name",
@@ -49,12 +58,17 @@ const FIELD_LABELS: Record<CanonicalField, string> = {
 
 function mappingFieldOptions(platform: AdUploadPlatform): CanonicalField[] {
   if (platform === "meta") {
-    return [...META_UPLOAD_FIELDS, "campaign_name", "objective", "start_date", "end_date"];
+    return [
+      ...META_UPLOAD_FIELDS,
+      "campaign_name",
+      "objective",
+      "start_date",
+      "end_date",
+    ];
   }
   if (platform === "spotify") {
     return [
       ...SPOTIFY_UPLOAD_FIELDS,
-      "converted_listeners",
       "format",
       "campaign_name",
       "artist",
@@ -75,13 +89,25 @@ export function AdResultsUploadWizard({
   artistName: string;
   trackName: string;
 }) {
-  const [step, setStep] = useState<Step>("upload");
+  const [entryMode, setEntryMode] = useState<EntryMode>("manual");
+  const [step, setStep] = useState<Step>("entry");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Manual entry state
+  const [manualPlatform, setManualPlatform] = useState<"meta" | "spotify">(
+    "meta",
+  );
+  const [manualObjective, setManualObjective] =
+    useState<AdUploadObjective>("traffic");
+  const [manualPartner, setManualPartner] = useState("Manual entry");
+  const [manualDrafts, setManualDrafts] = useState<ManualCampaignDraft[]>([
+    emptyManualDraft(),
+  ]);
+
+  // Upload state
   const [partnerLabel, setPartnerLabel] = useState("");
   const [file, setFile] = useState<File | null>(null);
-
   const [table, setTable] = useState<ParsedTable | null>(null);
   const [columnMappings, setColumnMappings] = useState<AdUploadColumnMappings>(
     {},
@@ -95,7 +121,6 @@ export function AdResultsUploadWizard({
     releaseKey: null,
   });
   const [mappingNotes, setMappingNotes] = useState<string[]>([]);
-
   const [rows, setRows] = useState<CanonicalRow[]>([]);
   const [gaps, setGaps] = useState<GapNeed[]>([]);
   const [gapDecisions, setGapDecisions] = useState<
@@ -132,6 +157,79 @@ export function AdResultsUploadWizard({
       return { ri, out };
     });
   }, [table, columnMappings, fileConstants]);
+
+  function switchMode(mode: EntryMode) {
+    setEntryMode(mode);
+    setStep("entry");
+    setError(null);
+    setDoneSummary(null);
+    setReportPath(null);
+    setReportUrl(null);
+  }
+
+  function updateDraft(
+    index: number,
+    patch: Partial<ManualCampaignDraft>,
+  ) {
+    setManualDrafts((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, ...patch } : row)),
+    );
+  }
+
+  async function onSaveManual() {
+    if (!manualDraftsHaveSpend(manualDrafts)) {
+      setError("Enter spend on at least one campaign row.");
+      return;
+    }
+    if (
+      manualPlatform === "spotify" &&
+      manualDrafts.some((d) => {
+        const spend = Number(String(d.spend).replace(/[$,\s]/g, ""));
+        return Number.isFinite(spend) && spend > 0 && !d.format;
+      })
+    ) {
+      setError("Spotify rows with spend need a format (Marquee or Showcase).");
+      return;
+    }
+
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await confirmManualAdResults({
+        releaseId,
+        platform: manualPlatform,
+        partnerLabel: manualPartner,
+        objective: manualPlatform === "meta" ? manualObjective : null,
+        drafts: manualDrafts,
+      });
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
+      const parts = [
+        result.spotifyUpserted > 0
+          ? `${result.spotifyUpserted} Spotify`
+          : null,
+        result.metaUpserted > 0 ? `${result.metaUpserted} Meta` : null,
+      ].filter(Boolean);
+      setDoneSummary(
+        `Wrote ${parts.join(" + ") || "0 rows"}${
+          result.skipped ? ` · ${result.skipped} skipped` : ""
+        }.`,
+      );
+      setReportPath(result.reportPath);
+      setReportUrl(result.reportUrl);
+      setLinkCopied(false);
+      if (result.warnings.length > 0) {
+        setError(result.warnings.join(" "));
+      }
+      setStep("done");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function onParse() {
     if (!file) {
@@ -192,7 +290,6 @@ export function AdResultsUploadWizard({
     setGaps(result.gaps);
     setGapDecisions({});
     if (result.gaps.length === 0) {
-      // Mapping confirm is the write gate when nothing to gap-fill.
       await onConfirmWrite(result.rows, {});
     } else {
       setStep("gaps");
@@ -208,8 +305,6 @@ export function AdResultsUploadWizard({
     setError(null);
     const decisions = decisionsOverride ?? gapDecisions;
     const baseRows = rowsOverride ?? rows;
-    // Merge accepted benchmark/manual values into canonical rows before write
-    // so the server upserts the same payload the gap-fill UI confirmed.
     const resolvedRows = applyGapFill(
       baseRows,
       fileConstants.platform,
@@ -265,22 +360,44 @@ export function AdResultsUploadWizard({
     );
   });
 
+  const stepLabel =
+    step === "entry"
+      ? entryMode === "manual"
+        ? "1 · MANUAL"
+        : "1 · UPLOAD"
+      : step === "mapping"
+        ? "2 · MAP"
+        : step === "gaps"
+          ? "3 · GAP-FILL"
+          : "DONE";
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-baseline gap-2">
-        <span className="bracket-tag bracket-tag--accent">
-          {step === "upload"
-            ? "1 · UPLOAD"
-            : step === "mapping"
-              ? "2 · MAP"
-              : step === "gaps"
-                ? "3 · GAP-FILL"
-                : "DONE"}
-        </span>
+        <span className="bracket-tag bracket-tag--accent">{stepLabel}</span>
         <p className="text-body-sm text-secondary">
           {trackName} · {artistName}
         </p>
       </div>
+
+      {step === "entry" ? (
+        <div
+          className="flex flex-wrap gap-2"
+          role="tablist"
+          aria-label="Entry mode"
+        >
+          <ModeTab
+            active={entryMode === "manual"}
+            onClick={() => switchMode("manual")}
+            label="Enter manually"
+          />
+          <ModeTab
+            active={entryMode === "upload"}
+            onClick={() => switchMode("upload")}
+            label="Upload file"
+          />
+        </div>
+      ) : null}
 
       {error ? (
         <p className="rounded-instrument border border-border bg-surface px-3 py-2 text-body-sm text-semantic-warning">
@@ -288,14 +405,220 @@ export function AdResultsUploadWizard({
         </p>
       ) : null}
 
-      {step === "upload" ? (
+      {step === "entry" && entryMode === "manual" ? (
+        <section className="space-y-4 rounded-instrument border border-border bg-surface p-4">
+          <p className="text-body-sm text-secondary">
+            Type campaign numbers from the dashboard. Only spend is required.
+            Incomplete model fields still save with{" "}
+            <span className="font-mono text-xs">usable_for_modeling=false</span>
+            .
+          </p>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <ConstantSelect
+              label="Platform"
+              value={manualPlatform}
+              options={[
+                ["meta", "Meta"],
+                ["spotify", "Spotify"],
+              ]}
+              onChange={(v) => setManualPlatform(v as "meta" | "spotify")}
+            />
+            {manualPlatform === "meta" ? (
+              <ConstantSelect
+                label="Objective"
+                value={manualObjective}
+                options={[
+                  ["traffic", "Traffic"],
+                  ["awareness", "Awareness"],
+                  ["streaming", "Streaming"],
+                ]}
+                onChange={(v) =>
+                  setManualObjective(v as AdUploadObjective)
+                }
+              />
+            ) : null}
+            <label className="block text-body-sm">
+              <span className="text-label text-muted">Source label</span>
+              <input
+                type="text"
+                value={manualPartner}
+                onChange={(e) => setManualPartner(e.target.value)}
+                className="mt-1 w-full rounded border border-border bg-canvas px-3 py-2 text-body-sm text-foreground"
+              />
+            </label>
+          </div>
+
+          <div className="space-y-4">
+            {manualDrafts.map((draft, index) => (
+              <div
+                key={index}
+                className="rounded border border-border-subtle bg-canvas p-3"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-label text-muted">
+                    Campaign {index + 1}
+                  </p>
+                  {manualDrafts.length > 1 ? (
+                    <button
+                      type="button"
+                      className="text-xs text-accent-readable hover:underline"
+                      onClick={() =>
+                        setManualDrafts((prev) =>
+                          prev.filter((_, i) => i !== index),
+                        )
+                      }
+                    >
+                      Remove
+                    </button>
+                  ) : null}
+                </div>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <FieldInput
+                    label="Campaign name"
+                    value={draft.campaign_name}
+                    onChange={(v) =>
+                      updateDraft(index, { campaign_name: v })
+                    }
+                  />
+                  <FieldInput
+                    label="Spend (required)"
+                    value={draft.spend}
+                    onChange={(v) => updateDraft(index, { spend: v })}
+                    inputMode="decimal"
+                  />
+                  {manualPlatform === "meta" ? (
+                    <>
+                      <FieldInput
+                        label="Impressions"
+                        value={draft.impressions}
+                        onChange={(v) =>
+                          updateDraft(index, { impressions: v })
+                        }
+                        inputMode="numeric"
+                      />
+                      <FieldInput
+                        label="Clicks"
+                        value={draft.clicks}
+                        onChange={(v) => updateDraft(index, { clicks: v })}
+                        inputMode="numeric"
+                      />
+                      <FieldInput
+                        label="Streams"
+                        value={draft.streams}
+                        onChange={(v) => updateDraft(index, { streams: v })}
+                        inputMode="numeric"
+                      />
+                      <FieldInput
+                        label="Linkfire visits"
+                        value={draft.linkfire_visits}
+                        onChange={(v) =>
+                          updateDraft(index, { linkfire_visits: v })
+                        }
+                        inputMode="numeric"
+                      />
+                      <FieldInput
+                        label="Linkfire Spotify clicks"
+                        value={draft.linkfire_spotify_clicks}
+                        onChange={(v) =>
+                          updateDraft(index, {
+                            linkfire_spotify_clicks: v,
+                          })
+                        }
+                        inputMode="numeric"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <ConstantSelect
+                        label="Format"
+                        value={draft.format}
+                        options={[
+                          ["", "— select —"],
+                          ["marquee", "Marquee"],
+                          ["showcase", "Showcase"],
+                        ]}
+                        onChange={(v) =>
+                          updateDraft(index, {
+                            format: v as "" | AdUploadFormat,
+                          })
+                        }
+                      />
+                      <FieldInput
+                        label="Reach"
+                        value={draft.reach}
+                        onChange={(v) => updateDraft(index, { reach: v })}
+                        inputMode="numeric"
+                      />
+                      <FieldInput
+                        label="Clicks"
+                        value={draft.clicks}
+                        onChange={(v) => updateDraft(index, { clicks: v })}
+                        inputMode="numeric"
+                      />
+                      <FieldInput
+                        label="Converted listeners"
+                        value={draft.converted_listeners}
+                        onChange={(v) =>
+                          updateDraft(index, { converted_listeners: v })
+                        }
+                        inputMode="numeric"
+                      />
+                      <FieldInput
+                        label="Streams (est_attributed_streams)"
+                        value={draft.est_attributed_streams}
+                        onChange={(v) =>
+                          updateDraft(index, {
+                            est_attributed_streams: v,
+                          })
+                        }
+                        inputMode="numeric"
+                      />
+                      <FieldInput
+                        label="Saves"
+                        value={draft.saves}
+                        onChange={(v) => updateDraft(index, { saves: v })}
+                        inputMode="numeric"
+                      />
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() =>
+                setManualDrafts((prev) => [...prev, emptyManualDraft()])
+              }
+              className="rounded-tag border border-border bg-canvas px-3 py-1.5 text-sm font-medium text-foreground hover:border-accent"
+            >
+              Add campaign
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void onSaveManual()}
+              className="rounded bg-foreground px-4 py-2 text-sm font-medium text-canvas disabled:opacity-40"
+            >
+              {busy ? "Saving…" : "Save to ad tables"}
+            </button>
+          </div>
+        </section>
+      ) : null}
+
+      {step === "entry" && entryMode === "upload" ? (
         <section className="space-y-4 rounded-instrument border border-border bg-surface p-4">
           <p className="text-body-sm text-secondary">
             Accept any partner/label export — CSV, XLSX, PDF, or screenshot.
-            Only spend is required. Meta: impressions, clicks, Linkfire visits /
-            Spotify clicks optional. Spotify: attributed streams optional.
-            Rows without model-complete fields still save with{" "}
-            <span className="font-mono text-xs">usable_for_modeling=false</span>.
+            Only spend is required. Meta: impressions, clicks, streams, Linkfire
+            visits / Spotify clicks optional. Spotify: reach, clicks, converted
+            listeners, streams, saves optional. Rows without model-complete
+            fields still save with{" "}
+            <span className="font-mono text-xs">usable_for_modeling=false</span>
+            .
           </p>
           <label className="block">
             <span className="text-label text-muted">Partner / label</span>
@@ -515,7 +838,7 @@ export function AdResultsUploadWizard({
             <button
               type="button"
               disabled={busy}
-              onClick={() => setStep("upload")}
+              onClick={() => setStep("entry")}
               className="text-sm font-medium text-accent-readable hover:underline"
             >
               ← Back
@@ -715,22 +1038,74 @@ export function AdResultsUploadWizard({
             <button
               type="button"
               onClick={() => {
-                setStep("upload");
+                setStep("entry");
                 setTable(null);
                 setDoneSummary(null);
                 setReportPath(null);
                 setReportUrl(null);
                 setError(null);
                 setFile(null);
+                setManualDrafts([emptyManualDraft()]);
               }}
               className="text-accent-readable hover:underline"
             >
-              Upload another file
+              Enter more results
             </button>
           </div>
         </section>
       ) : null}
     </div>
+  );
+}
+
+function ModeTab({
+  active,
+  onClick,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={`rounded-tag border px-3 py-1.5 text-sm font-medium ${
+        active
+          ? "border-foreground bg-foreground text-canvas"
+          : "border-border bg-canvas text-foreground hover:border-accent"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function FieldInput({
+  label,
+  value,
+  onChange,
+  inputMode,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  inputMode?: "decimal" | "numeric" | "text";
+}) {
+  return (
+    <label className="block text-body-sm">
+      <span className="text-label text-muted">{label}</span>
+      <input
+        type="text"
+        inputMode={inputMode}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-1 w-full rounded border border-border bg-surface px-2 py-1.5 font-mono text-xs text-foreground"
+      />
+    </label>
   );
 }
 

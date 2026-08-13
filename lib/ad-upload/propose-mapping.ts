@@ -50,9 +50,22 @@ const HEADER_ALIASES: Array<{ field: CanonicalField; patterns: RegExp[] }> = [
     patterns: [/link\s*clicks?/, /\bclicks?\b/, /ctr(?!\s*%)/],
   },
   {
+    field: "streams_per_listener",
+    patterns: [
+      /streams?\s*per\s*listener/,
+      /active_streams_per_listener/,
+      /\bspl\b/,
+    ],
+  },
+  {
+    field: "saves",
+    patterns: [/\bsaves?\b/, /library\s*adds?/],
+  },
+  {
     field: "converted_listeners",
     patterns: [
       /converted\s*listeners?/,
+      /new\s*listeners?/,
       /listeners?/,
       /conversions?/,
       /results?/,
@@ -64,9 +77,9 @@ const HEADER_ALIASES: Array<{ field: CanonicalField; patterns: RegExp[] }> = [
       /est[_\s-]*attributed[_\s-]*streams?/,
       /attributed\s*streams?/,
       /est\.?\s*streams?/,
+      /linkfire\s*streams?/,
       /\bplays?\b/,
       /\bstreams?\b/,
-      /active\s*streams/,
     ],
   },
   {
@@ -204,9 +217,10 @@ export async function proposeMapping(options: {
         system: `Map advertising export columns to a canonical schema.
 Canonical fields ONLY: ${CANONICAL_FIELDS.join(", ")}.
 Prefer primary upload fields:
-  Meta: spend, impressions, clicks, linkfire_visits, linkfire_spotify_clicks
-  Spotify: spend, attributed_streams
-Never emit DB names (est_attributed_streams, spend_usd, link_clicks) — map those to attributed_streams, spend, clicks.
+  Meta: spend, impressions, clicks, attributed_streams, linkfire_visits, linkfire_spotify_clicks
+  Spotify: spend, reach, clicks, converted_listeners, attributed_streams, saves, streams_per_listener
+Never emit DB names (est_attributed_streams, spend_usd, link_clicks, active_streams_per_listener) — map those to attributed_streams, spend, clicks, streams_per_listener.
+Do not treat streams_per_listener as a substitute for attributed_streams — both may be present independently.
 Return JSON: {
   "column_mappings": { "<source header>": "<canonical>|null" },
   "platform": "spotify"|"meta"|"unknown",
