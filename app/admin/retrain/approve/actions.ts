@@ -32,7 +32,7 @@ export async function activateDraftModel(
   if (!canRetrain(auth.user.email)) {
     return {
       success: false,
-      error: "Your account is not authorized to activate retrain drafts.",
+      error: "Your account is not authorized to promote retrain drafts.",
     };
   }
 
@@ -61,7 +61,7 @@ export async function activateDraftModel(
     return {
       success: false,
       error:
-        "HARD guardrails failed — type an override reason to activate anyway.",
+        "HARD guardrails failed — type an override reason to use this model anyway.",
     };
   }
 
@@ -80,7 +80,7 @@ export async function activateDraftModel(
         error.message,
       );
     if (!missingRpc) {
-      return { success: false, error: `Activate failed: ${error.message}` };
+      return { success: false, error: `Use this model failed: ${error.message}` };
     }
 
     // Fallback until 202607280003 migration is applied.
@@ -126,7 +126,7 @@ async function activateDraftSequentially(
   if (demoteError) {
     return {
       ok: false,
-      error: `Activate demote failed: ${demoteError.message}`,
+      error: `Use this model demote failed: ${demoteError.message}`,
     };
   }
 
@@ -146,13 +146,13 @@ async function activateDraftSequentially(
   if (promoteError) {
     return {
       ok: false,
-      error: `Activate promote failed: ${promoteError.message}`,
+      error: `Use this model promote failed: ${promoteError.message}`,
     };
   }
   if (!data?.length) {
     return {
       ok: false,
-      error: "Activate promote matched no draft row.",
+      error: "Use this model promote matched no draft row.",
     };
   }
   return { ok: true };

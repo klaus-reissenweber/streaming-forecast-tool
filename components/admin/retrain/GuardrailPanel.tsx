@@ -56,7 +56,7 @@ export function GuardrailPanel({
         </h2>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
-        <GuardrailList title="HARD" tag="BLOCKS ACTIVATE" checks={hard} />
+        <GuardrailList title="HARD" tag="BLOCKS USE" checks={hard} />
         <GuardrailList title="SOFT" tag="WARN ONLY" checks={soft} />
       </div>
     </section>

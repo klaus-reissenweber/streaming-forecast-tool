@@ -249,25 +249,44 @@ export async function upsertCanonicalRows(options: {
   }
 
   if (metaRows.length > 0) {
-    const { error, count } = await sb.from("ad_meta_campaigns").upsert(
-      metaRows,
-      // Matches unique (campaign_uid) from migration 202608050003.
-      { onConflict: "campaign_uid", count: "exact" },
-    );
-    if (error) {
+    let payload = metaRows;
+    let wrote = false;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const { error, count } = await sb.from("ad_meta_campaigns").upsert(
+        payload,
+        // Matches unique (campaign_uid) from migration 202608050003.
+        { onConflict: "campaign_uid", count: "exact" },
+      );
+      if (!error) {
+        metaUpserted = count ?? payload.length;
+        wrote = true;
+        break;
+      }
+      const stripable = [
+        "linkfire_spotify_clicks",
+        "linkfire_visits",
+        "derived_fields",
+        "source_partner",
+        "impressions",
+        "campaign_uid",
+      ].filter((col) => error.message.includes(`'${col}'`));
+      if (stripable.length > 0) {
+        payload = stripCols(payload, stripable);
+        continue;
+      }
       // Pre-migration: campaign_uid may not exist — fall back to release_key.
       if (
         error.message.includes("campaign_uid") ||
-        error.message.includes("derived_fields") ||
         error.message.includes("no unique") ||
         error.message.includes("unique or exclusion")
       ) {
-        const legacy = metaRows.map((r) => {
+        const legacy = payload.map((r) => {
           const copy = { ...r };
           delete copy.campaign_uid;
           delete copy.derived_fields;
           delete copy.source_partner;
           delete copy.impressions;
+          delete copy.linkfire_spotify_clicks;
           return copy;
         });
         const retry = await sb
@@ -280,12 +299,15 @@ export async function upsertCanonicalRows(options: {
           errors.push(
             "Meta wrote via legacy release_key key — apply migration 202608050003 for campaign_uid upserts.",
           );
+          wrote = true;
         }
-      } else {
-        errors.push(`Meta upsert: ${error.message}`);
+        break;
       }
-    } else {
-      metaUpserted = count ?? metaRows.length;
+      errors.push(`Meta upsert: ${error.message}`);
+      break;
+    }
+    if (!wrote && errors.length === 0) {
+      errors.push("Meta upsert failed after column stripping");
     }
   }
 

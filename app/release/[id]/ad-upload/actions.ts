@@ -147,7 +147,10 @@ export async function parseAdResultsUpload(
     if (table.headers.length === 0 || table.rows.length === 0) {
       return {
         success: false,
-        error: "No tabular rows found in the upload.",
+        error:
+          table.warnings.length > 0
+            ? `No tabular rows found in the upload. ${table.warnings.join(" ")}`
+            : "No tabular rows found in the upload.",
       };
     }
 
@@ -161,6 +164,11 @@ export async function parseAdResultsUpload(
       defaultReleaseKey: releaseKey,
       profile,
     });
+
+    // Surface CSV encoding/delimiter notes alongside mapping notes.
+    if (table.warnings.length > 0) {
+      proposal.notes = [...table.warnings, ...proposal.notes];
+    }
 
     // Re-load profile with detected platform if better match.
     if (proposal.fileConstants.platform !== "unknown") {
@@ -177,6 +185,9 @@ export async function parseAdResultsUpload(
           defaultReleaseKey: releaseKey,
           profile: typed,
         });
+        if (table.warnings.length > 0) {
+          again.notes = [...table.warnings, ...again.notes];
+        }
         return {
           success: true,
           table,

@@ -10,6 +10,7 @@ import {
   applyGapFill,
   computeGapNeeds,
 } from "@/lib/ad-upload/gap-fill";
+import { parseCsvBuffer } from "@/lib/ad-upload/parse-tabular";
 import { heuristicColumnMappings } from "@/lib/ad-upload/propose-mapping";
 import { SEED_AD_MODEL } from "@/lib/model/ad-model";
 
@@ -50,6 +51,7 @@ function main(): void {
   assert(rows[0]!.objective === "traffic", "objective constant");
   assert(rows[0]!.release_key === "test track", "release key constant");
 
+  // Write gate: spend + identity only — no gap when those are present.
   const spotifyTable: ParsedTable = {
     headers: ["spend", "converted_listeners"],
     rows: [["490", "1000"]],
@@ -75,26 +77,48 @@ function main(): void {
     "LSDREAM",
     "melodic-bass",
   );
-  assert(gaps.length === 1, "gap for streams");
-  assert(gaps[0]!.missing.includes("attributed_streams"), "need streams");
-  assert(
-    gaps[0]!.benchmarks.attributed_streams != null,
-    "streams benchmark present",
-  );
+  assert(gaps.length === 0, "no write-blocking gaps when spend+identity present");
+
+  // Completeness gate: still needs attributed_streams for usable_for_modeling.
+  const incomplete = applyGapFill(spotifyRows, "spotify", {});
+  assert(!incomplete[0]!.usable_for_modeling, "not usable without streams");
 
   const filled = applyGapFill(spotifyRows, "spotify", {
     0: [
       {
-        type: "benchmark",
+        type: "manual",
         field: "attributed_streams",
-        value: gaps[0]!.benchmarks.attributed_streams!.value,
+        value: 2650,
       },
     ],
   });
-  assert(filled[0]!.usable_for_modeling, "usable after gap-fill");
+  assert(filled[0]!.usable_for_modeling, "usable after streams filled");
+  assert(filled[0]!.attributed_streams === 2650, "streams applied");
+
+  // UTF-16 LE tab-delimited Meta-style export
+  const utf16 = Buffer.from(
+    "\ufeffAmount spent\tImpressions\tLink clicks\n12.50\t1000\t40\n",
+    "utf16le",
+  );
+  const parsed = parseCsvBuffer(utf16);
+  assert(parsed.headers.includes("Amount spent"), "utf16 header decoded");
+  assert(parsed.headers.includes("Link clicks"), "utf16 clicks header");
+  assert(parsed.rows.length === 1, "utf16 one data row");
+  assert(parsed.rows[0]![0] === "12.50", "utf16 spend cell");
   assert(
-    filled[0]!.derived_fields.includes("attributed_streams"),
-    "tagged derived",
+    parsed.warnings.some((w) => /tab-delimited/i.test(w)),
+    "tab delimiter warning",
+  );
+
+  const linkfireHeaders = heuristicColumnMappings([
+    "Amount spent",
+    "Linkfire visits",
+    "Spotify clicks",
+  ]);
+  assert(linkfireHeaders["Linkfire visits"] === "linkfire_visits", "lf visits");
+  assert(
+    linkfireHeaders["Spotify clicks"] === "linkfire_spotify_clicks",
+    "lf spotify clicks",
   );
 
   console.log("PASS: ad-upload mapping + gap-fill");

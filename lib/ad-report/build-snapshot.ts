@@ -12,6 +12,7 @@ import type {
   AdReportChannelId,
   AdReportChannelSnapshot,
   AdReportDailyPoint,
+  AdReportMetaFunnelComparison,
   AdReportMetricsSnapshot,
 } from "@/lib/ad-report/types";
 import { buildStreamCurve } from "@/lib/forecast";
@@ -66,7 +67,7 @@ async function loadAdRowsForRelease(releaseKey: string): Promise<{
     sb
       .from("ad_meta_campaigns")
       .select(
-        "release_key, campaign_uid, campaign_name, objective, spend_usd, link_clicks, impressions, reach, start_date, end_date, derived_fields, source_partner",
+        "release_key, campaign_uid, campaign_name, objective, spend_usd, link_clicks, impressions, reach, linkfire_visits, linkfire_spotify_clicks, start_date, end_date, derived_fields, source_partner",
       )
       .eq("release_key", releaseKey),
   ]);
@@ -211,6 +212,8 @@ export async function buildAdReportSnapshot(
       impressions: null,
       reach: numOrNull(row.reach),
       clicks: numOrNull(row.clicks),
+      linkfireSpotifyClicks: null,
+      predictedSpotifyClicks: null,
       costPerStream: cps(spend, streams),
       usableForModeling: usable,
       derivedFields: derived,
@@ -231,6 +234,7 @@ export async function buildAdReportSnapshot(
     const reach = num(row.reach);
     const clicks = num(row.link_clicks);
     const derived = asStringArray(row.derived_fields);
+    const measuredSpotifyClicks = numOrNull(row.linkfire_spotify_clicks);
 
     // Meta streams are not measured on the campaign row — leave 0 / n/a for awareness;
     // traffic streams stay estimate-only (0 in snapshot unless we model later).
@@ -256,6 +260,9 @@ export async function buildAdReportSnapshot(
       impressions: impressions > 0 ? impressions : numOrNull(row.impressions),
       reach: reach > 0 ? reach : numOrNull(row.reach),
       clicks: clicks > 0 ? clicks : numOrNull(row.link_clicks),
+      linkfireSpotifyClicks:
+        channelId === "meta_traffic" ? measuredSpotifyClicks : null,
+      predictedSpotifyClicks: null,
       costPerStream: null,
       usableForModeling: true,
       derivedFields: derived,
@@ -264,33 +271,63 @@ export async function buildAdReportSnapshot(
     });
   }
 
-  // Meta traffic streams are modeled (not measured): clicks × share × effective SPL scale.
+  // Meta traffic streams: measured Linkfire Spotify clicks × SPL effective when
+  // present; otherwise funnel estimate from Meta link_clicks × share × SPL.
+  let metaFunnelComparison: AdReportMetaFunnelComparison | null = null;
   {
     const { spl } = resolveSpl(
       model.adModel,
       release.artist_name,
       release.genre,
     );
+    const cpc = model.adModel.metaFunnel.cpc;
     const share = model.adModel.metaFunnel.spotifyClickShare;
     const perClick = effectiveMetaStreamsPerSpotifyClick(model.adModel, spl);
     const traffic = channels.meta_traffic;
-    if (traffic.clicks > 0) {
-      const estimated = Math.round(traffic.clicks * share * perClick);
-      traffic.streams = estimated;
-      traffic.streamsLabel = "estimate";
-      traffic.costPerStream = cps(traffic.spend, estimated);
-      for (const camp of campaigns) {
-        if (
-          camp.channel !== "meta_traffic" ||
-          !(camp.clicks != null && camp.clicks > 0)
-        ) {
-          continue;
-        }
+
+    let channelStreams = 0;
+    let measuredTotal = 0;
+    let hasAnyMeasured = false;
+    let predictedTotal = 0;
+
+    for (const camp of campaigns) {
+      if (camp.channel !== "meta_traffic") continue;
+      const predicted =
+        camp.spend > 0 && cpc > 0 ? (camp.spend / cpc) * share : 0;
+      camp.predictedSpotifyClicks = predicted > 0 ? predicted : null;
+      predictedTotal += predicted;
+
+      const measured = camp.linkfireSpotifyClicks;
+      if (measured != null && measured > 0) {
+        hasAnyMeasured = true;
+        measuredTotal += measured;
+        const est = Math.round(measured * perClick);
+        camp.streams = est;
+        camp.streamsLabel = "estimate";
+        camp.costPerStream = cps(camp.spend, est);
+        channelStreams += est;
+      } else if (camp.clicks != null && camp.clicks > 0) {
         const est = Math.round(camp.clicks * share * perClick);
         camp.streams = est;
         camp.streamsLabel = "estimate";
         camp.costPerStream = cps(camp.spend, est);
+        channelStreams += est;
       }
+    }
+
+    if (traffic.spend > 0 || traffic.clicks > 0 || hasAnyMeasured) {
+      traffic.streams = channelStreams;
+      traffic.streamsLabel = "estimate";
+      traffic.costPerStream = cps(traffic.spend, channelStreams);
+      metaFunnelComparison = {
+        predictedSpotifyClicks: Math.round(predictedTotal),
+        measuredSpotifyClicks: hasAnyMeasured ? measuredTotal : null,
+        estimatedStreams: channelStreams,
+        streamsFromMeasuredClicks: hasAnyMeasured,
+        cpc,
+        spotifyClickShare: share,
+        streamsPerSpotifyClickEffective: perClick,
+      };
     }
   }
 
@@ -355,6 +392,7 @@ export async function buildAdReportSnapshot(
     },
     channels: channelList,
     campaigns: campaigns.sort((a, b) => b.spend - a.spend),
+    metaFunnelComparison,
     charts: {
       spendByChannel: channelList.map((ch) => ({
         channel: ch.label,

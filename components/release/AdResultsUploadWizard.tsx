@@ -9,6 +9,8 @@ import {
 } from "@/app/release/[id]/ad-upload/actions";
 import {
   CANONICAL_FIELDS,
+  META_UPLOAD_FIELDS,
+  SPOTIFY_UPLOAD_FIELDS,
   type AdUploadColumnMappings,
   type AdUploadFileConstants,
   type AdUploadFormat,
@@ -28,10 +30,12 @@ import { formatCount } from "@/lib/format";
 type Step = "upload" | "mapping" | "gaps" | "done";
 
 const FIELD_LABELS: Record<CanonicalField, string> = {
-  spend: "Spend",
+  spend: "Spend (required)",
   impressions: "Impressions",
   reach: "Reach",
   clicks: "Clicks",
+  linkfire_visits: "Linkfire visits",
+  linkfire_spotify_clicks: "Linkfire Spotify clicks",
   converted_listeners: "Converted listeners",
   attributed_streams: "Attributed streams",
   format: "Format",
@@ -42,6 +46,25 @@ const FIELD_LABELS: Record<CanonicalField, string> = {
   artist: "Artist",
   release_key: "Release key",
 };
+
+function mappingFieldOptions(platform: AdUploadPlatform): CanonicalField[] {
+  if (platform === "meta") {
+    return [...META_UPLOAD_FIELDS, "campaign_name", "objective", "start_date", "end_date"];
+  }
+  if (platform === "spotify") {
+    return [
+      ...SPOTIFY_UPLOAD_FIELDS,
+      "converted_listeners",
+      "format",
+      "campaign_name",
+      "artist",
+      "release_key",
+      "start_date",
+      "end_date",
+    ];
+  }
+  return [...CANONICAL_FIELDS];
+}
 
 export function AdResultsUploadWizard({
   releaseId,
@@ -117,28 +140,37 @@ export function AdResultsUploadWizard({
     }
     setBusy(true);
     setError(null);
-    const fd = new FormData();
-    fd.set("file", file);
-    fd.set("partnerLabel", partnerLabel);
-    const result = await parseAdResultsUpload(releaseId, fd);
-    setBusy(false);
-    if (!result.success) {
-      setError(result.error);
-      return;
+    try {
+      const fd = new FormData();
+      fd.set("file", file);
+      fd.set("partnerLabel", partnerLabel);
+      const result = await parseAdResultsUpload(releaseId, fd);
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
+      setTable(result.table);
+      setColumnMappings(result.proposal.columnMappings);
+      setFileConstants({
+        ...result.proposal.fileConstants,
+        partnerLabel:
+          result.proposal.fileConstants.partnerLabel || partnerLabel,
+        artist: result.proposal.fileConstants.artist || artistName,
+        releaseKey:
+          result.proposal.fileConstants.releaseKey ||
+          result.release.releaseKey,
+      });
+      setMappingNotes(result.proposal.notes);
+      setStep("mapping");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Parse failed unexpectedly. Check the file encoding and try again.",
+      );
+    } finally {
+      setBusy(false);
     }
-    setTable(result.table);
-    setColumnMappings(result.proposal.columnMappings);
-    setFileConstants({
-      ...result.proposal.fileConstants,
-      partnerLabel:
-        result.proposal.fileConstants.partnerLabel || partnerLabel,
-      artist: result.proposal.fileConstants.artist || artistName,
-      releaseKey:
-        result.proposal.fileConstants.releaseKey ||
-        result.release.releaseKey,
-    });
-    setMappingNotes(result.proposal.notes);
-    setStep("mapping");
   }
 
   async function onConfirmMapping() {
@@ -260,7 +292,10 @@ export function AdResultsUploadWizard({
         <section className="space-y-4 rounded-instrument border border-border bg-surface p-4">
           <p className="text-body-sm text-secondary">
             Accept any partner/label export — CSV, XLSX, PDF, or screenshot.
-            Columns are mapped to a canonical schema; confirm before writing.
+            Only spend is required. Meta: impressions, clicks, Linkfire visits /
+            Spotify clicks optional. Spotify: attributed streams optional.
+            Rows without model-complete fields still save with{" "}
+            <span className="font-mono text-xs">usable_for_modeling=false</span>.
           </p>
           <label className="block">
             <span className="text-label text-muted">Partner / label</span>
@@ -416,11 +451,13 @@ export function AdResultsUploadWizard({
                         }}
                       >
                         <option value="">— ignore —</option>
-                        {CANONICAL_FIELDS.map((f) => (
-                          <option key={f} value={f}>
-                            {FIELD_LABELS[f]}
-                          </option>
-                        ))}
+                        {mappingFieldOptions(fileConstants.platform).map(
+                          (f) => (
+                            <option key={f} value={f}>
+                              {FIELD_LABELS[f]}
+                            </option>
+                          ),
+                        )}
                       </select>
                     </td>
                   </tr>

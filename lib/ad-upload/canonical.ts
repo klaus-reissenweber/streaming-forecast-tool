@@ -1,6 +1,11 @@
 /**
  * Canonical target schema for partner ad-result uploads.
  * Everything maps into these fields before gap-fill + upsert.
+ *
+ * Upload surface (all optional except spend):
+ *   Meta:     spend, impressions, clicks, linkfire_visits, linkfire_spotify_clicks
+ *   Spotify:  spend, attributed_streams (→ est_attributed_streams)
+ * Completeness for usable_for_modeling is enforced separately in gap-fill.
  */
 
 export const CANONICAL_FIELDS = [
@@ -8,6 +13,8 @@ export const CANONICAL_FIELDS = [
   "impressions",
   "reach",
   "clicks",
+  "linkfire_visits",
+  "linkfire_spotify_clicks",
   "converted_listeners",
   "attributed_streams",
   "format",
@@ -20,6 +27,20 @@ export const CANONICAL_FIELDS = [
 ] as const;
 
 export type CanonicalField = (typeof CANONICAL_FIELDS)[number];
+
+/** Fields shown as primary upload targets (platform-filtered in the wizard). */
+export const META_UPLOAD_FIELDS = [
+  "spend",
+  "impressions",
+  "clicks",
+  "linkfire_visits",
+  "linkfire_spotify_clicks",
+] as const satisfies readonly CanonicalField[];
+
+export const SPOTIFY_UPLOAD_FIELDS = [
+  "spend",
+  "attributed_streams",
+] as const satisfies readonly CanonicalField[];
 
 export type AdUploadPlatform = "spotify" | "meta" | "unknown";
 
@@ -45,6 +66,8 @@ export type CanonicalRow = {
   impressions: number | null;
   reach: number | null;
   clicks: number | null;
+  linkfire_visits: number | null;
+  linkfire_spotify_clicks: number | null;
   converted_listeners: number | null;
   attributed_streams: number | null;
   format: AdUploadFormat | null;
@@ -77,6 +100,8 @@ export function emptyCanonicalRow(sourceRowIndex: number): CanonicalRow {
     impressions: null,
     reach: null,
     clicks: null,
+    linkfire_visits: null,
+    linkfire_spotify_clicks: null,
     converted_listeners: null,
     attributed_streams: null,
     format: null,

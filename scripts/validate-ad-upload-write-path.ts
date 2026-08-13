@@ -3,7 +3,7 @@
  *
  * Repro shape:
  *  - rows 1–2: converted_listeners + attributed_streams from mapped columns
- *  - row 3: accepted benchmark for attributed_streams
+ *  - row 3: missing streams → still writable, usable_for_modeling=false
  *  - row 4: skipped
  * Write must persist rows 1–3 and exclude row 4; display numbering stays 1-based
  * on source_row_index.
@@ -36,7 +36,7 @@ function main(): void {
     rows: [
       ["Camp A", "100", "200", "500"],
       ["Camp B", "120", "220", "550"],
-      ["Camp C", "140", "240", ""], // streams missing → benchmark
+      ["Camp C", "140", "240", ""], // streams missing → write ok, not usable
       ["Camp D", "160", "260", ""], // skip
     ],
     sourceKind: "csv",
@@ -66,6 +66,7 @@ function main(): void {
   assert(mapped[1]!.attributed_streams === 550, "row2 streams mapped");
   assert(mapped[2]!.attributed_streams == null, "row3 streams empty");
 
+  // Write gate no longer blocks on attributed_streams.
   const gaps = computeGapNeeds(
     mapped,
     "spotify",
@@ -73,31 +74,20 @@ function main(): void {
     "Test Artist",
     "house",
   );
-  assert(gaps.length === 2, `expected 2 gaps, got ${gaps.length}`);
-  assert(gaps[0]!.displayRow === 3 && gaps[0]!.rowIndex === 2, "gap row 3");
-  assert(gaps[1]!.displayRow === 4 && gaps[1]!.rowIndex === 3, "gap row 4");
-  assert(
-    gaps[0]!.missing.includes("attributed_streams"),
-    "row3 needs streams",
-  );
+  assert(gaps.length === 0, `expected 0 write gaps, got ${gaps.length}`);
 
-  const bench = gaps[0]!.benchmarks.attributed_streams!.value;
-  // Simulate Server Action JSON key stringification.
   const decisions = normalizeGapDecisions({
-    "2": [{ type: "benchmark", field: "attributed_streams", value: bench }],
     "3": [{ type: "skip" }],
   });
 
   const resolved = applyGapFill(mapped, "spotify", decisions);
-  assert(resolved[2]!.attributed_streams === bench, "benchmark merged");
-  assert(
-    resolved[2]!.derived_fields.includes("attributed_streams"),
-    "derived tag",
-  );
   assert(resolved[3]!.skipped === true, "row4 skipped");
   assert(resolved[0]!.usable_for_modeling, "row1 usable");
   assert(resolved[1]!.usable_for_modeling, "row2 usable");
-  assert(resolved[2]!.usable_for_modeling, "row3 usable after benchmark");
+  assert(
+    !resolved[2]!.usable_for_modeling,
+    "row3 not usable without streams (completeness gate)",
+  );
 
   const writeable = [];
   const errors = [];
@@ -125,9 +115,10 @@ function main(): void {
     "row1 mapped values reach write payload",
   );
   assert(
-    Number(w2.est_attributed_streams) === bench,
-    "row3 benchmark reaches write payload",
+    w2.est_attributed_streams == null,
+    "row3 est_attributed_streams null",
   );
+  assert(w2.usable_for_modeling === false, "row3 not usable_for_modeling");
   assert(
     !("attributed_streams" in w0) && "est_attributed_streams" in w0,
     "DB payload uses est_attributed_streams, not attributed_streams",

@@ -79,6 +79,12 @@ function printReview(detail: ReturnType<typeof fitAdModel>): void {
 
   console.log("\n=== Meta funnel (confidence: estimate) — traffic objective only ===");
   console.log(
+    "  NOTE: linkfire_spotify_clicks / linkfire_visits are NEVER pooled into",
+  );
+  console.log(
+    "  cpc, spotify_click_share, or any fitted constant (configs differ).",
+  );
+  console.log(
     `  cpc:                           ${fmt(model.metaFunnel.cpc)}  (n=${model.sampleSizes.metaCpc}; = median of spend_usd/link_clicks)`,
   );
   console.log(

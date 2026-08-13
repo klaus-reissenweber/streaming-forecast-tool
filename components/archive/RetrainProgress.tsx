@@ -207,7 +207,7 @@ export function RetrainProgress({
             [ELIGIBLE]
           </span>
           <span className="align-middle">
-            Enough new closes — enqueue a draft retrain when ready.
+            Enough new closes — retrain a draft model when ready.
           </span>
         </p>
       ) : (
@@ -218,6 +218,22 @@ export function RetrainProgress({
         </p>
       )}
 
+      {inflight ? (
+        <div
+          className="mt-4 rounded-instrument border border-accent-border bg-accent-tint px-4 py-3"
+          data-testid="retrain-pending"
+        >
+          <p className="text-body-sm font-medium text-foreground">
+            Retrain in progress
+          </p>
+          <p className="mt-1 text-body-sm text-secondary">
+            Job is {job?.status}. This can take up to 30 minutes — the worker
+            claims queued jobs about every 30 minutes. Leave this page open or
+            come back later; you&apos;ll get a draft to review when it finishes.
+          </p>
+        </div>
+      ) : null}
+
       <div className="mt-4 flex flex-wrap items-center gap-3">
         {canEnqueue ? (
           <button
@@ -226,7 +242,7 @@ export function RetrainProgress({
             disabled={isPending || inflight != null}
             className="rounded-tag border border-border bg-canvas px-3 py-1.5 text-sm font-medium text-foreground hover:border-accent disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isPending ? "Enqueueing…" : "Enqueue retrain"}
+            {isPending ? "Retrain started…" : "Retrain"}
           </button>
         ) : null}
 
@@ -249,7 +265,6 @@ export function RetrainProgress({
                 >
                   Review draft
                 </Link>
-                <span className="text-secondary"> (Phase 2b)</span>
               </>
             ) : null}
             {job.status === "failed" && job.error ? (
@@ -261,12 +276,6 @@ export function RetrainProgress({
 
       {actionError ? (
         <p className="mt-2 text-body-sm text-semantic-negative">{actionError}</p>
-      ) : null}
-
-      {inflight ? (
-        <p className="mt-2 text-xs text-secondary">
-          GitHub Actions claims queued jobs about every 30 minutes.
-        </p>
       ) : null}
     </section>
   );

@@ -38,6 +38,8 @@ export async function loadAdFitInputs(): Promise<AdFitInputs> {
     );
   if (campErr) throw new Error(`ad_spotify_campaigns: ${campErr.message}`);
 
+  // Intentionally omit linkfire_spotify_clicks / linkfire_visits — measured
+  // click counts must not enter the global fit (share/cpc stay multi-service only).
   const metaSelectFull =
     "release_key, objective, spend_usd, link_clicks, spotify_click_share, impressions, reach, linkfire_ctr_pct, linkfire_streams";
   const metaSelectLegacy =

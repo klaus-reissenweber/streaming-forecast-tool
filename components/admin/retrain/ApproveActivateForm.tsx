@@ -44,7 +44,7 @@ export function ApproveActivateForm({
     <section className="rounded-instrument border border-border bg-surface p-5 motion-fade-up">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="font-serif text-section font-semibold text-foreground">
-          Activate
+          Use this model
         </h2>
         <span
           className={`bracket-tag ${allHardPassed ? "bracket-tag--positive" : "bracket-tag--warning"}`}
@@ -56,13 +56,13 @@ export function ApproveActivateForm({
       {!allHardPassed ? (
         <p className="mt-2 text-body-sm text-secondary">
           One or more HARD guardrails failed. Type an override reason to enable
-          Activate — stored on the model row as{" "}
+          Use this model — stored on the model row as{" "}
           <span className="font-mono text-xs">metadata.override_notes</span>.
         </p>
       ) : (
         <p className="mt-2 text-body-sm text-secondary">
-          All HARD guardrails passed. Activate promotes this draft to the live
-          consolidated model (no deploy).
+          All HARD guardrails passed. Use this model promotes the draft to the
+          live consolidated model (no deploy).
         </p>
       )}
 
@@ -86,7 +86,7 @@ export function ApproveActivateForm({
 
       {!canActivate ? (
         <p className="mt-3 text-body-sm text-semantic-warning">
-          Your account is not authorized to activate retrain drafts.
+          Your account is not authorized to promote retrain drafts.
         </p>
       ) : null}
 
@@ -102,7 +102,7 @@ export function ApproveActivateForm({
         disabled={!enabled}
         onClick={onActivate}
       >
-        {isPending ? "Activating…" : "Activate draft"}
+        {isPending ? "Promoting…" : "Use this model"}
       </button>
     </section>
   );

@@ -45,8 +45,15 @@ export function AdReportDashboard({
   snapshot: AdReportMetricsSnapshot;
   generatedAt: string;
 }) {
-  const { headline, paid, release, campaignWindow, channels, campaigns } =
-    snapshot;
+  const {
+    headline,
+    paid,
+    release,
+    campaignWindow,
+    channels,
+    campaigns,
+    metaFunnelComparison = null,
+  } = snapshot;
   const deltaPositive =
     headline.delta != null ? headline.delta >= 0 : null;
 
@@ -169,6 +176,45 @@ export function AdReportDashboard({
           ))}
         </div>
       </section>
+
+      {metaFunnelComparison ? (
+        <section className="mt-8" aria-label="Meta funnel comparison">
+          <h2 className="font-serif text-section text-foreground">
+            Meta funnel comparison
+          </h2>
+          <p className="mt-1 text-body-sm text-secondary">
+            Predicted vs measured at the Spotify-click level (same units).
+          </p>
+          <dl className="mt-3 space-y-3 rounded-instrument border border-border bg-surface p-4 text-body-sm">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <dt className="text-muted">Spotify clicks</dt>
+              <dd className="font-mono tabular-nums text-foreground">
+                {formatCount(metaFunnelComparison.predictedSpotifyClicks)}
+                {" → "}
+                {metaFunnelComparison.measuredSpotifyClicks == null
+                  ? "—"
+                  : formatCount(metaFunnelComparison.measuredSpotifyClicks)}
+              </dd>
+            </div>
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <dt className="text-muted">Est. streams</dt>
+              <dd className="font-mono tabular-nums text-foreground">
+                {formatCount(metaFunnelComparison.estimatedStreams)}
+                <span className="ml-1 text-muted">
+                  {metaFunnelComparison.streamsFromMeasuredClicks
+                    ? "(estimate · measured clicks × SPL)"
+                    : "(estimate · funnel)"}
+                </span>
+              </dd>
+            </div>
+            <p className="text-caption text-muted">
+              Predicted clicks = (spend ÷ CPC{" "}
+              {formatUsd(metaFunnelComparison.cpc, 2)}) × click share{" "}
+              {formatPercent(metaFunnelComparison.spotifyClickShare * 100, 0)}
+            </p>
+          </dl>
+        </section>
+      ) : null}
 
       {/* Per-channel */}
       <section className="mt-8" aria-label="Per-channel breakdown">

@@ -1,8 +1,10 @@
 /**
  * Interactive gap-fill for model-required fields.
- * Spotify: converted_listeners, attributed_streams (+ write keys: format, artist, release_key, spend)
- * Meta: clicks (link_clicks)
- * Benchmarks use active ad_model CPL / SPL.
+ *
+ * Write path (upload): only spend is required (plus Spotify identity from
+ * file constants). Completeness for usable_for_modeling is separate:
+ *   Spotify: converted_listeners, attributed_streams (+ write keys)
+ *   Meta: clicks (link_clicks) for traffic; impressions/reach for awareness
  */
 
 import { resolveSpl } from "@/lib/ad-forecast";
@@ -60,7 +62,7 @@ function spotifyModelMissing(row: CanonicalRow): CanonicalField[] {
   return missing;
 }
 
-/** Fields required to persist a Spotify row (must be gap-filled before write). */
+/** Fields required to persist a Spotify row (identity + spend). */
 function spotifyWriteMissing(row: CanonicalRow): CanonicalField[] {
   const missing: CanonicalField[] = [];
   if (!row.format) missing.push("format");
@@ -70,10 +72,17 @@ function spotifyWriteMissing(row: CanonicalRow): CanonicalField[] {
   return missing;
 }
 
-function metaMissing(row: CanonicalRow): CanonicalField[] {
+/** Write gate: spend (+ release_key from constants). */
+function metaWriteMissing(row: CanonicalRow): CanonicalField[] {
   const missing: CanonicalField[] = [];
   if (!row.release_key?.trim()) missing.push("release_key");
   if (row.spend == null || !(row.spend > 0)) missing.push("spend");
+  return missing;
+}
+
+/** Completeness gate for usable_for_modeling (unchanged semantics). */
+function metaModelMissing(row: CanonicalRow): CanonicalField[] {
+  const missing: CanonicalField[] = [];
   if (row.objective === "awareness") {
     if (
       !(row.impressions != null && row.impressions > 0) &&
@@ -87,6 +96,10 @@ function metaMissing(row: CanonicalRow): CanonicalField[] {
   return missing;
 }
 
+/**
+ * Gap UI only prompts for write-blocking fields (spend / identity).
+ * Modeling completeness still drives usable_for_modeling without blocking write.
+ */
 export function computeGapNeeds(
   rows: CanonicalRow[],
   platform: AdUploadPlatform,
@@ -101,14 +114,10 @@ export function computeGapNeeds(
     if (row.skipped) continue;
     const missing =
       platform === "spotify"
-        ? [...spotifyWriteMissing(row), ...spotifyModelMissing(row)]
+        ? spotifyWriteMissing(row)
         : platform === "meta"
-          ? metaMissing(row)
-          : [
-              ...spotifyWriteMissing(row),
-              ...spotifyModelMissing(row),
-              ...metaMissing(row),
-            ];
+          ? metaWriteMissing(row)
+          : [...spotifyWriteMissing(row), ...metaWriteMissing(row)];
     // Dedupe while preserving order.
     const unique = [...new Set(missing)];
     if (unique.length === 0) continue;
@@ -192,6 +201,8 @@ export function applyGapFill(
           action.field === "impressions" ||
           action.field === "reach" ||
           action.field === "clicks" ||
+          action.field === "linkfire_visits" ||
+          action.field === "linkfire_spotify_clicks" ||
           action.field === "converted_listeners" ||
           action.field === "attributed_streams"
         ) {
@@ -216,7 +227,9 @@ export function applyGapFill(
         spotifyWriteMissing(next).length === 0 &&
         spotifyModelMissing(next).length === 0;
     } else if (platform === "meta") {
-      next.usable_for_modeling = metaMissing(next).length === 0;
+      next.usable_for_modeling =
+        metaWriteMissing(next).length === 0 &&
+        metaModelMissing(next).length === 0;
     } else {
       next.usable_for_modeling = false;
     }
@@ -228,7 +241,7 @@ export function applyGapFill(
 /** Why a Spotify row cannot be written (for upsert error messages). */
 export function spotifyRowRejectReason(row: CanonicalRow): string | null {
   if (row.skipped) return "skipped";
-  const missing = [...spotifyWriteMissing(row), ...spotifyModelMissing(row)];
+  const missing = spotifyWriteMissing(row);
   if (missing.length === 0) return null;
   return `missing ${missing.join(", ")}`;
 }

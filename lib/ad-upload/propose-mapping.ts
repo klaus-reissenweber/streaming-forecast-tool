@@ -30,9 +30,21 @@ const HEADER_ALIASES: Array<{ field: CanonicalField; patterns: RegExp[] }> = [
   },
   {
     field: "impressions",
-    patterns: [/impressions?/, /\bimps?\b/, /views?/],
+    patterns: [/impressions?/, /\bimps?\b/],
   },
   { field: "reach", patterns: [/\breach\b/, /unique/] },
+  {
+    field: "linkfire_spotify_clicks",
+    patterns: [
+      /linkfire.*spotify.*clicks?/,
+      /spotify\s*clicks?/,
+      /spotify\s*clickthroughs?/,
+    ],
+  },
+  {
+    field: "linkfire_visits",
+    patterns: [/linkfire\s*visits?/, /\bvisits?\b/],
+  },
   {
     field: "clicks",
     patterns: [/link\s*clicks?/, /\bclicks?\b/, /ctr(?!\s*%)/],
@@ -191,6 +203,9 @@ export async function proposeMapping(options: {
       const raw = await openAiJsonCompletion({
         system: `Map advertising export columns to a canonical schema.
 Canonical fields ONLY: ${CANONICAL_FIELDS.join(", ")}.
+Prefer primary upload fields:
+  Meta: spend, impressions, clicks, linkfire_visits, linkfire_spotify_clicks
+  Spotify: spend, attributed_streams
 Never emit DB names (est_attributed_streams, spend_usd, link_clicks) — map those to attributed_streams, spend, clicks.
 Return JSON: {
   "column_mappings": { "<source header>": "<canonical>|null" },

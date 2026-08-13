@@ -27,8 +27,8 @@ interface ApprovePageProps {
 }
 
 export const metadata: Metadata = {
-  title: "Approve draft model",
-  description: "Review and activate a draft retrain model version.",
+  title: "Check retrain",
+  description: "Review draft-vs-active diffs and use a retrain model.",
 };
 
 function fmtBias(value: number): string {
@@ -46,7 +46,7 @@ export default async function ApproveDraftPage({ params }: ApprovePageProps) {
     return (
       <main className="mx-auto max-w-3xl px-5 py-8">
         <h1 className="font-serif text-release-title font-semibold text-foreground">
-          Approve draft model
+          Check retrain
         </h1>
         <p className="mt-3 text-body-sm text-secondary">{auth.error}</p>
         <p className="mt-6">
@@ -62,7 +62,7 @@ export default async function ApproveDraftPage({ params }: ApprovePageProps) {
     return (
       <main className="mx-auto max-w-3xl px-5 py-8">
         <h1 className="font-serif text-release-title font-semibold text-foreground">
-          Approve draft model
+          Check retrain
         </h1>
         <p className="mt-3 text-body-sm text-secondary">
           Your account is not authorized to review retrain drafts.
@@ -85,12 +85,19 @@ export default async function ApproveDraftPage({ params }: ApprovePageProps) {
     return (
       <main className="mx-auto max-w-3xl px-5 py-8">
         <h1 className="font-serif text-release-title font-semibold text-foreground">
-          Approve draft model
+          Check retrain
         </h1>
-        <p className="mt-3 text-body-sm text-secondary">
-          No consolidated model found for{" "}
-          <span className="font-mono">{draftId}</span>.
-        </p>
+        <div className="mt-4 rounded-instrument border border-accent-border bg-accent-tint px-4 py-4">
+          <p className="text-body-sm font-medium text-foreground">
+            Retrain still pending
+          </p>
+          <p className="mt-2 text-body-sm text-secondary">
+            No draft model is ready for{" "}
+            <span className="font-mono">{draftId}</span> yet. A queued or
+            running job can take up to 30 minutes. Check back from the archive
+            when the draft link appears.
+          </p>
+        </div>
         <p className="mt-6">
           <Link href="/archive" className="text-accent-readable hover:underline">
             ← Back to archive
@@ -116,45 +123,20 @@ export default async function ApproveDraftPage({ params }: ApprovePageProps) {
             Archive
           </Link>
           {" / "}
-          Retrain approve
+          Check retrain
         </p>
         <h1 className="mt-2 font-serif text-release-title font-semibold text-foreground">
-          Approve draft model
+          Draft vs active
         </h1>
-        <div className="mt-3 flex flex-wrap gap-3 text-body-sm text-secondary">
-          <span>
-            Draft{" "}
-            <span className="font-mono text-foreground">
-              {draft.id?.slice(0, 8)}
-            </span>
-            <span className="ml-2 bracket-tag bracket-tag--neutral">
-              {draft.status.toUpperCase()}
-            </span>
-          </span>
-          <span>
-            Fitted{" "}
-            <span className="font-mono text-foreground">{draft.fittedAt}</span>
-          </span>
-          <span>
-            Active{" "}
-            <span className="font-mono text-foreground">
-              {formatActiveModelSource(active)}
-            </span>
-          </span>
-        </div>
-        {fb ? (
-          <p className="mt-3 font-mono text-xs text-secondary">
-            forward_bias all live {fmtBias(fb.all.live)} / new{" "}
-            {fmtBias(fb.all.new)} · clean {fmtBias(fb.clean.live)} /{" "}
-            {fmtBias(fb.clean.new)} · newest_10 {fmtBias(fb.newest10.live)} /{" "}
-            {fmtBias(fb.newest10.new)}
-          </p>
-        ) : null}
+        <p className="mt-2 text-body-sm text-secondary">
+          Review coefficient diffs first, then promote with Use this model when
+          ready.
+        </p>
       </header>
 
       <div className="mt-8 space-y-8">
-        <GuardrailPanel hard={review.hard} soft={review.soft} />
         <DraftDiffTables diff={review.diff} />
+        <GuardrailPanel hard={review.hard} soft={review.soft} />
         <ComposedCurvePreview curves={review.curves} />
         <CooksAndSamples metadata={draft.metadata} drops={cooksDrops} />
         {draft.status === "draft" ? (
@@ -166,11 +148,47 @@ export default async function ApproveDraftPage({ params }: ApprovePageProps) {
         ) : (
           <section className="rounded-instrument border border-border bg-surface p-5">
             <p className="text-body-sm text-secondary">
-              This model is already <span className="font-mono">{draft.status}</span>
-              — Activate is unavailable.
+              This model is already{" "}
+              <span className="font-mono">{draft.status}</span> — Use this
+              model is unavailable.
             </p>
           </section>
         )}
+
+        <details className="rounded-instrument border border-border bg-surface p-5">
+          <summary className="cursor-pointer font-serif text-section font-semibold text-foreground">
+            Details
+          </summary>
+          <div className="mt-3 flex flex-wrap gap-3 text-body-sm text-secondary">
+            <span>
+              Draft id{" "}
+              <span className="font-mono text-foreground">
+                {draft.id?.slice(0, 8)}
+              </span>
+              <span className="ml-2 bracket-tag bracket-tag--neutral">
+                {draft.status.toUpperCase()}
+              </span>
+            </span>
+            <span>
+              Fitted{" "}
+              <span className="font-mono text-foreground">{draft.fittedAt}</span>
+            </span>
+            <span>
+              Active{" "}
+              <span className="font-mono text-foreground">
+                {formatActiveModelSource(active)}
+              </span>
+            </span>
+          </div>
+          {fb ? (
+            <p className="mt-3 font-mono text-xs text-secondary">
+              forward_bias all live {fmtBias(fb.all.live)} / new{" "}
+              {fmtBias(fb.all.new)} · clean {fmtBias(fb.clean.live)} /{" "}
+              {fmtBias(fb.clean.new)} · newest_10 {fmtBias(fb.newest10.live)} /{" "}
+              {fmtBias(fb.newest10.new)}
+            </p>
+          ) : null}
+        </details>
       </div>
     </main>
   );

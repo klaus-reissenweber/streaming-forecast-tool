@@ -6,6 +6,7 @@
  *   attributed_streams → est_attributed_streams
  *   spend → spend_usd
  *   clicks → link_clicks (Meta only)
+ *   linkfire_visits / linkfire_spotify_clicks → same DB names (Meta)
  */
 
 import type {
@@ -22,6 +23,8 @@ export const SPOTIFY_DB_COLUMNS = {
   spend: "spend_usd",
   reach: "reach",
   clicks: "clicks",
+  linkfire_visits: null,
+  linkfire_spotify_clicks: null,
   converted_listeners: "converted_listeners",
   attributed_streams: "est_attributed_streams",
   start_date: "start_date",
@@ -39,6 +42,8 @@ export const META_DB_COLUMNS = {
   spend: "spend_usd",
   reach: "reach",
   clicks: "link_clicks",
+  linkfire_visits: "linkfire_visits",
+  linkfire_spotify_clicks: "linkfire_spotify_clicks",
   converted_listeners: null,
   attributed_streams: null,
   start_date: "start_date",
@@ -64,6 +69,9 @@ const DB_OR_ALIAS_TO_CANONICAL: Record<string, CanonicalField> = {
   clicks: "clicks",
   impressions: "impressions",
   reach: "reach",
+  linkfire_visits: "linkfire_visits",
+  linkfire_spotify_clicks: "linkfire_spotify_clicks",
+  spotify_clicks: "linkfire_spotify_clicks",
   campaign_name: "campaign_name",
   campaign: "campaign_name",
   start_date: "start_date",
@@ -72,8 +80,6 @@ const DB_OR_ALIAS_TO_CANONICAL: Record<string, CanonicalField> = {
   objective: "objective",
   artist: "artist",
   release_key: "release_key",
-  // Not in canonical schema; ignored if proposed:
-  // campaign_days, days_release_to_campaign, active_streams_per_listener
 };
 
 export function normalizeToCanonicalField(
@@ -139,6 +145,8 @@ export function canonicalToMetaDbRow(
     [META_DB_COLUMNS.clicks]: row.clicks,
     [META_DB_COLUMNS.impressions]: row.impressions,
     [META_DB_COLUMNS.reach]: row.reach,
+    [META_DB_COLUMNS.linkfire_visits!]: row.linkfire_visits,
+    [META_DB_COLUMNS.linkfire_spotify_clicks!]: row.linkfire_spotify_clicks,
     start_date: row.start_date,
     end_date: row.end_date,
     derived_fields: extras.derived_fields,
@@ -148,7 +156,7 @@ export function canonicalToMetaDbRow(
 
 /**
  * After building a Spotify DB payload, verify required DB columns are present.
- * Uses real column names so a drift to `attributed_streams` fails loudly.
+ * Write path only requires identity + spend; model completeness is separate.
  */
 export function spotifyDbPayloadRejectReason(
   dbRow: Record<string, unknown>,
@@ -165,15 +173,6 @@ export function spotifyDbPayloadRejectReason(
   }
   const spend = Number(dbRow.spend_usd);
   if (!(spend > 0)) missing.push("spend_usd");
-  const listeners = Number(dbRow.converted_listeners);
-  if (!(listeners > 0)) missing.push("converted_listeners");
-  // Must be est_attributed_streams — not attributed_streams.
-  if (!("est_attributed_streams" in dbRow)) {
-    missing.push("est_attributed_streams");
-  } else {
-    const streams = Number(dbRow.est_attributed_streams);
-    if (!(streams > 0)) missing.push("est_attributed_streams");
-  }
   if ("attributed_streams" in dbRow) {
     return "payload has attributed_streams (use est_attributed_streams)";
   }

@@ -70,6 +70,8 @@ function setField(
     case "impressions":
     case "reach":
     case "clicks":
+    case "linkfire_visits":
+    case "linkfire_spotify_clicks":
     case "converted_listeners":
     case "attributed_streams":
       row[field] = parseNumber(raw);

@@ -36,11 +36,29 @@ export type AdReportCampaignRow = {
   impressions: number | null;
   reach: number | null;
   clicks: number | null;
+  /** Measured Linkfire Spotify clicks when present (Meta traffic). */
+  linkfireSpotifyClicks: number | null;
+  /** Predicted Spotify clicks from (spend/cpc)×click_share (Meta traffic). */
+  predictedSpotifyClicks: number | null;
   costPerStream: number | null;
   usableForModeling: boolean;
   derivedFields: string[];
   startDate: string | null;
   endDate: string | null;
+};
+
+/**
+ * Meta traffic funnel: predicted vs measured at the Spotify-click level.
+ * Streams stay estimates (measured clicks × SPL effective when available).
+ */
+export type AdReportMetaFunnelComparison = {
+  predictedSpotifyClicks: number;
+  measuredSpotifyClicks: number | null;
+  estimatedStreams: number;
+  streamsFromMeasuredClicks: boolean;
+  cpc: number;
+  spotifyClickShare: number;
+  streamsPerSpotifyClickEffective: number;
 };
 
 export type AdReportDailyPoint = {
@@ -82,6 +100,8 @@ export type AdReportMetricsSnapshot = {
   };
   channels: AdReportChannelSnapshot[];
   campaigns: AdReportCampaignRow[];
+  /** Present when Meta traffic spend > 0. */
+  metaFunnelComparison: AdReportMetaFunnelComparison | null;
   charts: {
     spendByChannel: Array<{ channel: string; spend: number }>;
     forecastVsActualDaily: AdReportDailyPoint[];
