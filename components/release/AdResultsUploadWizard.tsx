@@ -7,6 +7,7 @@ import {
   confirmManualAdResults,
   parseAdResultsUpload,
   previewAdUploadGaps,
+  uploadAdCreative,
 } from "@/app/release/[id]/ad-upload/actions";
 import {
   CANONICAL_FIELDS,
@@ -31,6 +32,7 @@ import {
   manualDraftsHaveSpend,
   type ManualCampaignDraft,
 } from "@/lib/ad-upload/manual-rows";
+import type { UpsertedCampaignRef } from "@/lib/ad-upload/campaign-ref";
 import { formatCount } from "@/lib/format";
 
 type EntryMode = "manual" | "upload";
@@ -41,8 +43,8 @@ const FIELD_LABELS: Record<CanonicalField, string> = {
   impressions: "Impressions",
   reach: "Reach",
   clicks: "Clicks",
-  linkfire_visits: "Linkfire visits",
-  linkfire_spotify_clicks: "Linkfire Spotify clicks",
+  linkfire_visits: "Link visits",
+  linkfire_spotify_clicks: "Spotify clicks",
   converted_listeners: "Converted listeners",
   attributed_streams: "Streams",
   streams_per_listener: "Streams per listener",
@@ -131,6 +133,14 @@ export function AdResultsUploadWizard({
   const [reportPath, setReportPath] = useState<string | null>(null);
   const [reportUrl, setReportUrl] = useState<string | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [savedCampaigns, setSavedCampaigns] = useState<UpsertedCampaignRef[]>(
+    [],
+  );
+  const [savedReleaseKey, setSavedReleaseKey] = useState<string | null>(null);
+  const [creativeCaptions, setCreativeCaptions] = useState<
+    Record<string, string>
+  >({});
+  const [creativeStatus, setCreativeStatus] = useState<string | null>(null);
 
   const previewRows = useMemo(() => {
     if (!table) return [];
@@ -165,6 +175,9 @@ export function AdResultsUploadWizard({
     setDoneSummary(null);
     setReportPath(null);
     setReportUrl(null);
+    setSavedCampaigns([]);
+    setSavedReleaseKey(null);
+    setCreativeStatus(null);
   }
 
   function updateDraft(
@@ -219,6 +232,8 @@ export function AdResultsUploadWizard({
       );
       setReportPath(result.reportPath);
       setReportUrl(result.reportUrl);
+      setSavedCampaigns(result.campaigns);
+      setSavedReleaseKey(result.releaseKey);
       setLinkCopied(false);
       if (result.warnings.length > 0) {
         setError(result.warnings.join(" "));
@@ -337,11 +352,52 @@ export function AdResultsUploadWizard({
     );
     setReportPath(result.reportPath);
     setReportUrl(result.reportUrl);
+    setSavedCampaigns(result.campaigns);
+    setSavedReleaseKey(result.releaseKey);
     setLinkCopied(false);
     if (result.warnings.length > 0) {
       setError(result.warnings.join(" "));
     }
     setStep("done");
+  }
+
+  async function onUploadCreative(
+    campaign: UpsertedCampaignRef,
+    file: File | null,
+  ) {
+    if (!file || !savedReleaseKey) return;
+    setBusy(true);
+    setCreativeStatus(null);
+    setError(null);
+    try {
+      const buffer = await file.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      let binary = "";
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]!);
+      }
+      const base64 = btoa(binary);
+      const result = await uploadAdCreative({
+        releaseId,
+        releaseKey: savedReleaseKey,
+        campaignUid: campaign.campaignUid,
+        platform: campaign.platform,
+        caption: creativeCaptions[campaign.campaignUid] ?? "",
+        fileName: file.name,
+        contentType: file.type || "image/jpeg",
+        base64,
+      });
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
+      setCreativeStatus(`Uploaded creative for ${campaign.campaignName}.`);
+      if (result.reportPath) setReportPath(result.reportPath);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
   }
 
   function setGapAction(rowIndex: number, actions: GapFillAction[]) {
@@ -409,9 +465,7 @@ export function AdResultsUploadWizard({
         <section className="space-y-4 rounded-instrument border border-border bg-surface p-4">
           <p className="text-body-sm text-secondary">
             Type campaign numbers from the dashboard. Only spend is required.
-            Incomplete model fields still save with{" "}
-            <span className="font-mono text-xs">usable_for_modeling=false</span>
-            .
+            Incomplete model fields still save as report-only.
           </p>
 
           <div className="grid gap-3 sm:grid-cols-3">
@@ -487,6 +541,18 @@ export function AdResultsUploadWizard({
                     onChange={(v) => updateDraft(index, { spend: v })}
                     inputMode="decimal"
                   />
+                  <FieldInput
+                    label="Start date"
+                    value={draft.start_date}
+                    onChange={(v) => updateDraft(index, { start_date: v })}
+                    type="date"
+                  />
+                  <FieldInput
+                    label="End date"
+                    value={draft.end_date}
+                    onChange={(v) => updateDraft(index, { end_date: v })}
+                    type="date"
+                  />
                   {manualPlatform === "meta" ? (
                     <>
                       <FieldInput
@@ -510,7 +576,7 @@ export function AdResultsUploadWizard({
                         inputMode="numeric"
                       />
                       <FieldInput
-                        label="Linkfire visits"
+                        label="Link visits"
                         value={draft.linkfire_visits}
                         onChange={(v) =>
                           updateDraft(index, { linkfire_visits: v })
@@ -518,7 +584,7 @@ export function AdResultsUploadWizard({
                         inputMode="numeric"
                       />
                       <FieldInput
-                        label="Linkfire Spotify clicks"
+                        label="Spotify clicks"
                         value={draft.linkfire_spotify_clicks}
                         onChange={(v) =>
                           updateDraft(index, {
@@ -565,7 +631,7 @@ export function AdResultsUploadWizard({
                         inputMode="numeric"
                       />
                       <FieldInput
-                        label="Streams (est_attributed_streams)"
+                        label="Streams"
                         value={draft.est_attributed_streams}
                         onChange={(v) =>
                           updateDraft(index, {
@@ -613,12 +679,10 @@ export function AdResultsUploadWizard({
         <section className="space-y-4 rounded-instrument border border-border bg-surface p-4">
           <p className="text-body-sm text-secondary">
             Accept any partner/label export — CSV, XLSX, PDF, or screenshot.
-            Only spend is required. Meta: impressions, clicks, streams, Linkfire
+            Only spend is required. Meta: impressions, clicks, streams, link
             visits / Spotify clicks optional. Spotify: reach, clicks, converted
             listeners, streams, saves optional. Rows without model-complete
-            fields still save with{" "}
-            <span className="font-mono text-xs">usable_for_modeling=false</span>
-            .
+            fields still save as report-only.
           </p>
           <label className="block">
             <span className="text-label text-muted">Partner / label</span>
@@ -1028,6 +1092,70 @@ export function AdResultsUploadWizard({
               </div>
             </div>
           ) : null}
+
+          {savedCampaigns.length > 0 ? (
+            <div className="space-y-3 rounded border border-border-subtle bg-canvas p-3">
+              <div>
+                <p className="text-label text-muted">Creatives (optional)</p>
+                <p className="mt-1 text-caption text-secondary">
+                  Upload one or more images per campaign. They appear on the
+                  report next to spend, impressions, clicks, and CTR.
+                </p>
+              </div>
+              {creativeStatus ? (
+                <p className="text-caption text-accent-readable">
+                  {creativeStatus}
+                </p>
+              ) : null}
+              {savedCampaigns.map((camp) => (
+                <div
+                  key={camp.campaignUid}
+                  className="rounded border border-border bg-surface p-3"
+                >
+                  <p className="text-body-sm font-medium text-foreground">
+                    {camp.campaignName}
+                    <span className="ml-2 text-caption font-normal text-muted">
+                      {camp.platform}
+                      {camp.format ? ` · ${camp.format}` : ""}
+                      {camp.objective ? ` · ${camp.objective}` : ""}
+                    </span>
+                  </p>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    <label className="block text-caption text-muted">
+                      Caption
+                      <input
+                        type="text"
+                        value={creativeCaptions[camp.campaignUid] ?? ""}
+                        onChange={(e) =>
+                          setCreativeCaptions((prev) => ({
+                            ...prev,
+                            [camp.campaignUid]: e.target.value,
+                          }))
+                        }
+                        placeholder="Optional label"
+                        className="mt-1 w-full rounded border border-border bg-canvas px-2 py-1.5 text-body-sm text-foreground"
+                      />
+                    </label>
+                    <label className="block text-caption text-muted">
+                      Image
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        disabled={busy}
+                        onChange={(e) => {
+                          const f = e.target.files?.[0] ?? null;
+                          void onUploadCreative(camp, f);
+                          e.target.value = "";
+                        }}
+                        className="mt-1 block w-full text-body-sm text-secondary file:mr-3 file:rounded file:border-0 file:bg-bracket-bg file:px-3 file:py-1.5 file:text-body-sm file:font-medium file:text-foreground"
+                      />
+                    </label>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
+
           <div className="flex flex-wrap gap-3 text-sm font-medium">
             <Link
               href={`/release/${releaseId}`}
@@ -1043,6 +1171,9 @@ export function AdResultsUploadWizard({
                 setDoneSummary(null);
                 setReportPath(null);
                 setReportUrl(null);
+                setSavedCampaigns([]);
+                setSavedReleaseKey(null);
+                setCreativeStatus(null);
                 setError(null);
                 setFile(null);
                 setManualDrafts([emptyManualDraft()]);
@@ -1089,18 +1220,20 @@ function FieldInput({
   value,
   onChange,
   inputMode,
+  type = "text",
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   inputMode?: "decimal" | "numeric" | "text";
+  type?: "text" | "date";
 }) {
   return (
     <label className="block text-body-sm">
       <span className="text-label text-muted">{label}</span>
       <input
-        type="text"
-        inputMode={inputMode}
+        type={type}
+        inputMode={type === "date" ? undefined : inputMode}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="mt-1 w-full rounded border border-border bg-surface px-2 py-1.5 font-mono text-xs text-foreground"

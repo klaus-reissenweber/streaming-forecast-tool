@@ -3,12 +3,12 @@
  *
  * Field sets:
  *   Meta:    spend (required), impressions, clicks, streams,
- *            linkfire_visits, linkfire_spotify_clicks
+ *            linkfire_visits, linkfire_spotify_clicks, start/end dates
  *   Spotify: spend (required), format, reach, clicks, converted_listeners,
- *            streams (est_attributed_streams), saves
+ *            streams (est_attributed_streams), saves, start/end dates
  *
- * Form field est_attributed_streams / streams map to canonical attributed_streams
- * (Spotify → DB est_attributed_streams; Meta → DB linkfire_streams).
+ * Flight dates map to existing ad_* start_date / end_date columns
+ * (same as the file-upload path).
  */
 
 import {
@@ -34,6 +34,10 @@ export type ManualCampaignDraft = {
   /** Spotify attributed streams → canonical attributed_streams. */
   est_attributed_streams: string;
   saves: string;
+  /** YYYY-MM-DD → ad_* start_date */
+  start_date: string;
+  /** YYYY-MM-DD → ad_* end_date */
+  end_date: string;
 };
 
 export function emptyManualDraft(): ManualCampaignDraft {
@@ -50,6 +54,8 @@ export function emptyManualDraft(): ManualCampaignDraft {
     converted_listeners: "",
     est_attributed_streams: "",
     saves: "",
+    start_date: "",
+    end_date: "",
   };
 }
 
@@ -58,6 +64,14 @@ function parseOptionalNumber(raw: string): number | null {
   if (cleaned === "" || cleaned === "—" || cleaned === "-") return null;
   const n = Number(cleaned);
   return Number.isFinite(n) ? n : null;
+}
+
+/** Accept HTML date input values (YYYY-MM-DD) or blank. */
+function parseOptionalDate(raw: string): string | null {
+  const s = String(raw ?? "").trim();
+  if (!s) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  return null;
 }
 
 /**
@@ -82,6 +96,8 @@ export function manualDraftsToCanonicalRows(options: {
     row.spend = parseOptionalNumber(draft.spend);
     row.artist = options.artist.trim() || null;
     row.release_key = options.releaseKey.trim() || null;
+    row.start_date = parseOptionalDate(draft.start_date);
+    row.end_date = parseOptionalDate(draft.end_date);
 
     if (options.platform === "meta") {
       row.objective = objective;

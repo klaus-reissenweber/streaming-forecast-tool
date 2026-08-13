@@ -134,7 +134,7 @@ export function computeGapNeeds(
     ) {
       benchmarks.converted_listeners = {
         value: Math.round(row.spend / cpl),
-        label: `spend ÷ CPL[${format}] (${cpl.toFixed(2)})`,
+        label: `spend ÷ cost per listener [${format}] (${cpl.toFixed(2)})`,
       };
     }
     if (unique.includes("attributed_streams")) {
@@ -145,7 +145,7 @@ export function computeGapNeeds(
       if (listeners != null && listeners > 0) {
         benchmarks.attributed_streams = {
           value: Math.round(listeners * spl),
-          label: `converted_listeners × SPL (${spl.toFixed(2)})`,
+          label: `listeners × streams per listener (${spl.toFixed(2)})`,
         };
       }
     }
@@ -154,7 +154,7 @@ export function computeGapNeeds(
       if (cpc > 0) {
         benchmarks.clicks = {
           value: Math.round(row.spend / cpc),
-          label: `spend ÷ CPC (${cpc.toFixed(2)})`,
+          label: `spend ÷ cost per click (${cpc.toFixed(2)})`,
         };
       }
     }

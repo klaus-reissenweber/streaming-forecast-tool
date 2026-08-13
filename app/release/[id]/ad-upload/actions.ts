@@ -28,9 +28,15 @@ import {
   saveSourceProfile,
 } from "@/lib/ad-upload/source-profiles";
 import {
+  listCreativesForReleaseKey,
+  uploadCampaignCreative,
+  type AdCreativeRecord,
+} from "@/lib/ad-upload/creatives";
+import {
   manualDraftsToCanonicalRows,
   type ManualCampaignDraft,
 } from "@/lib/ad-upload/manual-rows";
+import type { UpsertedCampaignRef } from "@/lib/ad-upload/campaign-ref";
 import { upsertCanonicalRows } from "@/lib/ad-upload/upsert";
 import { generateOrRefreshAdReport } from "@/lib/ad-report/generate";
 import { requireAllowedUser } from "@/lib/auth/require-allowed-user";
@@ -72,6 +78,8 @@ export type ConfirmUploadResult =
       profileSaved: boolean;
       reportUrl: string | null;
       reportPath: string | null;
+      campaigns: UpsertedCampaignRef[];
+      releaseKey: string;
     }
   | { success: false; error: string };
 
@@ -339,6 +347,8 @@ export async function confirmManualAdResults(input: {
       profileSaved: false,
       reportUrl,
       reportPath,
+      campaigns: result.campaigns,
+      releaseKey,
     };
   } catch (err) {
     return {
@@ -437,7 +447,93 @@ export async function confirmAdResultsUpload(input: {
       profileSaved,
       reportUrl,
       reportPath,
+      campaigns: result.campaigns,
+      releaseKey: releaseKeyFromTrackName(release.track_name),
     };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+/** Attach a creative image to a campaign after ad rows are saved. */
+export async function uploadAdCreative(input: {
+  releaseId: string;
+  releaseKey: string;
+  campaignUid: string;
+  platform: "spotify" | "meta";
+  caption?: string;
+  fileName: string;
+  contentType: string;
+  base64: string;
+}): Promise<
+  | { success: true; creative: AdCreativeRecord; reportPath: string | null }
+  | { success: false; error: string }
+> {
+  const auth = await requireAllowedUser();
+  if (!auth.ok) return { success: false, error: auth.error };
+  if (!isValidReleaseId(input.releaseId)) {
+    return { success: false, error: "Invalid release id." };
+  }
+  if (!input.campaignUid?.trim() || !input.releaseKey?.trim()) {
+    return { success: false, error: "Missing campaign identity." };
+  }
+  if (input.platform !== "spotify" && input.platform !== "meta") {
+    return { success: false, error: "Invalid platform." };
+  }
+
+  try {
+    const binary = Buffer.from(input.base64, "base64");
+    const creative = await uploadCampaignCreative({
+      releaseKey: input.releaseKey.trim(),
+      campaignUid: input.campaignUid.trim(),
+      platform: input.platform,
+      fileName: input.fileName,
+      contentType: input.contentType,
+      bytes: binary.buffer.slice(
+        binary.byteOffset,
+        binary.byteOffset + binary.byteLength,
+      ),
+      caption: input.caption ?? null,
+    });
+
+    let reportPath: string | null = null;
+    try {
+      const report = await generateOrRefreshAdReport(input.releaseId);
+      reportPath = report.path;
+      revalidatePath(report.path);
+    } catch {
+      // Creative saved; report refresh is best-effort.
+    }
+    revalidatePath(`/release/${input.releaseId}/ad-upload`);
+    return { success: true, creative, reportPath };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+export async function listAdCreativesForRelease(input: {
+  releaseId: string;
+}): Promise<
+  | { success: true; creatives: AdCreativeRecord[]; releaseKey: string }
+  | { success: false; error: string }
+> {
+  const auth = await requireAllowedUser();
+  if (!auth.ok) return { success: false, error: auth.error };
+  if (!isValidReleaseId(input.releaseId)) {
+    return { success: false, error: "Invalid release id." };
+  }
+  const release = await loadRelease(input.releaseId);
+  if (!release) return { success: false, error: "Release not found." };
+  const releaseKey = releaseKeyFromTrackName(release.track_name);
+  try {
+    const creatives = await listCreativesForReleaseKey(releaseKey);
+    return { success: true, creatives, releaseKey };
   } catch (err) {
     return {
       success: false,

@@ -2,6 +2,10 @@ import {
   ForecastVsActualChart,
   SpendByChannelChart,
 } from "@/components/report/AdReportCharts";
+import {
+  MetaLogo,
+  SpotifyLogo,
+} from "@/components/report/brand/PlatformLogos";
 import { SaveAsPdfButton } from "@/components/report/SaveAsPdfButton";
 import type {
   AdReportChannelSnapshot,
@@ -34,6 +38,13 @@ function fmtUsdOrDash(v: number | null | undefined, decimals = 2): string {
 function fmtCountOrDash(v: number | null | undefined): string {
   if (v == null || !Number.isFinite(v)) return "—";
   return formatCount(v);
+}
+
+function formatSignedPct(v: number | null | undefined, decimals = 0): string {
+  if (v == null || !Number.isFinite(v)) return "—";
+  const rounded = Number(v.toFixed(decimals));
+  const sign = rounded > 0 ? "+" : "";
+  return `${sign}${formatPercent(rounded, decimals)}`;
 }
 
 /** Show captured metrics only — never a bare 0 for uncaptured fields. */
@@ -93,6 +104,99 @@ function ChannelMetric({
   );
 }
 
+/**
+ * Labeled predicted/forecast vs actual comparison.
+ * Measured/actual is emphasized; model/forecast stays secondary.
+ */
+function LabeledComparison({
+  title,
+  predictedLabel,
+  predictedValue,
+  actualLabel,
+  actualValue,
+  actualEmpty,
+  variancePct,
+  predictedCaption,
+  predictedTone = "model",
+}: {
+  title: string;
+  predictedLabel: string;
+  predictedValue: string;
+  actualLabel: string;
+  actualValue: string;
+  actualEmpty?: boolean;
+  variancePct: number | null;
+  predictedCaption?: string;
+  predictedTone?: "model" | "forecast";
+}) {
+  const variancePositive =
+    variancePct != null ? variancePct >= 0 : null;
+
+  return (
+    <section
+      className="rounded-instrument border border-border bg-surface p-6"
+      aria-label={title}
+    >
+      <p className="text-label text-muted">{title}</p>
+      <dl className="mt-4 space-y-4">
+        <div
+          className={
+            predictedTone === "model"
+              ? "rounded border border-border-subtle bg-canvas/60 px-3 py-3"
+              : "px-0 py-0"
+          }
+        >
+          <dt className="text-xs uppercase tracking-wide text-muted">
+            {predictedLabel}
+          </dt>
+          <dd
+            className={`mt-1 font-serif tabular-nums ${
+              predictedTone === "model"
+                ? "text-2xl font-medium text-secondary sm:text-3xl"
+                : "text-3xl font-semibold text-foreground sm:text-4xl"
+            }`}
+          >
+            {predictedValue}
+          </dd>
+          {predictedCaption ? (
+            <p className="mt-1 text-caption text-muted">{predictedCaption}</p>
+          ) : null}
+        </div>
+        <div>
+          <dt className="text-xs uppercase tracking-wide text-muted">
+            {actualLabel}
+          </dt>
+          <dd
+            className={`mt-1 font-serif font-semibold tabular-nums ${
+              actualEmpty
+                ? "text-3xl text-muted sm:text-4xl"
+                : "text-3xl text-foreground sm:text-4xl"
+            }`}
+          >
+            {actualValue}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs uppercase tracking-wide text-muted">
+            Variance
+          </dt>
+          <dd
+            className={`mt-1 font-serif text-3xl font-semibold tabular-nums sm:text-4xl ${
+              variancePositive == null
+                ? "text-muted"
+                : variancePositive
+                  ? "text-semantic-positive"
+                  : "text-semantic-negative"
+            }`}
+          >
+            {formatSignedPct(variancePct, 0)}
+          </dd>
+        </div>
+      </dl>
+    </section>
+  );
+}
+
 function isSpotifyChannel(id: AdReportChannelSnapshot["id"]): boolean {
   return id === "marquee" || id === "showcase";
 }
@@ -118,14 +222,21 @@ export function AdReportDashboard({
     channels,
     campaigns,
     metaFunnelComparison = null,
+    hasCreatives = false,
   } = snapshot;
-  const deltaPositive =
-    headline.delta != null ? headline.delta >= 0 : null;
-  const savesDeltaPositive =
-    headline.savesDelta != null ? headline.savesDelta >= 0 : null;
 
   const forecastSaves = headline.forecastSaves ?? null;
   const actualSaves = headline.actualSaves ?? null;
+  const streamsVariance =
+    headline.variancePct ??
+    (headline.pctOfForecast != null && headline.actualStreams != null
+      ? headline.pctOfForecast - 100
+      : null);
+  const savesVariance =
+    headline.savesVariancePct ??
+    (headline.savesPctOfForecast != null && actualSaves != null
+      ? headline.savesPctOfForecast - 100
+      : null);
 
   const paidKpis: Array<{ label: string; value: string }> = [
     { label: "Spend", value: formatUsd(paid.totalSpend, 0) },
@@ -156,6 +267,9 @@ export function AdReportDashboard({
 
   const spotifyChannels = channels.filter((ch) => isSpotifyChannel(ch.id));
   const metaChannels = channels.filter((ch) => isMetaChannel(ch.id));
+  const campaignsWithCreatives = campaigns.filter(
+    (c) => (c.creatives?.length ?? 0) > 0,
+  );
 
   return (
     <div className="ad-report mx-auto max-w-5xl px-5 py-8 print:max-w-none print:px-0 print:py-0">
@@ -171,7 +285,11 @@ export function AdReportDashboard({
               </span>
             </h1>
             <p className="mt-1 text-body-sm text-secondary">
-              {title} · Campaign {campaignWindow.label} · Release{" "}
+              {title}
+              {campaignWindow.label
+                ? ` · Campaign ${campaignWindow.label}`
+                : ""}
+              {" · Release "}
               {formatReleaseDate(release.releaseDate)}
             </p>
             <p className="mt-1 text-xs text-muted">
@@ -183,126 +301,49 @@ export function AdReportDashboard({
         </div>
       </header>
 
-      {/* Headline: forecast vs actual streams */}
-      <section
-        className="mt-8 rounded-instrument border border-border bg-surface p-6 sm:p-8"
-        aria-label="Streaming forecast vs actual"
-      >
-        <p className="text-label text-muted">Forecast vs actual streams</p>
-        <div className="mt-4 grid gap-6 sm:grid-cols-3">
-          <div>
-            <p className="text-xs uppercase tracking-wide text-muted">
-              Locked forecast
-            </p>
-            <p className="mt-1 font-serif text-4xl font-semibold tabular-nums text-foreground sm:text-5xl">
-              {formatCompactNumber(headline.forecastStreams)}
-            </p>
-            <p className="mt-1 text-body-sm text-secondary">
-              {formatCount(headline.forecastStreams)} streams
-            </p>
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-wide text-muted">
-              Actual to date
-              {headline.actualDaysEntered > 0
-                ? ` · ${headline.actualDaysEntered}d entered`
-                : ""}
-            </p>
-            <p className="mt-1 font-serif text-4xl font-semibold tabular-nums text-foreground sm:text-5xl">
-              {headline.actualStreams == null
-                ? "—"
-                : formatCompactNumber(headline.actualStreams)}
-            </p>
-            <p className="mt-1 text-body-sm text-secondary">
-              {headline.actualStreams == null
-                ? "No daily data yet"
-                : `${formatCount(headline.actualStreams)} streams`}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-wide text-muted">
-              vs forecast
-            </p>
-            <p
-              className={`mt-1 font-serif text-4xl font-semibold tabular-nums sm:text-5xl ${
-                deltaPositive == null
-                  ? "text-muted"
-                  : deltaPositive
-                    ? "text-semantic-positive"
-                    : "text-semantic-negative"
-              }`}
-            >
-              {headline.pctOfForecast == null
-                ? "—"
-                : formatPercent(headline.pctOfForecast, 0)}
-            </p>
-            <p className="mt-1 text-body-sm text-secondary">
-              {headline.delta == null
-                ? "Awaiting actuals"
-                : `${headline.delta >= 0 ? "+" : ""}${formatCount(headline.delta)} streams`}
-            </p>
-          </div>
-        </div>
-        <MetricFoot />
-      </section>
+      <div className="mt-8 grid gap-6 lg:grid-cols-1">
+        <LabeledComparison
+          title="Streams"
+          predictedLabel="Locked forecast"
+          predictedValue={formatCompactNumber(headline.forecastStreams)}
+          actualLabel="Actually measured"
+          actualValue={
+            headline.actualStreams == null
+              ? "—"
+              : formatCompactNumber(headline.actualStreams)
+          }
+          actualEmpty={headline.actualStreams == null}
+          variancePct={streamsVariance}
+          predictedTone="forecast"
+          predictedCaption={
+            headline.actualDaysEntered > 0
+              ? `${formatCount(headline.forecastStreams)} forecast · actual covers ${headline.actualDaysEntered}d entered`
+              : `${formatCount(headline.forecastStreams)} forecast streams`
+          }
+        />
+      </div>
+      <MetricFoot />
 
-      {/* Saves: locked forecast vs Spotify campaign saves when captured */}
       {forecastSaves != null ? (
-        <section
-          className="mt-6 rounded-instrument border border-border bg-surface p-6"
-          aria-label="Saves forecast vs actual"
-        >
-          <p className="text-label text-muted">Forecast vs actual saves</p>
-          <div className="mt-4 grid gap-6 sm:grid-cols-3">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted">
-                Locked forecast
-              </p>
-              <p className="mt-1 font-serif text-3xl font-semibold tabular-nums text-foreground">
-                {formatCompactNumber(forecastSaves)}
-              </p>
-              <p className="mt-1 text-body-sm text-secondary">
-                {formatCount(forecastSaves)} saves
-              </p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted">
-                Campaign actual
-              </p>
-              <p className="mt-1 font-serif text-3xl font-semibold tabular-nums text-foreground">
-                {actualSaves == null ? "—" : formatCompactNumber(actualSaves)}
-              </p>
-              <p className="mt-1 text-body-sm text-secondary">
-                {actualSaves == null
-                  ? "No Spotify saves captured"
-                  : `${formatCount(actualSaves)} saves`}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted">
-                vs forecast
-              </p>
-              <p
-                className={`mt-1 font-serif text-3xl font-semibold tabular-nums ${
-                  savesDeltaPositive == null
-                    ? "text-muted"
-                    : savesDeltaPositive
-                      ? "text-semantic-positive"
-                      : "text-semantic-negative"
-                }`}
-              >
-                {headline.savesPctOfForecast == null
-                  ? "—"
-                  : formatPercent(headline.savesPctOfForecast, 0)}
-              </p>
-              <p className="mt-1 text-body-sm text-secondary">
-                {headline.savesDelta == null
-                  ? "Awaiting campaign saves"
-                  : `${headline.savesDelta >= 0 ? "+" : ""}${formatCount(headline.savesDelta)} saves`}
-              </p>
-            </div>
-          </div>
-        </section>
+        <div className="mt-6">
+          <LabeledComparison
+            title="Saves"
+            predictedLabel="Locked forecast"
+            predictedValue={formatCompactNumber(forecastSaves)}
+            actualLabel="Actually measured"
+            actualValue={
+              actualSaves == null ? "—" : formatCompactNumber(actualSaves)
+            }
+            actualEmpty={actualSaves == null}
+            variancePct={savesVariance}
+            predictedTone="forecast"
+            predictedCaption={
+              actualSaves == null
+                ? "Campaign saves not yet captured"
+                : `${formatCount(forecastSaves)} forecast saves`
+            }
+          />
+        </div>
       ) : null}
 
       <section className="mt-6" aria-label="Forecast vs actual chart">
@@ -311,7 +352,6 @@ export function AdReportDashboard({
         />
       </section>
 
-      {/* Paid KPIs */}
       <section className="mt-6" aria-label="Paid KPIs">
         <h2 className="font-serif text-section text-foreground">Paid KPIs</h2>
         <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -337,51 +377,83 @@ export function AdReportDashboard({
 
       {metaFunnelComparison ? (
         <section className="mt-8" aria-label="Meta funnel comparison">
-          <h2 className="font-serif text-section text-foreground">
-            Meta funnel comparison
-          </h2>
-          <p className="mt-1 text-body-sm text-secondary">
-            Predicted vs measured at the Spotify-click level (same units).
+          <div className="mb-3 flex items-center gap-2">
+            <MetaLogo className="h-5 w-auto" />
+            <h2 className="font-serif text-section text-foreground">
+              Meta funnel comparison
+            </h2>
+          </div>
+          <p className="text-body-sm text-secondary">
+            Spotify clicks — model prediction vs measured Linkfire clicks.
           </p>
-          <dl className="mt-3 space-y-3 rounded-instrument border border-border bg-surface p-4 text-body-sm">
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <dt className="text-muted">Spotify clicks</dt>
-              <dd className="font-mono tabular-nums text-foreground">
-                {formatCount(metaFunnelComparison.predictedSpotifyClicks)}
-                {" → "}
-                {metaFunnelComparison.measuredSpotifyClicks == null
-                  ? "—"
-                  : formatCount(metaFunnelComparison.measuredSpotifyClicks)}
-              </dd>
-            </div>
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <dt className="text-muted">Est. streams</dt>
-              <dd className="font-mono text-foreground">
-                <MetricValue
-                  value={metaFunnelComparison.estimatedStreams}
-                  estimate
-                />
-              </dd>
-            </div>
-            <p className="text-caption text-muted">
-              Predicted clicks = (spend ÷ CPC{" "}
-              {formatUsd(metaFunnelComparison.cpc, 2)}) × click share{" "}
-              {formatPercent(metaFunnelComparison.spotifyClickShare * 100, 0)}
-              {metaFunnelComparison.streamsFromMeasuredClicks
-                ? " · streams from measured clicks × SPL"
-                : " · streams from funnel"}
-            </p>
-          </dl>
+          <div className="mt-3 rounded-instrument border border-border bg-surface p-4">
+            <p className="text-label text-muted">Spotify clicks</p>
+            <dl className="mt-3 space-y-4 text-body-sm">
+              <div className="rounded border border-border-subtle bg-canvas/60 px-3 py-3">
+                <dt className="text-xs uppercase tracking-wide text-muted">
+                  Model predicted
+                </dt>
+                <dd className="mt-1 font-mono text-2xl tabular-nums text-secondary">
+                  {formatCount(metaFunnelComparison.predictedSpotifyClicks)}
+                </dd>
+                <p className="mt-1 text-caption text-muted">
+                  Predicted from (spend ÷ CPC{" "}
+                  {formatUsd(metaFunnelComparison.cpc, 2)}) × click share{" "}
+                  {formatPercent(
+                    metaFunnelComparison.spotifyClickShare * 100,
+                    0,
+                  )}
+                </p>
+              </div>
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-muted">
+                  Actually measured
+                </dt>
+                <dd className="mt-1 font-mono text-2xl font-semibold tabular-nums text-foreground">
+                  {metaFunnelComparison.measuredSpotifyClicks == null
+                    ? "—"
+                    : formatCount(metaFunnelComparison.measuredSpotifyClicks)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-muted">
+                  Variance
+                </dt>
+                <dd
+                  className={`mt-1 font-mono text-2xl font-semibold tabular-nums ${
+                    metaFunnelComparison.clicksVariancePct == null
+                      ? "text-muted"
+                      : metaFunnelComparison.clicksVariancePct >= 0
+                        ? "text-semantic-positive"
+                        : "text-semantic-negative"
+                  }`}
+                >
+                  {formatSignedPct(metaFunnelComparison.clicksVariancePct, 0)}
+                </dd>
+              </div>
+            </dl>
+            {metaFunnelComparison.estimatedStreams > 0 ? (
+              <p className="mt-4 border-t border-border-subtle pt-3 text-caption text-muted">
+                Est. streams {formatCount(metaFunnelComparison.estimatedStreams)}
+                <sup>*</sup>
+                {metaFunnelComparison.streamsFromMeasuredClicks
+                  ? ` · from measured clicks × ${metaFunnelComparison.streamsPerSpotifyClickEffective.toFixed(2)} streams/click`
+                  : " · from funnel estimate"}
+              </p>
+            ) : null}
+          </div>
         </section>
       ) : null}
 
-      {/* Spotify channels — field set: spend, reach, clicks, listeners, streams, saves, CPS */}
       {spotifyChannels.length > 0 ? (
         <section className="mt-8" aria-label="Spotify channels">
-          <h2 className="font-serif text-section text-foreground">
-            Spotify
-          </h2>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <div className="mb-3 flex items-center gap-2">
+            <SpotifyLogo className="h-5 w-5" />
+            <h2 className="font-serif text-section text-foreground">
+              Spotify
+            </h2>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
             {spotifyChannels.map((ch) => (
               <article
                 key={ch.id}
@@ -419,11 +491,13 @@ export function AdReportDashboard({
         </section>
       ) : null}
 
-      {/* Meta channels — field set: spend, impressions, clicks, streams, linkfire, CPS */}
       {metaChannels.length > 0 ? (
         <section className="mt-8" aria-label="Meta channels">
-          <h2 className="font-serif text-section text-foreground">Meta</h2>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <div className="mb-3 flex items-center gap-2">
+            <MetaLogo className="h-5 w-auto" />
+            <h2 className="font-serif text-section text-foreground">Meta</h2>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
             {metaChannels.map((ch) => (
               <article
                 key={ch.id}
@@ -449,11 +523,11 @@ export function AdReportDashboard({
                   <ChannelMetric label="Impressions" value={ch.impressions} />
                   <ChannelMetric label="Clicks" value={ch.clicks} />
                   <ChannelMetric
-                    label="Linkfire visits"
+                    label="Link visits"
                     value={ch.linkfireVisits}
                   />
                   <ChannelMetric
-                    label="Linkfire Spotify clicks"
+                    label="Spotify clicks"
                     value={ch.linkfireSpotifyClicks}
                   />
                   <ChannelMetric
@@ -468,7 +542,78 @@ export function AdReportDashboard({
         </section>
       ) : null}
 
-      {/* Per-campaign table */}
+      {hasCreatives && campaignsWithCreatives.length > 0 ? (
+        <section className="mt-8" aria-label="Creatives by campaign">
+          <h2 className="font-serif text-section text-foreground">
+            Creatives
+          </h2>
+          <p className="mt-1 text-body-sm text-secondary">
+            Performance next to the creative that produced it.
+          </p>
+          <div className="mt-3 space-y-4">
+            {campaignsWithCreatives.map((c, i) => (
+              <article
+                key={`${c.campaignUid ?? c.campaignName}-${i}`}
+                className="rounded-instrument border border-border bg-surface p-4"
+              >
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <h3 className="font-serif text-sm font-semibold text-foreground">
+                    {c.campaignName}
+                  </h3>
+                  <p className="text-caption text-muted">
+                    {c.channel.replace(/_/g, " ")}
+                  </p>
+                </div>
+                <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-body-sm sm:grid-cols-4">
+                  <div>
+                    <dt className="text-muted">Spend</dt>
+                    <dd className="font-mono tabular-nums">
+                      {formatUsd(c.spend, 0)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted">Impressions</dt>
+                    <dd className="font-mono tabular-nums">
+                      {fmtCountOrDash(c.impressions)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted">Clicks</dt>
+                    <dd className="font-mono tabular-nums">
+                      {fmtCountOrDash(c.clicks)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted">CTR</dt>
+                    <dd className="font-mono tabular-nums">
+                      {c.ctr == null ? "—" : formatPercent(c.ctr, 2)}
+                    </dd>
+                  </div>
+                </dl>
+                <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                  {c.creatives.map((asset) => (
+                    <li key={asset.id} className="min-w-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={asset.url}
+                        alt={asset.caption || "Ad creative"}
+                        className="aspect-square w-full rounded border border-border-subtle object-cover bg-canvas"
+                        loading="lazy"
+                      />
+                      {asset.caption ? (
+                        <p className="mt-1 truncate text-caption text-muted">
+                          {asset.caption}
+                        </p>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <section className="mt-8" aria-label="Per-campaign table">
         <h2 className="font-serif text-section text-foreground">
           Per-campaign

@@ -29,9 +29,17 @@ export type AdReportChannelSnapshot = {
   hasDerivedValues: boolean;
 };
 
+export type AdReportCreativeAsset = {
+  id: string;
+  url: string;
+  caption: string | null;
+};
+
 export type AdReportCampaignRow = {
   platform: "spotify" | "meta";
   channel: AdReportChannelId;
+  /** Stable uid for creative linking. */
+  campaignUid: string | null;
   campaignName: string;
   format: string | null;
   objective: string | null;
@@ -41,6 +49,8 @@ export type AdReportCampaignRow = {
   impressions: number | null;
   reach: number | null;
   clicks: number | null;
+  /** clicks / impressions when both captured. */
+  ctr: number | null;
   convertedListeners: number | null;
   saves: number | null;
   streamsPerListener: number | null;
@@ -54,6 +64,7 @@ export type AdReportCampaignRow = {
   derivedFields: string[];
   startDate: string | null;
   endDate: string | null;
+  creatives: AdReportCreativeAsset[];
 };
 
 /**
@@ -63,6 +74,8 @@ export type AdReportCampaignRow = {
 export type AdReportMetaFunnelComparison = {
   predictedSpotifyClicks: number;
   measuredSpotifyClicks: number | null;
+  /** (measured − predicted) / predicted × 100 when measured present. */
+  clicksVariancePct: number | null;
   estimatedStreams: number;
   streamsFromMeasuredClicks: boolean;
   cpc: number;
@@ -90,20 +103,25 @@ export type AdReportMetricsSnapshot = {
   campaignWindow: {
     startDate: string | null;
     endDate: string | null;
-    label: string;
+    /** Null when absent or a degenerate same-day range — omit from header. */
+    label: string | null;
   };
   headline: {
     forecastStreams: number;
     actualStreams: number | null;
     actualDaysEntered: number;
     delta: number | null;
+    /** Legacy: actual / forecast × 100. Prefer variancePct in UI. */
     pctOfForecast: number | null;
+    /** (actual − forecast) / forecast × 100 when actual present. */
+    variancePct: number | null;
     /** Locked week-1 saves forecast from the release. */
     forecastSaves: number;
     /** Sum of Spotify campaign saves when any campaign captured saves. */
     actualSaves: number | null;
     savesDelta: number | null;
     savesPctOfForecast: number | null;
+    savesVariancePct: number | null;
   };
   paid: {
     totalSpend: number;
@@ -119,6 +137,8 @@ export type AdReportMetricsSnapshot = {
   campaigns: AdReportCampaignRow[];
   /** Present when Meta traffic spend > 0. */
   metaFunnelComparison: AdReportMetaFunnelComparison | null;
+  /** True when any campaign has at least one creative. */
+  hasCreatives: boolean;
   charts: {
     spendByChannel: Array<{ channel: string; spend: number }>;
     forecastVsActualDaily: AdReportDailyPoint[];

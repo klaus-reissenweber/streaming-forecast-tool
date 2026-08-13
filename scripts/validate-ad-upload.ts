@@ -163,6 +163,8 @@ function main(): void {
         converted_listeners: "400",
         est_attributed_streams: "500",
         saves: "80",
+        start_date: "2026-08-01",
+        end_date: "2026-08-07",
       },
     ],
     artist: "LSDREAM",
@@ -174,6 +176,8 @@ function main(): void {
   );
   assert(manualSpotify[0]!.reach === 50000, "manual spotify reach");
   assert(manualSpotify[0]!.saves === 80, "manual spotify saves");
+  assert(manualSpotify[0]!.start_date === "2026-08-01", "manual start_date");
+  assert(manualSpotify[0]!.end_date === "2026-08-07", "manual end_date");
   const spotifyFilled = applyGapFill(manualSpotify, "spotify", {});
   assert(spotifyFilled[0]!.usable_for_modeling, "complete spotify usable");
   const write = toSpotifyRow(spotifyFilled[0]!, "Manual entry");
@@ -183,6 +187,8 @@ function main(): void {
     "manual write uses est_attributed_streams DB column",
   );
   assert(Number(write.row!.saves) === 80, "manual write includes saves");
+  assert(write.row!.start_date === "2026-08-01", "write start_date column");
+  assert(write.row!.end_date === "2026-08-07", "write end_date column");
   assert(
     write.row!.est_attributed_streams != null &&
       write.row!.streams_per_listener == null,

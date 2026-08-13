@@ -11,6 +11,7 @@ import type {
   AdUploadPlatform,
   CanonicalRow,
 } from "@/lib/ad-upload/canonical";
+import type { UpsertedCampaignRef } from "@/lib/ad-upload/campaign-ref";
 import {
   canonicalToMetaDbRow,
   canonicalToSpotifyDbRow,
@@ -18,6 +19,8 @@ import {
 } from "@/lib/ad-upload/column-map";
 import { spotifyRowRejectReason } from "@/lib/ad-upload/gap-fill";
 import { createServiceClient } from "@/lib/supabase/service";
+
+export type { UpsertedCampaignRef };
 
 /** Stable hash for synthetic ids (not format-scoped for Spotify). */
 export function campaignUid(parts: Array<string | null | undefined>): string {
@@ -141,6 +144,7 @@ export type UpsertAdUploadResult = {
   metaUpserted: number;
   skipped: number;
   errors: string[];
+  campaigns: UpsertedCampaignRef[];
 };
 
 const SPOTIFY_OPTIONAL_COLS = [
@@ -205,6 +209,7 @@ export async function upsertCanonicalRows(options: {
 
   const spotifyRows: Record<string, unknown>[] = [];
   const metaRows: Record<string, unknown>[] = [];
+  const campaigns: UpsertedCampaignRef[] = [];
 
   for (const row of options.rows) {
     if (row.skipped) {
@@ -230,6 +235,15 @@ export async function upsertCanonicalRows(options: {
         continue;
       }
       spotifyRows.push(mapped.row);
+      campaigns.push({
+        campaignUid: String(mapped.row.campaign_uid),
+        platform: "spotify",
+        campaignName:
+          row.campaign_name?.trim() ||
+          `${row.format ?? "spotify"} campaign`,
+        format: row.format,
+        objective: null,
+      });
     } else {
       const mapped = toMetaRow(row, options.sourcePartner);
       if (!mapped) {
@@ -239,6 +253,15 @@ export async function upsertCanonicalRows(options: {
         continue;
       }
       metaRows.push(mapped);
+      campaigns.push({
+        campaignUid: String(mapped.campaign_uid),
+        platform: "meta",
+        campaignName:
+          row.campaign_name?.trim() ||
+          `Meta ${row.objective ?? "traffic"}`,
+        format: null,
+        objective: row.objective,
+      });
     }
   }
 
@@ -315,5 +338,5 @@ export async function upsertCanonicalRows(options: {
     }
   }
 
-  return { spotifyUpserted, metaUpserted, skipped, errors };
+  return { spotifyUpserted, metaUpserted, skipped, errors, campaigns };
 }
