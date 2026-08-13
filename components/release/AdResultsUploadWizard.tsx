@@ -102,7 +102,6 @@ export function AdResultsUploadWizard({
   );
   const [manualObjective, setManualObjective] =
     useState<AdUploadObjective>("traffic");
-  const [manualPartner, setManualPartner] = useState("Manual entry");
   const [manualDrafts, setManualDrafts] = useState<ManualCampaignDraft[]>([
     emptyManualDraft(),
   ]);
@@ -211,7 +210,7 @@ export function AdResultsUploadWizard({
       const result = await confirmManualAdResults({
         releaseId,
         platform: manualPlatform,
-        partnerLabel: manualPartner,
+        partnerLabel: "Manual entry",
         objective: manualPlatform === "meta" ? manualObjective : null,
         drafts: manualDrafts,
       });
@@ -468,7 +467,7 @@ export function AdResultsUploadWizard({
             Incomplete model fields still save as report-only.
           </p>
 
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <ConstantSelect
               label="Platform"
               value={manualPlatform}
@@ -492,15 +491,6 @@ export function AdResultsUploadWizard({
                 }
               />
             ) : null}
-            <label className="block text-body-sm">
-              <span className="text-label text-muted">Source label</span>
-              <input
-                type="text"
-                value={manualPartner}
-                onChange={(e) => setManualPartner(e.target.value)}
-                className="mt-1 w-full rounded border border-border bg-canvas px-3 py-2 text-body-sm text-foreground"
-              />
-            </label>
           </div>
 
           <div className="space-y-4">
@@ -567,12 +557,6 @@ export function AdResultsUploadWizard({
                         label="Clicks"
                         value={draft.clicks}
                         onChange={(v) => updateDraft(index, { clicks: v })}
-                        inputMode="numeric"
-                      />
-                      <FieldInput
-                        label="Streams"
-                        value={draft.streams}
-                        onChange={(v) => updateDraft(index, { streams: v })}
                         inputMode="numeric"
                       />
                       <FieldInput
@@ -679,8 +663,8 @@ export function AdResultsUploadWizard({
         <section className="space-y-4 rounded-instrument border border-border bg-surface p-4">
           <p className="text-body-sm text-secondary">
             Accept any partner/label export — CSV, XLSX, PDF, or screenshot.
-            Only spend is required. Meta: impressions, clicks, streams, link
-            visits / Spotify clicks optional. Spotify: reach, clicks, converted
+            Only spend is required. Meta: impressions, clicks, link visits /
+            Spotify clicks optional. Spotify: reach, clicks, converted
             listeners, streams, saves optional. Rows without model-complete
             fields still save as report-only.
           </p>

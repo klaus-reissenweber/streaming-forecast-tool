@@ -136,7 +136,6 @@ function main(): void {
         spend: "250",
         impressions: "10000",
         clicks: "400",
-        streams: "1800",
         linkfire_spotify_clicks: "220",
       },
     ],
@@ -146,7 +145,10 @@ function main(): void {
   });
   const metaFilled = applyGapFill(manualMeta, "meta", {});
   assert(metaFilled[0]!.spend === 250, "manual meta spend");
-  assert(metaFilled[0]!.attributed_streams === 1800, "manual meta streams");
+  assert(
+    metaFilled[0]!.attributed_streams == null,
+    "manual meta does not write streams",
+  );
   assert(metaFilled[0]!.linkfire_spotify_clicks === 220, "manual lf clicks");
   assert(metaFilled[0]!.usable_for_modeling, "manual meta usable with clicks");
 

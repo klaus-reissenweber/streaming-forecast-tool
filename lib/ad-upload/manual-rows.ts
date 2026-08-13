@@ -2,13 +2,15 @@
  * Manual ad-results entry → CanonicalRow[] for the shared upsert path.
  *
  * Field sets:
- *   Meta:    spend (required), impressions, clicks, streams,
+ *   Meta:    spend (required), impressions, clicks,
  *            linkfire_visits, linkfire_spotify_clicks, start/end dates
  *   Spotify: spend (required), format, reach, clicks, converted_listeners,
  *            streams (est_attributed_streams), saves, start/end dates
  *
- * Flight dates map to existing ad_* start_date / end_date columns
- * (same as the file-upload path).
+ * Meta streams are not entered manually — report derives them from
+ * linkfire_spotify_clicks × streams_per_spotify_click_effective.
+ * Spotify streams map to canonical attributed_streams → DB est_attributed_streams.
+ * Flight dates map to existing ad_* start_date / end_date columns.
  */
 
 import {
@@ -24,8 +26,6 @@ export type ManualCampaignDraft = {
   spend: string;
   impressions: string;
   clicks: string;
-  /** Meta partner/Linkfire streams → canonical attributed_streams. */
-  streams: string;
   linkfire_visits: string;
   linkfire_spotify_clicks: string;
   format: "" | AdUploadFormat;
@@ -46,7 +46,6 @@ export function emptyManualDraft(): ManualCampaignDraft {
     spend: "",
     impressions: "",
     clicks: "",
-    streams: "",
     linkfire_visits: "",
     linkfire_spotify_clicks: "",
     format: "",
@@ -103,11 +102,11 @@ export function manualDraftsToCanonicalRows(options: {
       row.objective = objective;
       row.impressions = parseOptionalNumber(draft.impressions);
       row.clicks = parseOptionalNumber(draft.clicks);
-      row.attributed_streams = parseOptionalNumber(draft.streams);
       row.linkfire_visits = parseOptionalNumber(draft.linkfire_visits);
       row.linkfire_spotify_clicks = parseOptionalNumber(
         draft.linkfire_spotify_clicks,
       );
+      // Do not set attributed_streams from manual Meta entry.
     } else {
       row.format = draft.format || null;
       row.reach = parseOptionalNumber(draft.reach);

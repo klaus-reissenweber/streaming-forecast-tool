@@ -217,7 +217,7 @@ export async function proposeMapping(options: {
         system: `Map advertising export columns to a canonical schema.
 Canonical fields ONLY: ${CANONICAL_FIELDS.join(", ")}.
 Prefer primary upload fields:
-  Meta: spend, impressions, clicks, attributed_streams, linkfire_visits, linkfire_spotify_clicks
+  Meta: spend, impressions, clicks, linkfire_visits, linkfire_spotify_clicks
   Spotify: spend, reach, clicks, converted_listeners, attributed_streams, saves, streams_per_listener
 Never emit DB names (est_attributed_streams, spend_usd, link_clicks, active_streams_per_listener) — map those to attributed_streams, spend, clicks, streams_per_listener.
 Do not treat streams_per_listener as a substitute for attributed_streams — both may be present independently.

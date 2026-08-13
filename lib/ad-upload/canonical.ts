@@ -3,8 +3,9 @@
  * Everything maps into these fields before gap-fill + upsert.
  *
  * Upload surface (all optional except spend):
- *   Meta:     spend, impressions, clicks, attributed_streams,
+ *   Meta:     spend, impressions, clicks,
  *             linkfire_visits, linkfire_spotify_clicks
+ *             (attributed_streams optional on file upload only → linkfire_streams)
  *   Spotify:  spend, reach, clicks, converted_listeners,
  *             attributed_streams (→ est_attributed_streams), saves,
  *             streams_per_listener (optional; independent of attributed_streams)
@@ -38,7 +39,6 @@ export const META_UPLOAD_FIELDS = [
   "spend",
   "impressions",
   "clicks",
-  "attributed_streams",
   "linkfire_visits",
   "linkfire_spotify_clicks",
 ] as const satisfies readonly CanonicalField[];
