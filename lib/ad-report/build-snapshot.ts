@@ -23,6 +23,8 @@ import type { DailyDataPoint, ReleaseRecord } from "@/lib/map-release-row";
 import { coerceMetaObjective } from "@/lib/meta-objective";
 import { logActiveModelSource } from "@/lib/model/forecast-model";
 import { createServiceClient } from "@/lib/supabase/service";
+import { variancePct } from "@/lib/ad-report/windows";
+import { computeWeek1Actuals } from "@/lib/compute-week1-actuals";
 
 function num(v: unknown): number {
   const n = typeof v === "number" ? v : Number(v);
@@ -51,17 +53,6 @@ function cps(spend: number, streams: number | null): number | null {
   return spend / streams;
 }
 
-/** (actual − predicted) / predicted × 100. */
-function variancePct(
-  predicted: number,
-  actual: number | null,
-): number | null {
-  if (actual == null || !(predicted > 0) || !Number.isFinite(actual)) {
-    return null;
-  }
-  return ((actual - predicted) / predicted) * 100;
-}
-
 function ctrPct(
   clicks: number | null,
   impressions: number | null,
@@ -70,13 +61,60 @@ function ctrPct(
   return (clicks / impressions) * 100;
 }
 
-/** Add a captured metric into a running total; ignore null/absent. */
+/** Add a captured metric into a running total; ignore null and zero. */
 function addCaptured(
   current: number | null,
   value: number | null,
 ): number | null {
-  if (value == null) return current;
+  if (value == null || value === 0) return current;
   return (current ?? 0) + value;
+}
+
+function looksLikeCampaignUid(value: string): boolean {
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)) {
+    return true;
+  }
+  if (!/\s/.test(value) && value.length >= 12 && /[0-9]/.test(value)) {
+    return true;
+  }
+  return false;
+}
+
+function readableCampaignName(input: {
+  campaignName: string | null;
+  campaignUid: string | null;
+  platform: "spotify" | "meta";
+  format: string | null;
+  objective: string | null;
+}): string {
+  const named = input.campaignName;
+  if (named && !looksLikeCampaignUid(named)) {
+    return named;
+  }
+  if (input.format === "marquee") return "Marquee";
+  if (input.format === "showcase") return "Showcase";
+  if (input.objective === "awareness") return "Meta awareness";
+  if (input.objective === "traffic") return "Meta traffic";
+  if (input.platform === "spotify") return "Spotify";
+  return "Meta";
+}
+
+function isBlankCampaign(row: AdReportCampaignRow): boolean {
+  const hasSpend = row.spend > 0;
+  const hasResult =
+    (row.streams ?? 0) > 0 ||
+    (row.clicks ?? 0) > 0 ||
+    (row.impressions ?? 0) > 0 ||
+    (row.reach ?? 0) > 0 ||
+    (row.saves ?? 0) > 0 ||
+    (row.linkfireSpotifyClicks ?? 0) > 0 ||
+    (row.linkfireVisits ?? 0) > 0;
+  return !hasSpend && !hasResult;
+}
+
+function positiveMetric(value: number | null | undefined): number | null {
+  if (value == null || !Number.isFinite(value) || value === 0) return null;
+  return value;
 }
 
 type SpotifyRow = Record<string, unknown>;
@@ -218,16 +256,10 @@ export async function buildAdReportSnapshot(
     { releaseDate: release.release_date },
   );
 
-  let actualStreamsSum = 0;
-  let actualDaysEntered = 0;
-  for (const row of dailyData) {
-    if (row.streams != null && row.streams >= 0) {
-      actualStreamsSum += row.streams;
-      actualDaysEntered += 1;
-    }
-  }
+  const wk1 = computeWeek1Actuals(dailyData);
   const forecastStreams = release.locked_forecast_streams;
-  const actualStreams = actualDaysEntered > 0 ? actualStreamsSum : null;
+  const actualStreams = wk1.streams;
+  const actualDaysEntered = wk1.daysWithStreams;
   const delta =
     actualStreams == null ? null : actualStreams - forecastStreams;
   const pctOfForecast =
@@ -236,6 +268,17 @@ export async function buildAdReportSnapshot(
       : (actualStreams / forecastStreams) * 100;
 
   const forecastSaves = release.locked_forecast_saves;
+  const actualSavesSum = wk1.saves;
+
+  let d28Actual = 0;
+  let d28Days = 0;
+  for (const row of dailyData) {
+    if (row.day_number < 1 || row.day_number > 28) continue;
+    if (row.streams != null && row.streams >= 0) {
+      d28Actual += row.streams;
+      d28Days += 1;
+    }
+  }
 
   const channels: Record<AdReportChannelId, AdReportChannelSnapshot> = {
     marquee: emptyChannel("marquee", "Marquee", "measured"),
@@ -245,7 +288,6 @@ export async function buildAdReportSnapshot(
   };
 
   const campaigns: AdReportCampaignRow[] = [];
-  let actualSavesSum: number | null = null;
 
   for (const row of spotify) {
     const format = String(row.format ?? "").toLowerCase();
@@ -272,17 +314,18 @@ export async function buildAdReportSnapshot(
     ch.saves = addCaptured(ch.saves, saves);
     if (derived.length > 0) ch.hasDerivedValues = true;
 
-    if (saves != null) {
-      actualSavesSum = (actualSavesSum ?? 0) + saves;
-    }
-
     const campaignUid = strOrNull(row.campaign_uid);
     campaigns.push({
       platform: "spotify",
       channel: channelId,
       campaignUid,
-      campaignName:
-        campaignUid ?? `${format || "spotify"} · ${release.track_name}`,
+      campaignName: readableCampaignName({
+        campaignName: null,
+        campaignUid,
+        platform: "spotify",
+        format: format || null,
+        objective: null,
+      }),
       format: format || null,
       objective: null,
       spend,
@@ -336,14 +379,18 @@ export async function buildAdReportSnapshot(
     if (derived.length > 0) ch.hasDerivedValues = true;
 
     const campaignUid = strOrNull(row.campaign_uid);
+    const campaignName = readableCampaignName({
+      campaignName: strOrNull(row.campaign_name),
+      campaignUid,
+      platform: "meta",
+      format: null,
+      objective,
+    });
     campaigns.push({
       platform: "meta",
       channel: channelId,
       campaignUid,
-      campaignName:
-        strOrNull(row.campaign_name) ??
-        campaignUid ??
-        `Meta ${objective}`,
+      campaignName,
       format: null,
       objective,
       spend,
@@ -400,6 +447,10 @@ export async function buildAdReportSnapshot(
 
       const entered = camp.streams != null && camp.streams > 0 ? camp.streams : null;
       const measured = camp.linkfireSpotifyClicks;
+      if (measured != null && measured > 0) {
+        hasAnyMeasured = true;
+        measuredTotal += measured;
+      }
       if (entered != null) {
         // Partner-entered streams win; do not also apply click×SPL.
         camp.streams = entered;
@@ -408,8 +459,6 @@ export async function buildAdReportSnapshot(
         channelStreams += entered;
         hasAnyStreams = true;
       } else if (measured != null && measured > 0) {
-        hasAnyMeasured = true;
-        measuredTotal += measured;
         const est = Math.round(measured * perClick);
         camp.streams = est;
         camp.streamsLabel = "estimate";
@@ -508,8 +557,85 @@ export async function buildAdReportSnapshot(
     actualSavesSum == null || !(forecastSaves > 0)
       ? null
       : (actualSavesSum / forecastSaves) * 100;
-  const sortedCampaigns = campaigns.sort((a, b) => b.spend - a.spend);
+
+  const budgetByChannel: Record<AdReportChannelId, number> = {
+    marquee: release.spotify_marquee_spend_planned,
+    showcase: release.spotify_showcase_spend_planned,
+    meta_traffic: release.meta_traffic_spend_planned,
+    meta_awareness: release.meta_awareness_spend_planned,
+  };
+  const budgetTotal =
+    release.meta_spend_planned + release.spotify_spend_planned;
+
+  const visibleCampaigns = campaigns.filter((c) => !isBlankCampaign(c));
+  const spendByChannelId: Record<AdReportChannelId, number> = {
+    marquee: 0,
+    showcase: 0,
+    meta_traffic: 0,
+    meta_awareness: 0,
+  };
+  for (const camp of visibleCampaigns) {
+    spendByChannelId[camp.channel] += camp.spend;
+  }
+
+  for (const camp of visibleCampaigns) {
+    const channelSpend = spendByChannelId[camp.channel];
+    const channelBudget = budgetByChannel[camp.channel];
+    camp.budget =
+      channelSpend > 0 && channelBudget > 0
+        ? channelBudget * (camp.spend / channelSpend)
+        : channelBudget > 0
+          ? channelBudget
+          : null;
+
+    if (camp.platform === "spotify") {
+      camp.resultLabel = "Streams";
+      camp.resultActual = positiveMetric(camp.streams);
+      camp.resultForecast = null;
+      camp.status = null;
+    } else if (camp.channel === "meta_traffic") {
+      camp.resultLabel = "Spotify clicks";
+      camp.resultActual =
+        positiveMetric(camp.linkfireSpotifyClicks) ??
+        positiveMetric(camp.clicks);
+      camp.resultForecast = positiveMetric(camp.predictedSpotifyClicks);
+      if (camp.resultActual != null && camp.resultForecast != null) {
+        camp.status =
+          camp.resultActual >= camp.resultForecast
+            ? "achieved"
+            : "under_achieved";
+      } else {
+        camp.status = null;
+      }
+    } else {
+      camp.resultLabel = "Impressions";
+      camp.resultActual = positiveMetric(camp.impressions);
+      camp.resultForecast = null;
+      camp.status = null;
+    }
+  }
+
+  const sortedCampaigns = visibleCampaigns.sort((a, b) => b.spend - a.spend);
   const hasCreatives = sortedCampaigns.some((c) => c.creatives.length > 0);
+
+  const objectives = new Set(
+    meta
+      .map((row) =>
+        coerceMetaObjective(row.objective as string | null | undefined, "traffic"),
+      )
+      .filter(Boolean),
+  );
+  let objectiveLabel: string | null = null;
+  if (objectives.size === 0 && spotify.length > 0) {
+    objectiveLabel = "Streaming";
+  } else if (objectives.size === 1) {
+    const only = [...objectives][0]!;
+    objectiveLabel = only.charAt(0).toUpperCase() + only.slice(1);
+  } else if (objectives.size > 1) {
+    objectiveLabel = [...objectives]
+      .map((o) => o.charAt(0).toUpperCase() + o.slice(1))
+      .join(" + ");
+  }
 
   return {
     version: 1,
@@ -521,6 +647,7 @@ export async function buildAdReportSnapshot(
       genre: release.genre,
       releaseDate: release.release_date,
       releaseKey,
+      objectiveLabel,
     },
     campaignWindow: window,
     headline: {
@@ -535,6 +662,9 @@ export async function buildAdReportSnapshot(
       savesDelta,
       savesPctOfForecast,
       savesVariancePct: variancePct(forecastSaves, actualSavesSum),
+      actualSavesWindow: "week1",
+      d28ActualStreams: d28Days > 0 ? d28Actual : null,
+      d28DaysEntered: d28Days,
     },
     paid: {
       totalSpend,
@@ -544,6 +674,7 @@ export async function buildAdReportSnapshot(
       clicks,
       saves: paidSaves,
       blendedCostPerStream: cps(totalSpend, attributedStreams),
+      budgetTotal,
     },
     channels: channelList,
     campaigns: sortedCampaigns,
@@ -553,6 +684,7 @@ export async function buildAdReportSnapshot(
       spendByChannel: channelList.map((ch) => ({
         channel: ch.label,
         spend: ch.spend,
+        budget: budgetByChannel[ch.id],
       })),
       forecastVsActualDaily,
     },

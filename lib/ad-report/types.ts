@@ -65,6 +65,12 @@ export type AdReportCampaignRow = {
   startDate: string | null;
   endDate: string | null;
   creatives: AdReportCreativeAsset[];
+  /** Channel planned spend allocated to this campaign. */
+  budget?: number | null;
+  resultLabel?: string | null;
+  resultActual?: number | null;
+  resultForecast?: number | null;
+  status?: "achieved" | "under_achieved" | null;
 };
 
 /**
@@ -99,6 +105,8 @@ export type AdReportMetricsSnapshot = {
     genre: string;
     releaseDate: string;
     releaseKey: string;
+    /** e.g. Traffic, Awareness, Streaming. */
+    objectiveLabel?: string | null;
   };
   campaignWindow: {
     startDate: string | null;
@@ -107,7 +115,9 @@ export type AdReportMetricsSnapshot = {
     label: string | null;
   };
   headline: {
+    /** Week-1 locked forecast. */
     forecastStreams: number;
+    /** Week-1 actuals (D1–D7). */
     actualStreams: number | null;
     actualDaysEntered: number;
     delta: number | null;
@@ -117,11 +127,16 @@ export type AdReportMetricsSnapshot = {
     variancePct: number | null;
     /** Locked week-1 saves forecast from the release. */
     forecastSaves: number;
-    /** Sum of Spotify campaign saves when any campaign captured saves. */
+    /** Week-1 organic saves from daily data. */
     actualSaves: number | null;
     savesDelta: number | null;
     savesPctOfForecast: number | null;
     savesVariancePct: number | null;
+    /** Distinguishes week-1 organic saves from older paid-saves snapshots. */
+    actualSavesWindow?: "week1" | "paid";
+    /** D1–D28 actual total — no variance vs week-1 forecast. */
+    d28ActualStreams?: number | null;
+    d28DaysEntered?: number;
   };
   paid: {
     totalSpend: number;
@@ -132,6 +147,8 @@ export type AdReportMetricsSnapshot = {
     clicks: number | null;
     saves: number | null;
     blendedCostPerStream: number | null;
+    /** Planned Meta + Spotify spend at create time. */
+    budgetTotal?: number;
   };
   channels: AdReportChannelSnapshot[];
   campaigns: AdReportCampaignRow[];
@@ -140,7 +157,7 @@ export type AdReportMetricsSnapshot = {
   /** True when any campaign has at least one creative. */
   hasCreatives: boolean;
   charts: {
-    spendByChannel: Array<{ channel: string; spend: number }>;
+    spendByChannel: Array<{ channel: string; spend: number; budget?: number }>;
     forecastVsActualDaily: AdReportDailyPoint[];
   };
 };

@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { enqueueRetrainJob } from "@/app/archive/actions";
+import { SectionHeader } from "@/components/layout/SectionHeader";
+import { StatusPill, type PillTone } from "@/components/ui/StatusPill";
 import { RETRAIN_THRESHOLD } from "@/lib/constants";
 import { useCountUp } from "@/lib/hooks/use-count-up";
 import type { RetrainJobSummary } from "@/lib/load-retrain-job";
@@ -49,16 +51,16 @@ function formatCutoff(iso: string): string {
   });
 }
 
-function statusTagClass(status: RetrainJobSummary["status"]): string {
+function statusTone(status: RetrainJobSummary["status"]): PillTone {
   switch (status) {
     case "queued":
-      return "bracket-tag--neutral";
+      return "neutral";
     case "running":
-      return "bracket-tag--accent";
+      return "accent";
     case "completed":
-      return "bracket-tag--positive";
+      return "positive";
     case "failed":
-      return "bracket-tag--warning";
+      return "warning";
   }
 }
 
@@ -173,11 +175,7 @@ export function RetrainProgress({
       className="motion-fade-up rounded-instrument border border-border bg-surface p-5"
       aria-label="Retrain progress"
     >
-      <h2 className="font-serif text-section font-semibold text-foreground">
-        <span className="bracket-tag bracket-tag--accent bracket-tag--section instrument-section-title">
-          [RETRAIN]
-        </span>
-      </h2>
+      <SectionHeader>Retrain</SectionHeader>
 
       <div className="mt-4 flex items-center gap-4">
         <div
@@ -202,10 +200,8 @@ export function RetrainProgress({
       </div>
 
       {isEligible ? (
-        <p className="mt-2 text-body-sm text-secondary">
-          <span className="bracket-tag bracket-tag--positive mr-1.5 align-middle">
-            [ELIGIBLE]
-          </span>
+        <p className="mt-2 flex flex-wrap items-baseline gap-1.5 text-body-sm text-secondary">
+          <StatusPill tone="positive">Eligible</StatusPill>
           <span className="align-middle">
             Enough new closes — retrain a draft model when ready.
           </span>
@@ -248,11 +244,9 @@ export function RetrainProgress({
 
         {job ? (
           <p className="text-body-sm text-secondary" data-testid="retrain-job-chip">
-            <span
-              className={`bracket-tag ${statusTagClass(job.status)} mr-1.5 align-middle`}
-            >
-              [{job.status.toUpperCase()}]
-            </span>
+            <StatusPill tone={statusTone(job.status)}>
+              {job.status}
+            </StatusPill>
             <span className="align-middle font-mono text-xs">
               {job.id.slice(0, 8)}
             </span>

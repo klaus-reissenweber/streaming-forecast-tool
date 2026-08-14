@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { SectionHeader } from "@/components/layout/SectionHeader";
 import { formatCompactNumber } from "@/lib/format";
 import { useCountUp } from "@/lib/hooks/use-count-up";
 
@@ -11,8 +12,6 @@ export interface MetricCardsProps {
   algoBandLabel: string;
   algoBandSublabel: string;
   modelConfidenceR2: number;
-  /** e.g. "db:0306ceae fitted_at=…" or "fallback" */
-  activeModelSource: string;
 }
 
 const COUNT_UP_STAGGER_MS = 40;
@@ -22,16 +21,6 @@ function formatR2(value: number): string {
     return "n/a";
   }
   return value.toFixed(2);
-}
-
-function InstrumentMetricFoot() {
-  return (
-    <div className="instrument-metric-foot" aria-hidden="true">
-      {Array.from({ length: 8 }, (_, index) => (
-        <span key={index} />
-      ))}
-    </div>
-  );
 }
 
 function AnimatedCompactMetric({
@@ -68,14 +57,17 @@ function AnimatedSaveVelocityMetric({
   delay: number;
 }) {
   const percentMatch = display.match(/^(\d+)%/);
-  const percent = percentMatch ? Number(percentMatch[1]) : null;
+  const percent = percentMatch ? Number(percentMatch[1]) : 0;
+  const animated = useCountUp(percent, {
+    delay,
+    enabled: percentMatch != null,
+  });
 
-  if (percent == null) {
+  if (percentMatch == null) {
     return <span>{display}</span>;
   }
 
-  const animated = useCountUp(percent, { delay });
-  const suffix = display.slice(percentMatch![0].length);
+  const suffix = display.slice(percentMatch[0].length);
 
   return (
     <span>
@@ -85,27 +77,18 @@ function AnimatedSaveVelocityMetric({
 }
 
 function MetricCell({
-  tag,
-  tagClass,
   label,
   value,
   sublabel,
 }: {
-  tag: string;
-  tagClass: string;
   label: string;
   value: ReactNode;
   sublabel?: string;
 }) {
   return (
     <div className="min-w-0 flex-1 border-t border-accent/40 px-4 py-3 sm:px-5 sm:py-4">
-      <dt className="flex flex-wrap items-center gap-1.5">
-        <span className={`bracket-tag bracket-tag--axis ${tagClass}`}>
-          {tag}
-        </span>
-        <span className="text-[10px] font-medium uppercase tracking-[0.06em] text-muted">
-          {label}
-        </span>
+      <dt className="text-[10px] font-medium uppercase tracking-[0.06em] text-muted">
+        {label}
       </dt>
       <dd className="mt-2 font-mono text-[2.25rem] font-semibold tabular-nums leading-none tracking-[-0.02em] text-foreground">
         {value}
@@ -113,7 +96,6 @@ function MetricCell({
       {sublabel ? (
         <p className="mt-1 text-caption text-muted">{sublabel}</p>
       ) : null}
-      <InstrumentMetricFoot />
     </div>
   );
 }
@@ -125,30 +107,17 @@ export function MetricCards({
   algoBandLabel,
   algoBandSublabel,
   modelConfidenceR2,
-  activeModelSource,
 }: MetricCardsProps) {
-  const algoTag = algoBandSublabel === "Live pace" ? "[LIVE]" : "[LOCKED]";
-  const algoTagClass =
-    algoBandSublabel === "Live pace"
-      ? "bracket-tag--accent"
-      : "bracket-tag--neutral";
-
   return (
     <section
       className="motion-fade-up"
       aria-label="Key metrics"
     >
-      <h2 className="font-serif text-section font-semibold text-foreground">
-        <span className="bracket-tag bracket-tag--accent bracket-tag--section instrument-section-title">
-          [METRICS]
-        </span>
-      </h2>
+      <SectionHeader>Metrics</SectionHeader>
 
       <div className="mt-4 overflow-hidden rounded-instrument border border-border bg-surface">
-        <dl className="flex flex-col sm:flex-row sm:items-stretch">
+        <dl className="flex flex-col sm:flex-row sm:items-stretch sm:divide-x sm:divide-border-subtle">
           <MetricCell
-            tag="[LIVE]"
-            tagClass="bracket-tag--accent"
             label="Projected wk1"
             sublabel={projectedWk1Sublabel}
             value={
@@ -159,14 +128,7 @@ export function MetricCards({
             }
           />
 
-          <div
-            className="dot-matrix-divider hidden sm:flex"
-            aria-hidden="true"
-          />
-
           <MetricCell
-            tag="[LIVE]"
-            tagClass="bracket-tag--accent"
             label="Save velocity"
             sublabel={saveVelocity ? "Vs tier p50" : "Needs daily saves"}
             value={
@@ -181,28 +143,15 @@ export function MetricCards({
             }
           />
 
-          <div
-            className="dot-matrix-divider hidden sm:flex"
-            aria-hidden="true"
-          />
-
           <MetricCell
-            tag={algoTag}
-            tagClass={algoTagClass}
             label="Algo positioning"
+            sublabel={algoBandSublabel}
             value={algoBandLabel}
           />
 
-          <div
-            className="dot-matrix-divider hidden sm:flex"
-            aria-hidden="true"
-          />
-
           <MetricCell
-            tag="[MODEL]"
-            tagClass="bracket-tag--neutral"
             label="Model confidence"
-            sublabel={`streams_d0 R² · ${activeModelSource}`}
+            sublabel="streams_d0 R²"
             value={
               <AnimatedR2Metric
                 value={modelConfidenceR2}

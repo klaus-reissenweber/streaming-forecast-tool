@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { CloseReleaseButton } from "@/components/release/CloseReleaseButton";
 import { ReleaseReportActions } from "@/components/release/ReleaseReportActions";
+import { StatusPill } from "@/components/ui/StatusPill";
 import { EDITORIAL_TIER_DEFINITIONS } from "@/lib/constants";
 import type { EditorialTier, Genre } from "@/lib/forecast";
 import type { ReleaseStatus } from "@/lib/map-release-row";
@@ -25,19 +25,19 @@ function formatGenreLabel(genre: Genre): string {
 }
 
 function statusBadge(status: ReleaseStatus): {
-  tag: string;
-  tagClass: string;
+  label: string;
+  tone: "neutral" | "positive";
 } {
   if (status === "closed") {
     return {
-      tag: "[CLOSED · READ-ONLY]",
-      tagClass: "bracket-tag--neutral",
+      label: "Closed · read-only",
+      tone: "neutral",
     };
   }
 
   return {
-    tag: "[ACTIVE]",
-    tagClass: "bracket-tag--positive",
+    label: "Active",
+    tone: "positive",
   };
 }
 
@@ -71,7 +71,7 @@ export function ReleasePageHeader({
         </div>
 
         <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
-          <span className={`bracket-tag ${badge.tagClass}`}>{badge.tag}</span>
+          <StatusPill tone={badge.tone}>{badge.label}</StatusPill>
           {status === "active" ? (
             <CloseReleaseButton releaseId={releaseId} />
           ) : null}
@@ -80,32 +80,6 @@ export function ReleasePageHeader({
             reportPath={reportPath}
             reportUrl={reportUrl}
           />
-          <nav className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium">
-            <Link
-              href={`/release/${releaseId}/ad-upload`}
-              className="text-accent-readable hover:text-accent-hover hover:underline"
-            >
-              Upload ad results
-            </Link>
-            <Link
-              href="/"
-              className="text-accent-readable hover:text-accent-hover hover:underline"
-            >
-              Active releases
-            </Link>
-            <Link
-              href="/archive"
-              className="text-accent-readable hover:text-accent-hover hover:underline"
-            >
-              Archive
-            </Link>
-            <Link
-              href="/new"
-              className="text-accent-readable hover:text-accent-hover hover:underline"
-            >
-              Create another release
-            </Link>
-          </nav>
         </div>
       </div>
     </header>

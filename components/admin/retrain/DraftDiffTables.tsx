@@ -38,7 +38,7 @@ function DiffTable({
 
   return (
     <div className="rounded-instrument border border-border bg-surface p-4">
-      <h3 className="font-serif text-sm font-semibold text-foreground">
+      <h3 className="text-sm font-semibold text-foreground">
         {title}
       </h3>
       {compact && visible.length === 0 ? (
@@ -80,10 +80,10 @@ export function DraftDiffTables({ diff }: { diff: ModelDiff }) {
   return (
     <section className="motion-fade-up">
       <div className="mb-3 flex flex-wrap items-baseline gap-2">
-        <h2 className="font-serif text-section font-semibold text-foreground">
+        <h2 className="text-section font-semibold text-foreground">
           Diff vs active
         </h2>
-        <span className="bracket-tag bracket-tag--accent">NEW / ACTIVE / Δ</span>
+        <span className="text-caption text-muted">New / active / Δ</span>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
         <DiffTable title="DOW" rows={diff.dow} digits={3} />

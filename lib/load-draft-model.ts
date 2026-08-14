@@ -99,3 +99,34 @@ export async function loadCooksDropReleases(
       },
   );
 }
+
+export type DraftModelSummary = {
+  id: string;
+  fittedAt: string | null;
+  status: string;
+  isActive: boolean;
+};
+
+/** Draft (and recently fitted) models for the approve listing. */
+export async function loadDraftModelSummaries(
+  limit = 20,
+): Promise<DraftModelSummary[]> {
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from("model_coefficients")
+    .select("id, fitted_at, status, is_active")
+    .eq("status", "draft")
+    .order("fitted_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(`model_coefficients drafts: ${error.message}`);
+  }
+
+  return (data ?? []).map((row) => ({
+    id: String(row.id),
+    fittedAt: typeof row.fitted_at === "string" ? row.fitted_at : null,
+    status: String(row.status ?? "draft"),
+    isActive: Boolean(row.is_active),
+  }));
+}

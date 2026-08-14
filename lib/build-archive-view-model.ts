@@ -1,7 +1,8 @@
 import { computeWeek1Actuals } from "@/lib/compute-week1-actuals";
-import { formatLockTimestamp, formatReleaseDate } from "@/lib/format";
+import { formatTimestampDate, formatReleaseDate } from "@/lib/format";
 import type { Genre } from "@/lib/forecast";
 import { isTimestampAfter } from "@/lib/is-timestamp-after";
+import type { DailyDataPoint, ReleaseRecord } from "@/lib/map-release-row";
 import type { ActiveModel } from "@/lib/model/active-model";
 import {
   formatActiveModelSource,
@@ -11,7 +12,12 @@ import {
   HEALTH_LAGGING_THRESHOLD_PCT,
   HEALTH_OUTPERFORM_THRESHOLD_PCT,
 } from "@/lib/monitoring";
-import type { DailyDataPoint, ReleaseRecord } from "@/lib/map-release-row";
+import {
+  classifySaveRateVsBand,
+  type SaveRateVsBand,
+} from "@/lib/save-rate-band-label";
+
+export type { SaveRateVsBand };
 
 export type ArchiveSortOption =
   | "closed_at_desc"
@@ -22,8 +28,6 @@ export type ArchiveSortOption =
   | "streams_delta_pct_asc";
 
 export type DeltaTone = "outperform" | "on_track" | "lagging";
-
-export type SaveRateVsBand = "below" | "within" | "above";
 
 export interface ArchiveRow {
   id: string;
@@ -125,25 +129,6 @@ export function deltaTone(deltaPct: number | null): DeltaTone | null {
   return "on_track";
 }
 
-function classifySaveRateVsBand(
-  actualSaveRate: number | null,
-  genre: Genre,
-  model: ForecastModel,
-): SaveRateVsBand | null {
-  if (actualSaveRate == null) {
-    return null;
-  }
-
-  const band = model.saveRateBands[genre];
-  if (actualSaveRate < band.lo) {
-    return "below";
-  }
-  if (actualSaveRate > band.hi) {
-    return "above";
-  }
-  return "within";
-}
-
 function buildArchiveRow(
   release: ReleaseRecord,
   dailyData: DailyDataPoint[],
@@ -178,7 +163,7 @@ function buildArchiveRow(
     releaseDateDisplay: formatReleaseDate(release.release_date),
     closedAt: release.closed_at,
     closedAtDisplay: release.closed_at
-      ? formatLockTimestamp(release.closed_at)
+      ? formatTimestampDate(release.closed_at)
       : null,
 
     lockedStreams: release.locked_forecast_streams,
@@ -199,11 +184,13 @@ function buildArchiveRow(
     savesDeltaTone: deltaTone(savesDeltaResult.deltaPct),
 
     saveRateBand: model.saveRateBands[release.genre],
-    saveRateVsBand: classifySaveRateVsBand(
-      actualSaveRate,
-      release.genre,
-      model,
-    ),
+    saveRateVsBand:
+      actualSaveRate == null
+        ? null
+        : classifySaveRateVsBand(
+            actualSaveRate,
+            model.saveRateBands[release.genre],
+          ),
 
     detailHref: `/release/${release.id}`,
   };

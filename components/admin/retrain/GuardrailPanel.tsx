@@ -1,3 +1,4 @@
+import { StatusPill } from "@/components/ui/StatusPill";
 import type { GuardrailCheck } from "@/lib/model/draft-review";
 
 function GuardrailList({
@@ -12,20 +13,18 @@ function GuardrailList({
   return (
     <div className="rounded-instrument border border-border bg-surface p-4">
       <div className="flex flex-wrap items-baseline gap-2">
-        <h3 className="font-serif text-sm font-semibold text-foreground">
+        <h3 className="text-sm font-semibold text-foreground">
           {title}
         </h3>
-        <span className="bracket-tag bracket-tag--neutral">{tag}</span>
+        <span className="text-caption text-muted">{tag}</span>
       </div>
       <ul className="mt-3 space-y-3">
         {checks.map((check) => (
           <li key={check.id} className="text-body-sm">
             <div className="flex flex-wrap items-baseline gap-2">
-              <span
-                className={`bracket-tag ${check.passed ? "bracket-tag--positive" : "bracket-tag--warning"}`}
-              >
-                {check.passed ? "PASS" : "FAIL"}
-              </span>
+              <StatusPill tone={check.passed ? "positive" : "warning"}>
+                {check.passed ? "Pass" : "Fail"}
+              </StatusPill>
               <span className="font-medium text-foreground">{check.label}</span>
             </div>
             <p className="mt-1 font-mono text-xs text-secondary">{check.value}</p>
@@ -51,13 +50,13 @@ export function GuardrailPanel({
   return (
     <section className="motion-fade-up">
       <div className="mb-3 flex flex-wrap items-baseline gap-2">
-        <h2 className="font-serif text-section font-semibold text-foreground">
+        <h2 className="text-section font-semibold text-foreground">
           Guardrails
         </h2>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
-        <GuardrailList title="HARD" tag="BLOCKS USE" checks={hard} />
-        <GuardrailList title="SOFT" tag="WARN ONLY" checks={soft} />
+        <GuardrailList title="Hard" tag="Blocks use" checks={hard} />
+        <GuardrailList title="Soft" tag="Warn only" checks={soft} />
       </div>
     </section>
   );

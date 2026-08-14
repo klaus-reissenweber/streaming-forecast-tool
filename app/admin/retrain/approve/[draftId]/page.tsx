@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PageBreadcrumbs } from "@/components/layout/PageBreadcrumbs";
+import { StatusPill } from "@/components/ui/StatusPill";
 import { ApproveActivateForm } from "@/components/admin/retrain/ApproveActivateForm";
 import { ComposedCurvePreview } from "@/components/admin/retrain/ComposedCurvePreview";
 import { CooksAndSamples } from "@/components/admin/retrain/CooksAndSamples";
@@ -118,14 +120,14 @@ export default async function ApproveDraftPage({ params }: ApprovePageProps) {
   return (
     <main className="mx-auto max-w-6xl px-5 py-8">
       <header className="motion-fade-up">
-        <p className="text-caption uppercase tracking-wide text-secondary">
-          <Link href="/archive" className="hover:underline">
-            Archive
-          </Link>
-          {" / "}
-          Check retrain
-        </p>
-        <h1 className="mt-2 font-serif text-release-title font-semibold text-foreground">
+        <PageBreadcrumbs
+          items={[
+            { label: "Model", href: "/admin/retrain" },
+            { label: "Approve drafts", href: "/admin/retrain/approve" },
+            { label: "Draft vs active" },
+          ]}
+        />
+        <h1 className="mt-4 font-serif text-release-title font-semibold text-foreground">
           Draft vs active
         </h1>
         <p className="mt-2 text-body-sm text-secondary">
@@ -156,7 +158,7 @@ export default async function ApproveDraftPage({ params }: ApprovePageProps) {
         )}
 
         <details className="rounded-instrument border border-border bg-surface p-5">
-          <summary className="cursor-pointer font-serif text-section font-semibold text-foreground">
+          <summary className="cursor-pointer text-section font-semibold text-foreground">
             Details
           </summary>
           <div className="mt-3 flex flex-wrap gap-3 text-body-sm text-secondary">
@@ -165,9 +167,7 @@ export default async function ApproveDraftPage({ params }: ApprovePageProps) {
               <span className="font-mono text-foreground">
                 {draft.id?.slice(0, 8)}
               </span>
-              <span className="ml-2 bracket-tag bracket-tag--neutral">
-                {draft.status.toUpperCase()}
-              </span>
+              <StatusPill tone="neutral">{draft.status}</StatusPill>
             </span>
             <span>
               Fitted{" "}

@@ -1,14 +1,26 @@
 "use client";
 
+import { SectionHeader } from "@/components/layout/SectionHeader";
 import type { ReactNode } from "react";
 import { formatCompactNumber, formatPercent } from "@/lib/format";
 import { useCountUp } from "@/lib/hooks/use-count-up";
+import type { ReleaseStatus } from "@/lib/map-release-row";
+import {
+  saveRateBandCaption,
+  saveRateToneClass,
+  type SaveRateVsBand,
+} from "@/lib/save-rate-band-label";
 
 export interface LockedForecastBannerProps {
   streams: number;
   saves: number;
-  impliedSaveRate: number;
+  forecastSaveRate: number;
+  actualSaveRate?: number | null;
+  actualSaveRateVsBand?: SaveRateVsBand | null;
+  saveRateBand: { lo: number; hi: number };
   lockedAtDisplay: string;
+  status: ReleaseStatus;
+  releaseDate: string;
   /** Organic locked + ad attributed streams in D1–D7. */
   week1WithAds?: number;
   week1AdMarquee?: number;
@@ -19,6 +31,20 @@ export interface LockedForecastBannerProps {
 }
 
 const COUNT_UP_STAGGER_MS = 50;
+
+function forecastStatusLabel(
+  status: ReleaseStatus,
+  releaseDate: string,
+): string {
+  if (status === "closed") {
+    return "Final forecast";
+  }
+  const todayUtc = new Date().toISOString().slice(0, 10);
+  if (todayUtc < releaseDate) {
+    return "Pre-release forecast";
+  }
+  return "Live monitoring";
+}
 
 function AnimatedCompactMetric({
   value,
@@ -46,38 +72,39 @@ function AnimatedPercentMetric({
   return <span>{formatPercent(animated)}</span>;
 }
 
-function DotMatrixFoot() {
-  return (
-    <div
-      className="mt-2 flex items-center gap-1"
-      aria-hidden="true"
-    >
-      {Array.from({ length: 8 }, (_, index) => (
-        <span
-          key={index}
-          className="size-0.5 rounded-full bg-dot"
-        />
-      ))}
-    </div>
-  );
-}
-
 function MetricColumn({
   label,
   children,
+  caption,
+  valueClassName,
 }: {
   label: string;
   children: ReactNode;
+  caption?: string;
+  valueClassName?: string;
 }) {
   return (
-    <div className="min-w-0 flex-1 border-t-2 border-accent/40 py-1 sm:py-0 sm:pt-3">
+    <div className="min-w-0 flex-1 border-t-2 border-accent/40 py-1 sm:px-4 sm:py-0 sm:pt-3 sm:first:pl-0 sm:last:pr-0">
       <dt className="text-[10px] font-medium uppercase tracking-[0.06em] text-muted">
         {label}
       </dt>
-      <dd className="mt-1 font-mono text-[3rem] font-semibold tabular-nums leading-none tracking-[-0.02em] text-foreground">
+      <dd
+        className={
+          "mt-1 font-mono text-[3rem] font-semibold tabular-nums leading-none tracking-[-0.02em] " +
+          (valueClassName ?? "text-foreground")
+        }
+      >
         {children}
       </dd>
-      <DotMatrixFoot />
+      {caption ? (
+        <p
+          className={
+            "mt-2 text-caption " + (valueClassName ?? "text-muted")
+          }
+        >
+          {caption}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -85,8 +112,13 @@ function MetricColumn({
 export function LockedForecastBanner({
   streams,
   saves,
-  impliedSaveRate,
+  forecastSaveRate,
+  actualSaveRate = null,
+  actualSaveRateVsBand = null,
+  saveRateBand,
   lockedAtDisplay,
+  status,
+  releaseDate,
   week1WithAds,
   week1AdMarquee = 0,
   week1AdShowcase = 0,
@@ -100,7 +132,7 @@ export function LockedForecastBanner({
   return (
     <section
       className="motion-fade-up relative overflow-hidden rounded-instrument border border-border bg-accent-tint p-5"
-      aria-label="Locked forecast"
+      aria-label="Forecast"
     >
       <span
         className="pointer-events-none absolute inset-y-0 left-0 w-1 origin-top bg-accent animate-instrument-rule-grow"
@@ -109,32 +141,19 @@ export function LockedForecastBanner({
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="font-serif text-[1.5rem] font-semibold leading-tight text-foreground">
-            <span className="bracket-tag bracket-tag--accent mr-2 align-middle">
-              [LOCKED]
-            </span>
-            <span className="instrument-section-title align-middle">
-              Locked forecast
-            </span>
-          </h2>
-          <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.06em] text-muted">
-            Organic · locked {lockedAtDisplay}
-          </p>
+          <SectionHeader description={`Organic · ${lockedAtDisplay}`}>
+            Forecast
+          </SectionHeader>
         </div>
-        <p className="font-mono text-[11px] uppercase tracking-[0.06em] text-muted sm:text-right">
-          Pre-release monitoring
+        <p className="text-sm text-muted sm:text-right">
+          {forecastStatusLabel(status, releaseDate)}
         </p>
       </div>
 
-      <dl className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-stretch sm:gap-0">
+      <dl className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-stretch sm:gap-0 sm:divide-x sm:divide-border-subtle">
         <MetricColumn label="Week-1 streams (organic)">
           <AnimatedCompactMetric value={streams} delay={0} />
         </MetricColumn>
-
-        <div
-          className="dot-matrix-divider hidden sm:flex"
-          aria-hidden="true"
-        />
 
         <MetricColumn label="Week-1 saves">
           <AnimatedCompactMetric
@@ -143,17 +162,25 @@ export function LockedForecastBanner({
           />
         </MetricColumn>
 
-        <div
-          className="dot-matrix-divider hidden sm:flex"
-          aria-hidden="true"
-        />
-
-        <MetricColumn label="Implied save rate">
+        <MetricColumn label="Forecast save rate">
           <AnimatedPercentMetric
-            value={impliedSaveRate}
+            value={forecastSaveRate}
             delay={COUNT_UP_STAGGER_MS * 2}
           />
         </MetricColumn>
+
+        {actualSaveRate != null && actualSaveRateVsBand != null ? (
+          <MetricColumn
+            label="Actual save rate"
+            valueClassName={saveRateToneClass(actualSaveRateVsBand)}
+            caption={saveRateBandCaption(actualSaveRateVsBand, saveRateBand)}
+          >
+            <AnimatedPercentMetric
+              value={actualSaveRate}
+              delay={COUNT_UP_STAGGER_MS * 3}
+            />
+          </MetricColumn>
+        ) : null}
       </dl>
 
       {showAds ? (

@@ -107,14 +107,14 @@ export function computeFlags(ctx: FlagDetectionContext): ReleaseFlag[] {
           id: "d1-editorial-spike",
           type: "positive",
           title: "Strong D1 with editorial support",
-          detail: `D1 streams (${formatCompactNumber(d1Streams)}) are ${multiplier}× the locked-curve expectation (${formatCompactNumber(expectedD1)}). Tier ${ctx.release.editorial_tier} editorial coverage likely contributed.`,
+          detail: `D1 streams (${formatCompactNumber(d1Streams)}) are ${multiplier}× the forecast expectation (${formatCompactNumber(expectedD1)}). Tier ${ctx.release.editorial_tier} editorial coverage likely contributed.`,
         });
       } else {
         flags.push({
           id: "d1-spike",
           type: "positive",
           title: "Strong D1 stream spike",
-          detail: `D1 streams (${formatCompactNumber(d1Streams)}) are ${multiplier}× the locked-curve expectation (${formatCompactNumber(expectedD1)}).`,
+          detail: `D1 streams (${formatCompactNumber(d1Streams)}) are ${multiplier}× the forecast expectation (${formatCompactNumber(expectedD1)}).`,
         });
       }
     }

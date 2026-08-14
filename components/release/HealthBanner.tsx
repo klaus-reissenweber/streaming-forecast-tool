@@ -1,3 +1,4 @@
+import { StatusPill, type PillTone } from "@/components/ui/StatusPill";
 import type { HealthStatus, HealthSummary, HealthTone } from "@/lib/monitoring";
 
 export interface HealthBannerProps {
@@ -6,23 +7,23 @@ export interface HealthBannerProps {
 
 const STATUS_CONFIG: Record<
   HealthStatus,
-  { tag: string; tagClass: string }
+  { label: string; tone: PillTone }
 > = {
   "on-track": {
-    tag: "[ON TRACK]",
-    tagClass: "bracket-tag--neutral",
+    label: "On track",
+    tone: "neutral",
   },
   outperforming: {
-    tag: "[OUTPERFORMING]",
-    tagClass: "bracket-tag--positive",
+    label: "Outperforming",
+    tone: "positive",
   },
   lagging: {
-    tag: "[LAGGING]",
-    tagClass: "bracket-tag--negative",
+    label: "Lagging",
+    tone: "negative",
   },
   awaiting: {
-    tag: "[AWAITING]",
-    tagClass: "bracket-tag--neutral",
+    label: "Awaiting",
+    tone: "neutral",
   },
 };
 
@@ -64,9 +65,7 @@ export function HealthBanner({ health }: HealthBannerProps) {
 
       <div className="instrument-health-content flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-2">
         <span className="inline-flex flex-wrap items-baseline gap-x-1.5 text-sm font-semibold leading-snug">
-          <span className={`bracket-tag ${statusConfig.tagClass}`}>
-            {statusConfig.tag}
-          </span>
+          <StatusPill tone={statusConfig.tone}>{statusConfig.label}</StatusPill>
           <span className={toneStyles.titleClass}>{health.title}</span>
         </span>
         <span

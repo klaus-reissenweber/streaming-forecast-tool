@@ -27,16 +27,6 @@ export interface AdSpendLiveForecastProps {
 
 const COUNT_UP_STAGGER_MS = 40;
 
-function InstrumentMetricFoot() {
-  return (
-    <div className="instrument-metric-foot mt-0" aria-hidden="true">
-      {Array.from({ length: 8 }, (_, index) => (
-        <span key={index} />
-      ))}
-    </div>
-  );
-}
-
 function AnimatedCount({ value, delay }: { value: number; delay: number }) {
   const animated = useCountUp(value, { delay, enabled: value > 0 });
   return <span>{formatCount(animated)}</span>;
@@ -50,14 +40,13 @@ function MetricCell({
   value: ReactNode;
 }) {
   return (
-    <div className="grid min-w-0 flex-1 basis-0 grid-rows-[1.25rem_1.75rem_0.625rem] gap-y-1 border-t border-border px-4 py-3 sm:px-5 sm:py-4">
-      <p className="flex min-h-[1.25rem] items-end text-[10px] font-medium uppercase tracking-[0.06em] text-muted">
+    <div className="min-w-0 flex-1 basis-0 border-t border-border px-4 py-3 sm:px-5 sm:py-4">
+      <p className="text-[10px] font-medium uppercase tracking-[0.06em] text-muted">
         {label}
       </p>
-      <p className="flex min-h-[1.75rem] items-end font-mono text-[1.5rem] font-semibold tabular-nums leading-none tracking-[-0.02em] text-foreground">
+      <p className="mt-1 font-mono text-[1.5rem] font-semibold tabular-nums leading-none tracking-[-0.02em] text-foreground">
         {value}
       </p>
-      <InstrumentMetricFoot />
     </div>
   );
 }
@@ -87,17 +76,11 @@ function ForecastCard({
         <p className="mt-1 text-caption leading-snug text-muted">{note}</p>
       ) : null}
       <div className="mt-2 min-w-0 overflow-hidden rounded-instrument border border-border bg-surface">
-        <div className="flex min-w-0 w-full flex-col sm:flex-row sm:items-stretch">
+        <div className="flex min-w-0 w-full flex-col sm:flex-row sm:items-stretch sm:divide-x sm:divide-border-subtle">
           {children}
         </div>
       </div>
     </section>
-  );
-}
-
-function Divider() {
-  return (
-    <div className="dot-matrix-divider hidden sm:flex" aria-hidden="true" />
   );
 }
 
@@ -205,7 +188,6 @@ export function AdSpendLiveForecast({
               value={<AnimatedCount value={totals.spotifyMarquee} delay={0} />}
             />
           ) : null}
-          {marqueeSpend > 0 && showcaseSpend > 0 ? <Divider /> : null}
           {showcaseSpend > 0 ? (
             <MetricCell
               label="Showcase streams"
@@ -217,7 +199,6 @@ export function AdSpendLiveForecast({
               }
             />
           ) : null}
-          <Divider />
           <MetricCell label="CPS" value={spotifyCps} />
         </ForecastCard>
       ) : null}
@@ -237,7 +218,6 @@ export function AdSpendLiveForecast({
               />
             }
           />
-          <Divider />
           <MetricCell
             label="Clicks"
             value={
@@ -247,7 +227,6 @@ export function AdSpendLiveForecast({
               />
             }
           />
-          <Divider />
           <MetricCell
             label="Impressions"
             value={
@@ -257,7 +236,6 @@ export function AdSpendLiveForecast({
               />
             }
           />
-          <Divider />
           <MetricCell label="CPS" value={metaCps} />
         </ForecastCard>
       ) : null}
@@ -276,7 +254,6 @@ export function AdSpendLiveForecast({
               />
             }
           />
-          <Divider />
           <MetricCell
             label="Reach"
             value={
@@ -294,7 +271,6 @@ export function AdSpendLiveForecast({
           label="Streams"
           value={<AnimatedCount value={totalStreams} delay={0} />}
         />
-        <Divider />
         <MetricCell
           label="Impressions"
           value={
@@ -304,14 +280,12 @@ export function AdSpendLiveForecast({
             />
           }
         />
-        <Divider />
         <MetricCell
           label="Reach"
           value={
             <AnimatedCount value={totalReach} delay={COUNT_UP_STAGGER_MS * 2} />
           }
         />
-        <Divider />
         <MetricCell
           label="Clicks"
           value={

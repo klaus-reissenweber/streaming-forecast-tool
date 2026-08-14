@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { AdReportDashboard } from "@/components/report/AdReportDashboard";
-import { loadAdReportBySlug } from "@/lib/ad-report/load";
+import {
+  isInternalReportPreview,
+  loadAdReportBySlug,
+} from "@/lib/ad-report/load";
 import type { AdReportMetricsSnapshot } from "@/lib/ad-report/types";
 
 interface ReportPageProps {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ from?: string }>;
 }
 
 function isValidSnapshot(
@@ -31,13 +35,21 @@ export async function generateMetadata({
   };
 }
 
-export default async function PublicAdReportPage({ params }: ReportPageProps) {
+export default async function PublicAdReportPage({
+  params,
+  searchParams,
+}: ReportPageProps) {
   const { slug } = await params;
+  const { from } = await searchParams;
   const report = await loadAdReportBySlug(slug).catch(() => null);
 
   if (!report || !isValidSnapshot(report.metricsSnapshot)) {
     notFound();
   }
+
+  const backHref = isInternalReportPreview(from)
+    ? `/release/${report.metricsSnapshot.release.id}`
+    : null;
 
   return (
     <main className="min-h-full bg-canvas print:bg-white">
@@ -47,6 +59,7 @@ export default async function PublicAdReportPage({ params }: ReportPageProps) {
         generatedAt={
           report.metricsSnapshot.generatedAt || report.updatedAt
         }
+        backHref={backHref}
       />
     </main>
   );

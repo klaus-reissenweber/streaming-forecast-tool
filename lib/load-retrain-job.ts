@@ -84,3 +84,26 @@ export async function loadRetrainJobById(
   }
   return mapRow(data as Record<string, unknown>);
 }
+
+/** Latest N jobs for the approve-drafts listing. */
+export async function loadRecentRetrainJobs(
+  limit = 20,
+): Promise<RetrainJobSummary[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("retrain_jobs")
+    .select(
+      "id, status, created_at, started_at, completed_at, draft_model_id, error, triggered_email",
+    )
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.info(`[retrain-job] loadRecent: ${error.message}`);
+    return [];
+  }
+
+  return (data ?? [])
+    .map((row) => mapRow(row as Record<string, unknown>))
+    .filter((row): row is RetrainJobSummary => row != null);
+}

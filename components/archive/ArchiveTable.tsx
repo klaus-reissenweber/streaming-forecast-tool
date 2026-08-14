@@ -1,104 +1,22 @@
-import Link from "next/link";
+"use client";
+
+import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { GENRES } from "@/lib/constants";
+import { SectionHeader } from "@/components/layout/SectionHeader";
 import type {
-  ArchiveSortOption,
   ArchiveViewModel,
   DeltaTone,
-  SaveRateVsBand,
 } from "@/lib/build-archive-view-model";
-import { formatCompactNumber, formatPercent } from "@/lib/format";
-import type { Genre } from "@/lib/forecast";
-
-export interface ArchiveFiltersProps {
-  currentGenre?: Genre;
-  currentSort: ArchiveSortOption;
-}
-
-const SORT_OPTIONS: { value: ArchiveSortOption; label: string }[] = [
-  { value: "closed_at_desc", label: "Closed (newest)" },
-  { value: "closed_at_asc", label: "Closed (oldest)" },
-  { value: "release_date_desc", label: "Release date (newest)" },
-  { value: "release_date_asc", label: "Release date (oldest)" },
-  { value: "streams_delta_pct_desc", label: "Δ streams (best first)" },
-  { value: "streams_delta_pct_asc", label: "Δ streams (worst first)" },
-];
-
-function buildQuery(
-  genre: Genre | undefined,
-  sort: ArchiveSortOption,
-): string {
-  const params = new URLSearchParams();
-  if (genre) {
-    params.set("genre", genre);
-  }
-  if (sort !== "closed_at_desc") {
-    params.set("sort", sort);
-  }
-  const query = params.toString();
-  return query ? `?${query}` : "";
-}
-
-function filterPillClass(active: boolean): string {
-  return (
-    "rounded-full border px-3 py-1 text-xs font-medium transition " +
-    (active
-      ? "border-accent-border bg-accent-tint text-accent-readable"
-      : "border-transparent bg-canvas text-secondary hover:border-border")
-  );
-}
-
-export function ArchiveFilters({
-  currentGenre,
-  currentSort,
-}: ArchiveFiltersProps) {
-  return (
-    <section
-      className="motion-fade-up rounded-instrument border border-border bg-surface p-5"
-      aria-label="Archive filters"
-    >
-      <h2 className="font-serif text-section font-semibold text-foreground">
-        <span className="bracket-tag bracket-tag--accent bracket-tag--section instrument-section-title">
-          [FILTERS]
-        </span>
-      </h2>
-
-      <div className="mt-4 space-y-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-label text-muted">Genre</span>
-          <Link
-            href={`/archive${buildQuery(undefined, currentSort)}`}
-            className={filterPillClass(currentGenre == null)}
-          >
-            All
-          </Link>
-          {GENRES.map((genre) => (
-            <Link
-              key={genre}
-              href={`/archive${buildQuery(genre, currentSort)}`}
-              className={filterPillClass(currentGenre === genre)}
-            >
-              {genre}
-            </Link>
-          ))}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-label text-muted">Sort</span>
-          {SORT_OPTIONS.map((option) => (
-            <Link
-              key={option.value}
-              href={`/archive${buildQuery(currentGenre, option.value)}`}
-              className={filterPillClass(currentSort === option.value)}
-            >
-              {option.label}
-            </Link>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
+import {
+  formatCompactNumber,
+  formatLockTimestamp,
+  formatPercent,
+} from "@/lib/format";
+import {
+  saveRateBandCaption,
+  saveRateToneClass,
+  type SaveRateVsBand,
+} from "@/lib/save-rate-band-label";
 
 function deltaToneClass(tone: DeltaTone | null): string {
   switch (tone) {
@@ -113,80 +31,64 @@ function deltaToneClass(tone: DeltaTone | null): string {
   }
 }
 
-function formatSignedCompact(value: number): string {
-  if (value > 0) {
-    return `+${formatCompactNumber(value)}`;
-  }
-  if (value < 0) {
-    return `-${formatCompactNumber(Math.abs(value))}`;
-  }
-  return formatCompactNumber(0);
-}
-
 function formatSignedPercent(value: number): string {
   const sign = value > 0 ? "+" : "";
   return `${sign}${formatPercent(value, 1)}`;
 }
 
-function formatForecastCell(streams: number, saves: number): string {
-  return `${formatCompactNumber(streams)} / ${formatCompactNumber(saves)}`;
+function forecastActualTitle(
+  forecast: number,
+  actual: number | null,
+): string {
+  const actualLabel =
+    actual == null ? "n/a" : formatCompactNumber(actual);
+  return `${formatCompactNumber(forecast)} forecast → ${actualLabel} actual`;
 }
 
-function formatDeltaCell(
-  delta: number | null,
+function formatDeltaPctCell(
   deltaPct: number | null,
   tone: DeltaTone | null,
 ): ReactNode {
-  if (delta == null || deltaPct == null) {
+  if (deltaPct == null) {
     return <span className="text-muted">n/a</span>;
   }
 
   return (
     <span className={`font-mono tabular-nums ${deltaToneClass(tone)}`}>
-      {formatSignedCompact(delta)}
-      <span className="text-muted"> · </span>
       {formatSignedPercent(deltaPct)}
     </span>
   );
 }
 
-function saveRatePill(
+function saveRateCell(
   actualSaveRate: number | null,
   vsBand: SaveRateVsBand | null,
-  band: { lo: number; hi: number },
 ): ReactNode {
   if (actualSaveRate == null || vsBand == null) {
     return <span className="text-muted">n/a</span>;
   }
 
-  let pillClass = "bg-canvas text-secondary";
-  let label = "In band";
-
-  if (vsBand === "below") {
-    pillClass = "bg-semantic-warning-bg text-semantic-warning";
-    label = "Below band";
-  } else if (vsBand === "above") {
-    pillClass = "bg-semantic-positive-bg text-semantic-positive";
-    label = "Above band";
-  }
-
   return (
-    <span className="inline-flex flex-col items-start gap-0.5">
-      <span
-        className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${pillClass}`}
-      >
-        {label}
-      </span>
-      <span className="font-mono tabular-nums text-secondary">
-        {formatPercent(actualSaveRate, 1)}
-        <span className="text-muted">
-          {" "}
-          (band {band.lo}–{band.hi}%)
-        </span>
-      </span>
+    <span
+      className={`font-mono tabular-nums ${saveRateToneClass(vsBand)}`}
+    >
+      {formatPercent(actualSaveRate, 1)}
     </span>
   );
 }
+
+function saveRateTitle(
+  vsBand: SaveRateVsBand | null,
+  band: { lo: number; hi: number },
+): string {
+  if (vsBand == null) {
+    return `Expected ${band.lo}–${band.hi}%`;
+  }
+  return saveRateBandCaption(vsBand, band);
+}
+
+const NUM =
+  "py-2 text-right font-mono text-[13px] tabular-nums whitespace-nowrap";
 
 export interface ArchiveTableProps {
   viewModel: ArchiveViewModel;
@@ -194,126 +96,126 @@ export interface ArchiveTableProps {
 
 export function ArchiveTable({ viewModel }: ArchiveTableProps) {
   const { rows } = viewModel;
+  const router = useRouter();
 
   return (
     <section
-      className="motion-fade-up overflow-hidden rounded-instrument border border-border bg-surface"
+      className="motion-fade-up min-w-0 overflow-hidden rounded-instrument border border-border bg-surface"
       aria-label="Closed releases"
     >
       <div className="p-5">
-        <h2 className="font-serif text-section font-semibold text-foreground">
-          <span className="bracket-tag bracket-tag--accent bracket-tag--section instrument-section-title">
-            [RELEASES]
-          </span>
-        </h2>
+        <SectionHeader>Releases</SectionHeader>
       </div>
 
       {rows.length === 0 ? (
-        <p className="mx-5 mb-5 border border-dashed border-border bg-canvas px-4 py-12 text-center text-body-sm text-muted">
+        <p className="mx-5 mb-5 border border-dashed border-border bg-canvas px-4 py-12 text-center text-sm text-muted">
           No closed releases yet. Releases appear here once marked closed in the
           database (auto-close on D28 arrives in step 8).
         </p>
       ) : (
-        <div className="overflow-x-auto border-t border-border-subtle">
-          <table className="min-w-[960px] w-full text-left text-body-sm">
-            <thead className="border-b border-border-subtle bg-canvas text-label text-muted">
+        <div className="min-w-0 overflow-hidden border-t border-border-subtle">
+          <table className="w-full table-fixed text-left text-body-sm">
+            <thead className="border-b border-border-subtle bg-canvas text-muted">
               <tr>
-                <th className="px-4 py-3 font-medium uppercase tracking-[0.06em]">
+                <th className="w-[28%] px-3 py-2 text-[10px] font-medium uppercase tracking-[0.04em]">
                   Release
                 </th>
-                <th className="px-4 py-3 font-medium uppercase tracking-[0.06em]">
-                  Genre
+                <th className="w-[13%] px-2 py-2 text-right text-[10px] font-medium uppercase leading-tight tracking-[0.04em]">
+                  <span className="block">Release</span>
+                  <span className="block">date</span>
                 </th>
-                <th className="px-4 py-3 font-medium uppercase tracking-[0.06em]">
-                  Released
+                <th className="w-[13%] px-2 py-2 text-right text-[10px] font-medium uppercase leading-tight tracking-[0.04em]">
+                  <span className="block">Actual</span>
+                  <span className="block">streams</span>
                 </th>
-                <th className="px-4 py-3 font-medium uppercase tracking-[0.06em]">
-                  Locked wk1
+                <th className="w-[11%] px-2 py-2 text-right text-[10px] font-medium uppercase leading-tight tracking-[0.04em]">
+                  <span className="block">Δ</span>
+                  <span className="block">streams</span>
                 </th>
-                <th className="px-4 py-3 font-medium uppercase tracking-[0.06em]">
-                  Actual wk1
+                <th className="w-[11%] px-2 py-2 text-right text-[10px] font-medium uppercase leading-tight tracking-[0.04em]">
+                  <span className="block">Δ</span>
+                  <span className="block">saves</span>
                 </th>
-                <th className="px-4 py-3 font-medium uppercase tracking-[0.06em]">
-                  Δ Streams
+                <th className="w-[11%] px-2 py-2 text-right text-[10px] font-medium uppercase leading-tight tracking-[0.04em]">
+                  <span className="block">Save</span>
+                  <span className="block">rate</span>
                 </th>
-                <th className="px-4 py-3 font-medium uppercase tracking-[0.06em]">
-                  Δ Saves
-                </th>
-                <th className="px-4 py-3 font-medium uppercase tracking-[0.06em]">
-                  Save rate
-                </th>
-                <th className="px-4 py-3 font-medium uppercase tracking-[0.06em]">
+                <th className="w-[13%] px-3 py-2 text-right text-[10px] font-medium uppercase tracking-[0.04em]">
                   Closed
-                </th>
-                <th className="px-4 py-3 font-medium uppercase tracking-[0.06em]">
-                  <span className="sr-only">View</span>
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-subtle bg-surface">
               {rows.map((row) => (
-                <tr key={row.id} className="hover:bg-canvas">
-                  <td className="px-4 py-3">
-                    <Link
-                      href={row.detailHref}
-                      className="font-semibold text-foreground hover:text-accent-readable hover:underline"
-                    >
+                <tr
+                  key={row.id}
+                  className="cursor-pointer hover:bg-canvas"
+                  onClick={() => router.push(row.detailHref)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      router.push(row.detailHref);
+                    }
+                  }}
+                  tabIndex={0}
+                  role="link"
+                  aria-label={`${row.trackName} by ${row.artistName}`}
+                >
+                  <td className="min-w-0 px-3 py-2">
+                    <p className="truncate font-semibold text-foreground">
                       {row.trackName}
-                    </Link>
-                    <p className="text-secondary">{row.artistName}</p>
+                    </p>
+                    <p className="truncate text-secondary">{row.artistName}</p>
                   </td>
-                  <td className="px-4 py-3 text-secondary">{row.genre}</td>
-                  <td className="px-4 py-3 font-mono tabular-nums text-secondary">
+                  <td className={`${NUM} px-2 text-secondary`}>
                     {row.releaseDateDisplay}
                   </td>
-                  <td className="px-4 py-3 font-mono tabular-nums text-secondary">
-                    {formatForecastCell(row.lockedStreams, row.lockedSaves)}
-                  </td>
-                  <td className="px-4 py-3 font-mono tabular-nums text-secondary">
-                    {row.actualStreams != null && row.actualSaves != null ? (
-                      <>
-                        {formatForecastCell(row.actualStreams, row.actualSaves)}
-                        {!row.wk1Complete ? (
-                          <span className="mt-1 block font-sans text-[10px] font-semibold uppercase tracking-wide text-semantic-warning">
-                            Incomplete wk1
-                          </span>
-                        ) : null}
-                      </>
+                  <td className={`${NUM} px-2 text-secondary`}>
+                    {row.actualStreams != null ? (
+                      formatCompactNumber(row.actualStreams)
                     ) : (
                       <span className="text-muted">n/a</span>
                     )}
                   </td>
-                  <td className="px-4 py-3">
-                    {formatDeltaCell(
-                      row.streamsDelta,
+                  <td
+                    className="px-2 py-2 text-right"
+                    title={forecastActualTitle(
+                      row.lockedStreams,
+                      row.actualStreams,
+                    )}
+                  >
+                    {formatDeltaPctCell(
                       row.streamsDeltaPct,
                       row.streamsDeltaTone,
                     )}
                   </td>
-                  <td className="px-4 py-3">
-                    {formatDeltaCell(
-                      row.savesDelta,
+                  <td
+                    className="px-2 py-2 text-right"
+                    title={forecastActualTitle(
+                      row.lockedSaves,
+                      row.actualSaves,
+                    )}
+                  >
+                    {formatDeltaPctCell(
                       row.savesDeltaPct,
                       row.savesDeltaTone,
                     )}
                   </td>
-                  <td className="px-4 py-3">
-                    {saveRatePill(
-                      row.actualSaveRate,
-                      row.saveRateVsBand,
-                      row.saveRateBand,
-                    )}
+                  <td
+                    className="px-2 py-2 text-right"
+                    title={saveRateTitle(row.saveRateVsBand, row.saveRateBand)}
+                  >
+                    {saveRateCell(row.actualSaveRate, row.saveRateVsBand)}
                   </td>
-                  <td className="px-4 py-3 font-mono tabular-nums text-muted">
+                  <td
+                    className={`${NUM} px-3 text-muted`}
+                    title={
+                      row.closedAt
+                        ? formatLockTimestamp(row.closedAt)
+                        : undefined
+                    }
+                  >
                     {row.closedAtDisplay ?? "n/a"}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      href={row.detailHref}
-                      className="text-sm font-medium text-accent-readable hover:text-accent-hover hover:underline"
-                    >
-                      View
-                    </Link>
                   </td>
                 </tr>
               ))}

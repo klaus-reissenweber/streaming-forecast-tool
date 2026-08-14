@@ -1,3 +1,4 @@
+import { StatusPill } from "@/components/ui/StatusPill";
 import type { CooksDropRelease } from "@/lib/load-draft-model";
 import type { ActiveModelMetadata } from "@/lib/model/active-model";
 
@@ -14,10 +15,9 @@ export function CooksAndSamples({
     <section className="motion-fade-up grid gap-3 md:grid-cols-2">
       <div className="rounded-instrument border border-border bg-surface p-4">
         <div className="flex flex-wrap items-baseline gap-2">
-          <h2 className="font-serif text-section font-semibold text-foreground">
+          <h2 className="text-section font-semibold text-foreground">
             Sample sizes
           </h2>
-          <span className="bracket-tag bracket-tag--neutral">METADATA</span>
         </div>
         {samples ? (
           <dl className="mt-3 grid grid-cols-2 gap-2 text-body-sm">
@@ -48,12 +48,10 @@ export function CooksAndSamples({
 
       <div className="rounded-instrument border border-border bg-surface p-4">
         <div className="flex flex-wrap items-baseline gap-2">
-          <h2 className="font-serif text-section font-semibold text-foreground">
+          <h2 className="text-section font-semibold text-foreground">
             Cook&apos;s D drops
           </h2>
-          <span className="bracket-tag bracket-tag--warning">
-            {drops.length}
-          </span>
+          <StatusPill tone="warning">{drops.length}</StatusPill>
         </div>
         {drops.length === 0 ? (
           <p className="mt-2 text-body-sm text-secondary">None excluded.</p>

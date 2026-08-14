@@ -28,7 +28,6 @@
   --color-chart-projected: #1565a8;
   --color-chart-actual: #12151a;
   --color-chart-grid: #eceef2;
-  --color-dot-matrix: #c5cad3;
   --color-bracket-bg: #f0f2f5;
   --color-bracket-text: #545b66;
   --color-scanline: rgba(18, 21, 26, 0.04);
@@ -83,7 +82,6 @@
   --color-chart-actual: var(--color-chart-actual);
   --color-chart-grid: var(--color-chart-grid);
   --color-chart-axis: #868e98;
-  --color-dot: var(--color-dot-matrix);
   --color-bracket-bg: var(--color-bracket-bg);
   --color-bracket-text: var(--color-bracket-text);
 
@@ -199,50 +197,6 @@ body {
   letter-spacing: 0.03em;
   color: var(--color-accent-readable);
   white-space: nowrap;
-}
-
-/* ─── Instrument utility: dot-matrix column divider ─── */
-.dot-matrix-divider {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  align-self: stretch;
-  padding-inline: 0.5rem;
-}
-
-.dot-matrix-divider::before {
-  content: "";
-  display: block;
-  width: 2px;
-  height: 2px;
-  border-radius: 50%;
-  background-color: var(--color-dot-matrix);
-  box-shadow:
-    0 6px 0 0 var(--color-dot-matrix),
-    0 12px 0 0 var(--color-dot-matrix),
-    0 18px 0 0 var(--color-dot-matrix),
-    0 24px 0 0 var(--color-dot-matrix),
-    0 30px 0 0 var(--color-dot-matrix),
-    0 36px 0 0 var(--color-dot-matrix),
-    0 42px 0 0 var(--color-dot-matrix);
-}
-
-/* ─── Instrument utility: metric cell dot-matrix foot ─── */
-.instrument-metric-foot {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 0.5rem;
-}
-
-.instrument-metric-foot span {
-  display: block;
-  width: 2px;
-  height: 2px;
-  border-radius: 50%;
-  background-color: var(--color-dot-matrix);
 }
 
 /* ─── Instrument utility: left accent rule ─── */

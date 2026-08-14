@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { SectionHeader } from "@/components/layout/SectionHeader";
 import { upsertDailyDay } from "@/app/release/[id]/actions";
 import {
   DailyEntryGrid,
@@ -149,11 +150,7 @@ export function DailyEntrySection({
 
   return (
     <section className="motion-fade-up" aria-label="Daily data">
-      <h2 className="font-serif text-section font-semibold text-foreground">
-        <span className="bracket-tag bracket-tag--accent bracket-tag--section instrument-section-title">
-          [DAILY DATA]
-        </span>
-      </h2>
+      <SectionHeader>Daily data</SectionHeader>
 
       <div className="mt-4 rounded-instrument border border-border bg-surface p-5">
         {sectionError ? (

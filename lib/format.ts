@@ -75,3 +75,16 @@ export function formatLockTimestamp(isoTimestamp: string): string {
     minute: "2-digit",
   }).format(date);
 }
+
+/** Date only from a timestamptz (no time). */
+export function formatTimestampDate(isoTimestamp: string): string {
+  const date = new Date(isoTimestamp);
+  if (Number.isNaN(date.getTime())) {
+    return isoTimestamp;
+  }
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}

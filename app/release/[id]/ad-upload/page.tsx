@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { PageBreadcrumbs } from "@/components/layout/PageBreadcrumbs";
+import { AdResultsStatus } from "@/components/release/AdResultsStatus";
 import { AdResultsUploadWizard } from "@/components/release/AdResultsUploadWizard";
+import { summarizeAdCampaigns } from "@/lib/ad-results-summary";
+import { releaseKeyFromTrackName } from "@/lib/ad-upload/canonical";
 import { requireAllowedUser } from "@/lib/auth/require-allowed-user";
+import { loadCampaignFlightsForReleaseKey } from "@/lib/load-campaign-flights";
 import { loadRelease } from "@/lib/load-release";
 
 interface PageProps {
@@ -43,24 +48,34 @@ export default async function AdUploadPage({ params }: PageProps) {
   const release = await loadRelease(id);
   if (!release) notFound();
 
+  const campaignFlights = await loadCampaignFlightsForReleaseKey(
+    releaseKeyFromTrackName(release.track_name),
+  ).catch(() => []);
+  const adSummary = summarizeAdCampaigns(campaignFlights);
+
   return (
     <main className="mx-auto max-w-4xl px-5 py-8">
-      <div className="mb-6">
-        <p className="text-sm font-medium">
-          <Link
-            href={`/release/${id}`}
-            className="text-accent-readable hover:underline"
-          >
-            ← {release.track_name}
-          </Link>
-        </p>
-        <h1 className="mt-2 font-serif text-release-title font-semibold text-foreground">
+      <PageBreadcrumbs
+        items={[
+          {
+            label: "Releases",
+            href: release.status === "closed" ? "/archive" : "/",
+          },
+          { label: release.track_name, href: `/release/${id}` },
+          { label: "Ad results" },
+        ]}
+      />
+      <div className="mt-4 mb-6">
+        <h1 className="font-serif text-release-title font-semibold text-foreground">
           Ad results
         </h1>
-        <p className="mt-1 text-body-sm text-secondary">
+        <p className="mt-1 text-sm text-muted">
           Enter campaign numbers manually, or upload a partner export — both
           write into the same ad model tables for this release.
         </p>
+      </div>
+      <div className="mb-6">
+        <AdResultsStatus summary={adSummary} />
       </div>
       <AdResultsUploadWizard
         releaseId={id}

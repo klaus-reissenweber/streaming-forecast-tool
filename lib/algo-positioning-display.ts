@@ -1,4 +1,5 @@
-import type { AlgoBand } from "@/lib/forecast";
+import { formatCompactNumber } from "@/lib/format";
+import type { AlgoBand, AlgoPositioningResult } from "@/lib/forecast";
 
 /** UI labels and copy for algo positioning bands (prototype v3.2). */
 export const ALGO_BAND_DISPLAY: Record<
@@ -33,3 +34,20 @@ export const ALGO_BAND_ORDER: AlgoBand[] = [
   "strong",
   "elite",
 ];
+
+/** Percentile cutoff from the tier band that produced this classification. */
+export function algoBandCutoffCaption(
+  positioning: Pick<AlgoPositioningResult, "band" | "tier" | "thresholds">,
+): string {
+  const { band, tier, thresholds } = positioning;
+  if (band === "weak") {
+    return `< ${formatCompactNumber(thresholds.p25)} saves (p25, ${tier})`;
+  }
+  if (band === "typical") {
+    return `${formatCompactNumber(thresholds.p25)}–${formatCompactNumber(thresholds.p75)} saves (p25–p75, ${tier})`;
+  }
+  if (band === "strong") {
+    return `${formatCompactNumber(thresholds.p75)}–${formatCompactNumber(thresholds.p90)} saves (p75–p90, ${tier})`;
+  }
+  return `≥ ${formatCompactNumber(thresholds.p90)} saves (p90, ${tier})`;
+}

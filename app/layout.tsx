@@ -4,6 +4,7 @@ import {
   IBM_Plex_Sans,
   Source_Serif_4,
 } from "next/font/google";
+import { AppShell } from "@/components/layout/AppShell";
 import "./globals.css";
 
 const sourceSerif = Source_Serif_4({
@@ -39,7 +40,9 @@ export default function RootLayout({
       lang="en"
       className={`${sourceSerif.variable} ${plexSans.variable} ${plexMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        <AppShell>{children}</AppShell>
+      </body>
     </html>
   );
 }

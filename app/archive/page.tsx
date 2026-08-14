@@ -1,27 +1,23 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ArchiveFilters, ArchiveTable } from "@/components/archive/ArchiveTable";
+import { ArchiveFilters } from "@/components/archive/ArchiveFilters";
+import { ArchiveTable } from "@/components/archive/ArchiveTable";
 import { ArchiveSummaryBar } from "@/components/archive/ArchiveSummaryBar";
-import { RetrainProgress } from "@/components/archive/RetrainProgress";
 import {
   buildArchiveViewModel,
   type ArchiveRow,
   type ArchiveSortOption,
 } from "@/lib/build-archive-view-model";
-import { canRetrain } from "@/lib/auth/retrain-allowed";
-import { requireAllowedUser } from "@/lib/auth/require-allowed-user";
 import { GENRES } from "@/lib/constants";
 import { formatReleaseDate } from "@/lib/format";
 import type { Genre } from "@/lib/forecast";
 import { loadActiveModel } from "@/lib/load-active-model";
 import { loadClosedReleasesWithDailyData } from "@/lib/load-closed-releases";
 import { loadLastRetrainAt } from "@/lib/load-last-retrain-at";
-import { loadLatestRetrainJob } from "@/lib/load-retrain-job";
 import { logActiveModelSource } from "@/lib/model/forecast-model";
 
 export const metadata: Metadata = {
   title: "Release archive",
-  description: "Closed releases with locked forecast vs actual week-1 performance.",
+  description: "Closed releases with forecast vs actual week-1 performance.",
 };
 
 const SORT_OPTIONS: ArchiveSortOption[] = [
@@ -80,14 +76,10 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
     { releases, dailyDataByReleaseId },
     lastRetrainAt,
     model,
-    latestJob,
-    auth,
   ] = await Promise.all([
     loadClosedReleasesWithDailyData({ genre }),
     loadLastRetrainAt(),
     loadActiveModel(),
-    loadLatestRetrainJob(),
-    requireAllowedUser(),
   ]);
   logActiveModelSource(model, "archive");
 
@@ -101,61 +93,28 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
     },
   );
 
-  const canEnqueue =
-    auth.ok && canRetrain(auth.user.email);
-
-  const closedReleaseCount = viewModel.summary.totalClosed;
   const dateRange = formatArchiveDateRange(viewModel.rows);
-  const closedReleaseLabel = `${closedReleaseCount} closed release${closedReleaseCount === 1 ? "" : "s"}`;
-  const archiveMetaLine = dateRange
-    ? `${closedReleaseLabel} · ${dateRange} · model ${viewModel.summary.activeModelSource}`
-    : `${closedReleaseLabel} · model ${viewModel.summary.activeModelSource}`;
 
   return (
     <main className="mx-auto max-w-6xl px-5 py-8">
       <header className="border-b border-border pb-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <h1 className="font-serif text-release-title font-semibold text-foreground">
-              Release archive
-            </h1>
-            <p className="mt-1 text-body-sm text-secondary">{archiveMetaLine}</p>
-          </div>
-          <nav className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium">
-            <Link
-              href="/"
-              className="text-accent-readable hover:text-accent-hover hover:underline"
-            >
-              Active releases
-            </Link>
-            <Link
-              href="/new"
-              className="text-accent-readable hover:text-accent-hover hover:underline"
-            >
-              Create release
-            </Link>
-          </nav>
-        </div>
+        <h1 className="font-serif text-release-title font-semibold text-foreground">
+          Release archive
+        </h1>
+        {dateRange ? (
+          <p className="mt-1 text-sm text-muted">{dateRange}</p>
+        ) : null}
       </header>
 
       <div className="mt-6">
-        <RetrainProgress
-          progressCount={viewModel.summary.retrainProgressCount}
-          lastRetrainAt={viewModel.summary.lastRetrainAt}
-          initialJob={latestJob}
-          canEnqueue={canEnqueue}
-        />
-
-        <div className="mt-6">
-          <ArchiveSummaryBar summary={viewModel.summary} />
-          <div className="mt-4">
-            <ArchiveFilters currentGenre={genre} currentSort={sort} />
-          </div>
+        <ArchiveSummaryBar summary={viewModel.summary} />
+        <div className="mt-4">
+          <ArchiveFilters currentGenre={genre} currentSort={sort} />
         </div>
+      </div>
 
-        <div className="mt-6">
-          <ArchiveTable viewModel={viewModel} />
-        </div>
+      <div className="mt-6">
+        <ArchiveTable viewModel={viewModel} />
       </div>
     </main>
   );

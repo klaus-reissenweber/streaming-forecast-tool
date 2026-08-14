@@ -1,7 +1,10 @@
+import { SectionHeader } from "@/components/layout/SectionHeader";
 import {
   ALGO_BAND_DISPLAY,
   ALGO_BAND_ORDER,
+  algoBandCutoffCaption,
 } from "@/lib/algo-positioning-display";
+import { StatusPill } from "@/components/ui/StatusPill";
 import { formatCompactNumber } from "@/lib/format";
 import type { AlgoPositioningResult } from "@/lib/forecast";
 
@@ -26,14 +29,9 @@ export function AlgoPositioningModule({
     >
       <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="font-serif text-section font-semibold text-foreground">
-            <span className="bracket-tag bracket-tag--accent bracket-tag--section instrument-section-title">
-              [ALGO POSITIONING]
-            </span>
-          </h2>
-          <p className="mt-1 text-body-sm text-muted">
-            Week-1 save count vs {tier} tier benchmarks (locked forecast)
-          </p>
+          <SectionHeader description={`Week-1 save count vs ${tier} tier benchmarks (forecast)`}>
+            Algo positioning
+          </SectionHeader>
         </div>
         <div className="mt-2 sm:mt-0 sm:text-right">
           <p className="text-label text-muted">Current projection</p>
@@ -83,7 +81,7 @@ export function AlgoPositioningModule({
                   {display.label}
                 </h3>
                 {isActive ? (
-                  <span className="bracket-tag bracket-tag--accent">[YOU]</span>
+                  <StatusPill tone="accent">You</StatusPill>
                 ) : null}
               </div>
               <p
@@ -103,9 +101,9 @@ export function AlgoPositioningModule({
       </div>
 
       <p className="mt-4 text-body-sm text-secondary">
-        Locked forecast places this release in the{" "}
+        Forecast places this release in the{" "}
         <span className="font-semibold text-foreground">{active.label}</span>{" "}
-        band.
+        band — {algoBandCutoffCaption(positioning)}.
       </p>
     </section>
   );

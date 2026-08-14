@@ -88,8 +88,41 @@ export function reportPublicPath(slug: string): string {
   return `/report/${slug}`;
 }
 
+/** Internal preview of the public report — does not change the shareable URL. */
+export function reportInternalPath(slug: string): string {
+  return `${reportPublicPath(slug)}?from=app`;
+}
+
+export function withInternalReportPreview(path: string): string {
+  const pathname = path.split("?")[0] ?? path;
+  return `${pathname}?from=app`;
+}
+
+export function isInternalReportPreview(from: string | undefined): boolean {
+  return from === "app";
+}
+
 export function reportPublicUrl(slug: string, origin?: string): string {
   const path = reportPublicPath(slug);
   if (!origin) return path;
   return `${origin.replace(/\/$/, "")}${path}`;
+}
+
+/** Auth'd listing of generated reports (expired rows omitted). */
+export async function loadAdReportsList(): Promise<AdReportRecord[]> {
+  const sb = createServiceClient();
+  const { data, error } = await sb
+    .from("ad_reports")
+    .select(
+      "id, release_id, slug, title, created_at, updated_at, expires_at, metrics_snapshot",
+    )
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    throw new Error(`ad_reports list: ${error.message}`);
+  }
+
+  return (data ?? [])
+    .map((row) => mapRow(row as AdReportRow))
+    .filter((report) => !isExpired(report.expiresAt));
 }

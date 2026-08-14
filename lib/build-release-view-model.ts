@@ -35,6 +35,11 @@ import {
   type DailyDataPoint,
   type ReleaseRecord,
 } from "@/lib/map-release-row";
+import { computeWeek1Actuals } from "@/lib/compute-week1-actuals";
+import {
+  classifySaveRateVsBand,
+  type SaveRateVsBand,
+} from "@/lib/save-rate-band-label";
 
 export type ReleasePhase = "pre-release" | "monitoring";
 
@@ -42,6 +47,7 @@ export interface LockedForecastSummary {
   streams: number;
   saves: number;
   impliedSaveRate: number;
+  saveRateBand: { lo: number; hi: number };
   lockedAt: string;
   lockedAtDisplay: string;
 }
@@ -72,6 +78,8 @@ export interface ReleaseViewModel {
   actualStreamsByDay: (number | null)[];
   monitoring: MonitoringSummary;
   flags: readonly ReleaseFlag[];
+  actualSaveRate: number | null;
+  actualSaveRateVsBand: SaveRateVsBand | null;
 }
 
 function chartSeriesFromDailyData(dailyData: DailyDataPoint[]): {
@@ -110,13 +118,27 @@ export function buildReleaseViewModel(
   const inputs = releaseRowToForecastInputs(release);
   const forecastModel: ForecastModel = model;
 
+  const impliedSaveRate = computeImpliedSaveRate(
+    release.locked_forecast_streams,
+    release.locked_forecast_saves,
+  );
+  const saveRateBand = forecastModel.saveRateBands[release.genre];
+  const wk1Actuals = computeWeek1Actuals(dailyData);
+  const actualSaveRate =
+    wk1Actuals.streams != null &&
+    wk1Actuals.saves != null &&
+    wk1Actuals.streams > 0
+      ? (wk1Actuals.saves / wk1Actuals.streams) * 100
+      : null;
+  const actualSaveRateVsBand =
+    actualSaveRate == null
+      ? null
+      : classifySaveRateVsBand(actualSaveRate, saveRateBand);
   const locked: LockedForecastSummary = {
     streams: release.locked_forecast_streams,
     saves: release.locked_forecast_saves,
-    impliedSaveRate: computeImpliedSaveRate(
-      release.locked_forecast_streams,
-      release.locked_forecast_saves,
-    ),
+    impliedSaveRate,
+    saveRateBand,
     lockedAt: release.created_at,
     lockedAtDisplay: formatLockTimestamp(release.created_at),
   };
@@ -190,5 +212,7 @@ export function buildReleaseViewModel(
     actualStreamsByDay,
     monitoring,
     flags,
+    actualSaveRate,
+    actualSaveRateVsBand,
   };
 }

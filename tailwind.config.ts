@@ -50,7 +50,6 @@ const config = {
           grid: "#ECEEF2",
           axis: "#868E98",
         },
-        dot: "#C5CAD3",
         bracket: {
           bg: "#F0F2F5",
           text: "#545B66",
@@ -77,7 +76,7 @@ const config = {
       },
       fontSize: {
         "release-title": ["1.75rem", { lineHeight: "1.2", fontWeight: "600" }],
-        section: ["1.125rem", { lineHeight: "1.3", fontWeight: "600" }],
+        section: ["1.0625rem", { lineHeight: "1.3", fontWeight: "600" }],
         "metric-value": ["1.75rem", { lineHeight: "1.1", fontWeight: "600" }],
         label: [
           "0.6875rem",

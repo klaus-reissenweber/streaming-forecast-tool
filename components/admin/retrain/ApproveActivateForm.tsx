@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { activateDraftModel } from "@/app/admin/retrain/approve/actions";
+import { StatusPill } from "@/components/ui/StatusPill";
 
 export interface ApproveActivateFormProps {
   draftId: string;
@@ -43,14 +44,12 @@ export function ApproveActivateForm({
   return (
     <section className="rounded-instrument border border-border bg-surface p-5 motion-fade-up">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="font-serif text-section font-semibold text-foreground">
+        <h2 className="text-section font-semibold text-foreground">
           Use this model
         </h2>
-        <span
-          className={`bracket-tag ${allHardPassed ? "bracket-tag--positive" : "bracket-tag--warning"}`}
-        >
-          {allHardPassed ? "HARD PASS" : "OVERRIDE REQUIRED"}
-        </span>
+        <StatusPill tone={allHardPassed ? "positive" : "warning"}>
+          {allHardPassed ? "Hard pass" : "Override required"}
+        </StatusPill>
       </div>
 
       {!allHardPassed ? (

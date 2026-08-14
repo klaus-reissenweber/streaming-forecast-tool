@@ -22,7 +22,7 @@ function CurveCard({ curve }: { curve: CurvePreview }) {
   return (
     <div className="rounded-instrument border border-border bg-surface p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="font-serif text-sm font-semibold text-foreground">
+        <h3 className="text-sm font-semibold text-foreground">
           {curve.label} release
         </h3>
         <span className="font-mono text-caption text-secondary">
@@ -80,10 +80,10 @@ export function ComposedCurvePreview({ curves }: { curves: CurvePreview[] }) {
   return (
     <section className="motion-fade-up">
       <div className="mb-3 flex flex-wrap items-baseline gap-2">
-        <h2 className="font-serif text-section font-semibold text-foreground">
+        <h2 className="text-section font-semibold text-foreground">
           Composed curve preview
         </h2>
-        <span className="bracket-tag bracket-tag--accent">NEW VS ACTIVE</span>
+        <span className="text-caption text-muted">New vs active</span>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
         {curves.map((curve) => (

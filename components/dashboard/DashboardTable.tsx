@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
+import { SectionHeader } from "@/components/layout/SectionHeader";
+import { StatusPill, type PillTone } from "@/components/ui/StatusPill";
 import type {
   DashboardRow,
   DashboardViewModel,
@@ -14,23 +16,23 @@ import type { HealthStatus } from "@/lib/monitoring";
 
 const HEALTH_STATUS_CONFIG: Record<
   HealthStatus,
-  { tag: string; tagClass: string }
+  { label: string; tone: PillTone }
 > = {
   "on-track": {
-    tag: "[ON TRACK]",
-    tagClass: "bracket-tag--neutral",
+    label: "On track",
+    tone: "neutral",
   },
   outperforming: {
-    tag: "[OUTPERFORMING]",
-    tagClass: "bracket-tag--positive",
+    label: "Outperforming",
+    tone: "positive",
   },
   lagging: {
-    tag: "[LAGGING]",
-    tagClass: "bracket-tag--negative",
+    label: "Lagging",
+    tone: "negative",
   },
   awaiting: {
-    tag: "[AWAITING]",
-    tagClass: "bracket-tag--neutral",
+    label: "Awaiting",
+    tone: "neutral",
   },
 };
 
@@ -74,7 +76,7 @@ function formatProjectedWk1Cell(row: DashboardRow): ReactNode {
         {formatCompactNumber(row.projectedWk1)}
       </span>
       <span className={`font-mono text-[11px] tabular-nums ${deltaClass}`}>
-        vs {formatCompactNumber(row.lockedWk1)} locked
+        vs {formatCompactNumber(row.lockedWk1)} forecast
         {row.healthStatus !== "awaiting" ? (
           <>
             <span className="text-muted"> · </span>
@@ -140,9 +142,7 @@ function DashboardTableRow({ row }: { row: DashboardRow }) {
         {formatDayIntoCampaign(row.dayIntoCampaign)}
       </td>
       <td className="px-4 py-3">
-        <span className={`bracket-tag ${healthConfig.tagClass}`}>
-          {healthConfig.tag}
-        </span>
+        <StatusPill tone={healthConfig.tone}>{healthConfig.label}</StatusPill>
       </td>
       <td className="px-4 py-3">{formatProjectedWk1Cell(row)}</td>
       <td className="px-4 py-3">
@@ -169,11 +169,7 @@ export function DashboardTable({ viewModel }: DashboardTableProps) {
       aria-label="Active releases"
     >
       <div className="p-5">
-        <h2 className="font-serif text-section font-semibold text-foreground">
-          <span className="bracket-tag bracket-tag--accent bracket-tag--section instrument-section-title">
-            [RELEASES]
-          </span>
-        </h2>
+        <SectionHeader>Releases</SectionHeader>
       </div>
 
       {rows.length === 0 ? (

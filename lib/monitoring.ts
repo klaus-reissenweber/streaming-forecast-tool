@@ -126,18 +126,18 @@ function healthCopy(
       };
     case "outperforming":
       return {
-        title: "Outperforming locked forecast",
-        detail: `Projected ${projectedLabel} wk1 vs ${lockedLabel} locked (+${Math.abs(deltaPct).toFixed(0)}% from ${dayRange} pace).`,
+        title: "Outperforming forecast",
+        detail: `Projected ${projectedLabel} wk1 vs ${lockedLabel} forecast (+${Math.abs(deltaPct).toFixed(0)}% from ${dayRange} pace).`,
       };
     case "lagging":
       return {
-        title: "Lagging locked forecast",
-        detail: `Projected ${projectedLabel} wk1 vs ${lockedLabel} locked (${deltaPct.toFixed(0)}% from ${dayRange} pace).`,
+        title: "Lagging forecast",
+        detail: `Projected ${projectedLabel} wk1 vs ${lockedLabel} forecast (${deltaPct.toFixed(0)}% from ${dayRange} pace).`,
       };
     case "on-track":
       return {
         title: "On track",
-        detail: `Projected ${projectedLabel} wk1 vs ${lockedLabel} locked (within ±${HEALTH_OUTPERFORM_THRESHOLD_PCT}% from ${dayRange} pace).`,
+        detail: `Projected ${projectedLabel} wk1 vs ${lockedLabel} forecast (within ±${HEALTH_OUTPERFORM_THRESHOLD_PCT}% from ${dayRange} pace).`,
       };
   }
 }

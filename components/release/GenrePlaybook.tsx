@@ -1,3 +1,4 @@
+import { SectionHeader } from "@/components/layout/SectionHeader";
 import type { ReactNode } from "react";
 import { GENRE_PLAYBOOKS } from "@/lib/constants";
 import type { Genre } from "@/lib/forecast";
@@ -14,40 +15,30 @@ type PlaybookSectionKey =
 
 const PLAYBOOK_SECTIONS: readonly {
   key: PlaybookSectionKey;
-  tag: string;
-  tagClass: string;
   ruleClass: string;
   titleClass: string;
   title: string;
 }[] = [
   {
     key: "optimize_for",
-    tag: "[GOAL]",
-    tagClass: "bracket-tag--accent",
     ruleClass: "border-l-accent",
     titleClass: "text-accent-readable",
     title: "What to optimize for",
   },
   {
     key: "best_practices",
-    tag: "[PLAYS]",
-    tagClass: "bracket-tag--info",
     ruleClass: "border-l-semantic-info",
     titleClass: "text-semantic-info",
     title: "Best practices",
   },
   {
     key: "creative",
-    tag: "[CREATIVE]",
-    tagClass: "bracket-tag--neutral",
     ruleClass: "border-l-muted",
     titleClass: "text-muted",
     title: "Creative direction",
   },
   {
     key: "avoid",
-    tag: "[AVOID]",
-    tagClass: "bracket-tag--warning",
     ruleClass: "border-l-semantic-warning",
     titleClass: "text-semantic-warning",
     title: "Avoid",
@@ -72,16 +63,12 @@ function BulletList({ items }: { items: readonly string[] }) {
 }
 
 function PlaybookSectionItem({
-  tag,
-  tagClass,
   ruleClass,
   titleClass,
   title,
   children,
   isLast,
 }: {
-  tag: string;
-  tagClass: string;
   ruleClass: string;
   titleClass: string;
   title: string;
@@ -94,12 +81,7 @@ function PlaybookSectionItem({
         isLast ? "" : "border-b border-border-subtle"
       }`}
     >
-      <h3 className="text-body-sm font-semibold">
-        <span className={`bracket-tag mr-1.5 align-middle ${tagClass}`}>
-          {tag}
-        </span>
-        <span className={`align-middle ${titleClass}`}>{title}</span>
-      </h3>
+      <h3 className={`text-body-sm font-semibold ${titleClass}`}>{title}</h3>
       <div className="mt-1.5 text-body-sm leading-relaxed text-secondary">
         {children}
       </div>
@@ -113,14 +95,7 @@ export function GenrePlaybook({ genre }: GenrePlaybookProps) {
 
   return (
     <section className="motion-fade-up" aria-label="Genre playbook">
-      <h2 className="font-serif text-section font-semibold text-foreground">
-        <span className="bracket-tag bracket-tag--accent mr-2 align-middle">
-          [PLAYBOOK]
-        </span>
-        <span className="instrument-section-title align-middle">
-          {genreLabel} operational playbook
-        </span>
-      </h2>
+      <SectionHeader>{genreLabel} operational playbook</SectionHeader>
 
       <ul className="mt-4 overflow-hidden rounded-instrument border border-border bg-surface">
         {PLAYBOOK_SECTIONS.map((section, index) => {
@@ -129,8 +104,6 @@ export function GenrePlaybook({ genre }: GenrePlaybookProps) {
           return (
             <PlaybookSectionItem
               key={section.key}
-              tag={section.tag}
-              tagClass={section.tagClass}
               ruleClass={section.ruleClass}
               titleClass={section.titleClass}
               title={section.title}

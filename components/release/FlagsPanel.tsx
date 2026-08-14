@@ -1,3 +1,5 @@
+import { SectionHeader } from "@/components/layout/SectionHeader";
+import { StatusPill, type PillTone } from "@/components/ui/StatusPill";
 import type { ReleasePhase } from "@/lib/build-release-view-model";
 import type { FlagType, ReleaseFlag } from "@/lib/flags";
 
@@ -14,27 +16,27 @@ const FLAG_ROW_INITIAL_DELAY_MS = 100;
 const FLAG_TYPE_CONFIG: Record<
   FlagType,
   {
-    tag: string;
-    tagClass: string;
+    label: string;
+    tone: PillTone;
     ruleClass: string;
     titleClass: string;
   }
 > = {
   positive: {
-    tag: "[+]",
-    tagClass: "bracket-tag--positive",
+    label: "Positive",
+    tone: "positive",
     ruleClass: "border-l-semantic-positive",
     titleClass: "text-semantic-positive",
   },
   warning: {
-    tag: "[WARN]",
-    tagClass: "bracket-tag--warning",
+    label: "Warning",
+    tone: "warning",
     ruleClass: "border-l-semantic-warning",
     titleClass: "text-semantic-warning",
   },
   info: {
-    tag: "[INFO]",
-    tagClass: "bracket-tag--info",
+    label: "Info",
+    tone: "info",
     ruleClass: "border-l-semantic-info",
     titleClass: "text-semantic-info",
   },
@@ -45,11 +47,7 @@ export function FlagsPanel({ phase, flags = [] }: FlagsPanelProps) {
 
   return (
     <section className="motion-fade-up" aria-label="Flags">
-      <h2 className="font-serif text-section font-semibold text-foreground">
-        <span className="bracket-tag bracket-tag--accent bracket-tag--section instrument-section-title">
-          [FLAGS]
-        </span>
-      </h2>
+      <SectionHeader>Flags</SectionHeader>
 
       {isEmpty ? (
         <p className="mt-4 border border-dashed border-border bg-canvas px-4 py-8 text-center text-caption text-muted">
@@ -73,12 +71,8 @@ export function FlagsPanel({ phase, flags = [] }: FlagsPanelProps) {
                   }ms`,
                 }}
               >
-                <p className="text-body-sm font-semibold">
-                  <span
-                    className={`bracket-tag mr-1.5 align-middle ${config.tagClass}`}
-                  >
-                    {config.tag}
-                  </span>
+                <p className="flex flex-wrap items-baseline gap-1.5 text-body-sm font-semibold">
+                  <StatusPill tone={config.tone}>{config.label}</StatusPill>
                   <span className={`align-middle ${config.titleClass}`}>
                     {flag.title}
                   </span>

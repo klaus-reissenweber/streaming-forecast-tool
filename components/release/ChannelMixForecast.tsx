@@ -1,5 +1,6 @@
 "use client";
 
+import { SectionHeader } from "@/components/layout/SectionHeader";
 import { AdSpendLiveForecast } from "@/components/new/AdSpendLiveForecast";
 import type { AdSpendPlan } from "@/lib/ad-forecast";
 import type { Genre } from "@/lib/forecast";
@@ -31,18 +32,9 @@ export function ChannelMixForecast({
       className="motion-fade-up"
       aria-label="Channel mix forecast"
     >
-      <h2 className="font-serif text-section font-semibold text-foreground">
-        <span className="bracket-tag bracket-tag--accent mr-2 align-middle">
-          [CHANNEL MIX]
-        </span>
-        <span className="instrument-section-title align-middle">
-          Channel mix
-        </span>
-      </h2>
-      <p className="mt-1 text-body-sm text-muted">
-        Forecasted ad metrics from the active ad model — same figures as create
-        release.
-      </p>
+      <SectionHeader description="Forecasted ad metrics from the active ad model — same figures as create release.">
+        Channel mix
+      </SectionHeader>
 
       {hasSpend ? (
         <div className="mt-4">

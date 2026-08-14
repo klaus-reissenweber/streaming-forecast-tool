@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { withInternalReportPreview } from "@/lib/ad-report/load";
 import { useState, useTransition } from "react";
 import { refreshReleaseReport } from "@/app/release/[id]/report-actions";
 
@@ -71,7 +72,7 @@ export function ReleaseReportActions({
     <div className="flex flex-col items-start gap-1 sm:items-end">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium">
         <Link
-          href={path}
+          href={withInternalReportPreview(path)}
           target="_blank"
           rel="noopener noreferrer"
           className="text-accent-readable hover:text-accent-hover hover:underline"

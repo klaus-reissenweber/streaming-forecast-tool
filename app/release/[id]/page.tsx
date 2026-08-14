@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { PageBreadcrumbs } from "@/components/layout/PageBreadcrumbs";
+import { AdResultsStatus } from "@/components/release/AdResultsStatus";
 import { AlgoPositioningModule } from "@/components/release/AlgoPositioningModule";
 import { ChannelMixForecast } from "@/components/release/ChannelMixForecast";
 import { DailyEntrySection } from "@/components/release/DailyEntrySection";
@@ -10,12 +12,15 @@ import { LockedForecastBanner } from "@/components/release/LockedForecastBanner"
 import { MetricCards } from "@/components/release/MetricCards";
 import { ReleasePageHeader } from "@/components/release/ReleasePageHeader";
 import { StreamCurveChart } from "@/components/release/StreamCurveChart";
-import { ALGO_BAND_DISPLAY } from "@/lib/algo-positioning-display";
-import { buildReleaseViewModel } from "@/lib/build-release-view-model";
 import {
-  loadAdReportByReleaseId,
-  reportPublicUrl,
-} from "@/lib/ad-report/load";
+  ALGO_BAND_DISPLAY,
+  algoBandCutoffCaption,
+} from "@/lib/algo-positioning-display";
+import { buildReleaseViewModel } from "@/lib/build-release-view-model";
+import { loadAdReportByReleaseId, reportPublicUrl } from "@/lib/ad-report/load";
+import { releaseKeyFromTrackName } from "@/lib/ad-upload/canonical";
+import { loadCampaignFlightsForReleaseKey } from "@/lib/load-campaign-flights";
+import { summarizeAdCampaigns } from "@/lib/ad-results-summary";
 import { loadActiveModel } from "@/lib/load-active-model";
 import { loadForecastData } from "@/lib/load-forecast-data";
 import { loadDailyData, loadRelease } from "@/lib/load-release";
@@ -37,7 +42,7 @@ export async function generateMetadata({
 
   return {
     title: `${release.track_name} · ${release.artist_name}`,
-    description: `Locked forecast monitoring for ${release.track_name} by ${release.artist_name}.`,
+    description: `Forecast monitoring for ${release.track_name} by ${release.artist_name}.`,
   };
 }
 
@@ -50,11 +55,15 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
   }
 
   const dailyData = await loadDailyData(id);
-  const [model, { adRates, coefficients }, existingReport] = await Promise.all([
-    loadActiveModel(),
-    loadForecastData(),
-    loadAdReportByReleaseId(id).catch(() => null),
-  ]);
+  const [model, { adRates, coefficients }, existingReport, campaignFlights] =
+    await Promise.all([
+      loadActiveModel(),
+      loadForecastData(),
+      loadAdReportByReleaseId(id).catch(() => null),
+      loadCampaignFlightsForReleaseKey(
+        releaseKeyFromTrackName(release.track_name),
+      ).catch(() => []),
+    ]);
   logActiveModelSource(model, `release/${id}`);
   const siteOrigin =
     process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
@@ -74,6 +83,8 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
   );
 
   const { health, saveVelocity, liveAlgoPositioning } = viewModel.monitoring;
+  const algoPositioningForMetrics =
+    liveAlgoPositioning ?? viewModel.algoPositioning;
   const lockedAlgoBandLabel =
     ALGO_BAND_DISPLAY[viewModel.algoPositioning.band].label;
   const liveAlgoBandLabel = liveAlgoPositioning
@@ -85,32 +96,56 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
       ? health.streamDaysEntered === 1
         ? "D1 pace"
         : `D1–D${health.streamDaysEntered} pace`
-      : "Locked forecast";
+      : "Forecast";
 
   const algoBandSublabel = liveAlgoPositioning
-    ? "Live pace"
-    : "Locked forecast";
+    ? `Live pace · ${algoBandCutoffCaption(algoPositioningForMetrics)}`
+    : algoBandCutoffCaption(algoPositioningForMetrics);
 
   return (
     <main className="mx-auto max-w-6xl px-5 py-8">
-      <ReleasePageHeader
-        releaseId={id}
-        trackName={viewModel.header.trackName}
-        artistName={viewModel.header.artistName}
-        genre={viewModel.header.genre}
-        releaseDateDisplay={viewModel.header.releaseDateDisplay}
-        editorialTier={viewModel.header.editorialTier}
-        status={viewModel.header.status}
-        reportPath={reportPath}
-        reportUrl={reportUrl}
+      <PageBreadcrumbs
+        items={[
+          {
+            label: "Releases",
+            href: viewModel.header.status === "closed" ? "/archive" : "/",
+          },
+          { label: viewModel.header.trackName },
+        ]}
       />
+
+      <div className="mt-4">
+        <ReleasePageHeader
+          releaseId={id}
+          trackName={viewModel.header.trackName}
+          artistName={viewModel.header.artistName}
+          genre={viewModel.header.genre}
+          releaseDateDisplay={viewModel.header.releaseDateDisplay}
+          editorialTier={viewModel.header.editorialTier}
+          status={viewModel.header.status}
+          reportPath={reportPath}
+          reportUrl={reportUrl}
+        />
+      </div>
+
+      <div className="mt-6">
+        <AdResultsStatus
+          summary={summarizeAdCampaigns(campaignFlights)}
+          href={`/release/${id}/ad-upload`}
+        />
+      </div>
 
       <div className="mt-6">
         <LockedForecastBanner
           streams={viewModel.locked.streams}
           saves={viewModel.locked.saves}
-          impliedSaveRate={viewModel.locked.impliedSaveRate}
+          forecastSaveRate={viewModel.locked.impliedSaveRate}
+          actualSaveRate={viewModel.actualSaveRate}
+          actualSaveRateVsBand={viewModel.actualSaveRateVsBand}
+          saveRateBand={viewModel.locked.saveRateBand}
           lockedAtDisplay={viewModel.locked.lockedAtDisplay}
+          status={viewModel.header.status}
+          releaseDate={viewModel.header.releaseDate}
           week1WithAds={viewModel.adLayer.week1WithAds}
           week1AdMarquee={viewModel.adLayer.week1AdMarquee}
           week1AdShowcase={viewModel.adLayer.week1AdShowcase}
@@ -129,7 +164,6 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
               algoBandLabel={liveAlgoBandLabel}
               algoBandSublabel={algoBandSublabel}
               modelConfidenceR2={viewModel.modelConfidenceR2}
-              activeModelSource={viewModel.activeModelSource}
             />
           </div>
         </section>
@@ -156,6 +190,7 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
             actualStreamsByDay={viewModel.actualStreamsByDay}
             phase={viewModel.phase}
             releaseDate={viewModel.header.releaseDate}
+            campaignFlights={campaignFlights}
           />
         </div>
 

@@ -22,6 +22,7 @@ import {
   type CanonicalRow,
   type ParsedTable,
 } from "@/lib/ad-upload/canonical";
+import { StatusPill } from "@/components/ui/StatusPill";
 import {
   applyGapFill,
   type GapFillAction,
@@ -34,6 +35,7 @@ import {
 } from "@/lib/ad-upload/manual-rows";
 import type { UpsertedCampaignRef } from "@/lib/ad-upload/campaign-ref";
 import { formatCount } from "@/lib/format";
+import { withInternalReportPreview } from "@/lib/ad-report/load";
 
 type EntryMode = "manual" | "upload";
 type Step = "entry" | "mapping" | "gaps" | "done";
@@ -429,7 +431,7 @@ export function AdResultsUploadWizard({
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-baseline gap-2">
-        <span className="bracket-tag bracket-tag--accent">{stepLabel}</span>
+        <StatusPill tone="accent">{stepLabel}</StatusPill>
         <p className="text-body-sm text-secondary">
           {trackName} · {artistName}
         </p>
@@ -1054,7 +1056,7 @@ export function AdResultsUploadWizard({
               </p>
               <div className="mt-2 flex flex-wrap gap-3 text-sm font-medium">
                 <Link
-                  href={reportPath}
+                  href={withInternalReportPreview(reportPath)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-accent-readable hover:underline"
