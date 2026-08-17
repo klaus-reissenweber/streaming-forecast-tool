@@ -42,7 +42,7 @@ function formatGenreLabel(genre: Genre): string {
 }
 
 const selectClass =
-  "min-w-[11rem] cursor-pointer rounded-instrument border border-border bg-surface px-2.5 py-1.5 text-sm text-foreground";
+  "w-full cursor-pointer rounded-instrument border border-border bg-surface px-2.5 py-1.5 text-sm text-foreground md:w-auto md:min-w-[11rem]";
 
 export function ArchiveFilters({
   currentGenre,
@@ -56,10 +56,10 @@ export function ArchiveFilters({
 
   return (
     <div
-      className="flex flex-wrap items-center gap-x-4 gap-y-2"
+      className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:gap-x-4 md:gap-y-2"
       aria-label="Archive filters"
     >
-      <label className="flex items-center gap-2">
+      <label className="flex w-full flex-col gap-1.5 md:w-auto md:flex-row md:items-center md:gap-2">
         <span className="text-label text-muted">Genre</span>
         <select
           className={selectClass}
@@ -78,7 +78,7 @@ export function ArchiveFilters({
         </select>
       </label>
 
-      <label className="flex items-center gap-2">
+      <label className="flex w-full flex-col gap-1.5 md:w-auto md:flex-row md:items-center md:gap-2">
         <span className="text-label text-muted">Sort</span>
         <select
           className={selectClass}

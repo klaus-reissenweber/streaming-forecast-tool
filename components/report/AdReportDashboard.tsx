@@ -67,6 +67,112 @@ function displayCampaignName(row: AdReportCampaignRow): string {
   return row.platform === "spotify" ? "Spotify" : "Meta";
 }
 
+function campaignCompareMetrics(c: AdReportCampaignRow) {
+  const resultActual =
+    c.resultActual ??
+    (c.platform === "spotify"
+      ? positiveOrNull(c.streams)
+      : (positiveOrNull(c.linkfireSpotifyClicks) ??
+        positiveOrNull(c.clicks)));
+  const resultForecast =
+    c.resultForecast ?? positiveOrNull(c.predictedSpotifyClicks);
+  const resultLabel =
+    c.resultLabel ??
+    (c.platform === "spotify" ? "Streams" : "Spotify clicks");
+  const status =
+    c.status ??
+    (resultActual != null && resultForecast != null
+      ? resultActual >= resultForecast
+        ? "achieved"
+        : "under_achieved"
+      : null);
+  const cpr =
+    resultActual != null && resultActual > 0
+      ? c.spend / resultActual
+      : c.costPerStream;
+  return { resultActual, resultForecast, resultLabel, status, cpr };
+}
+
+function CampaignCompareCard({
+  campaign,
+}: {
+  campaign: AdReportCampaignRow;
+}) {
+  const { resultActual, resultForecast, resultLabel, status, cpr } =
+    campaignCompareMetrics(campaign);
+  const isSpotify = campaign.platform === "spotify";
+
+  return (
+    <li className="px-4 py-3.5">
+      <div className="flex items-start gap-2.5">
+        {isSpotify ? (
+          <SpotifyLogo className="mt-0.5 h-5 w-5 shrink-0" />
+        ) : (
+          <MetaLogo className="mt-0.5 h-5 w-auto shrink-0" />
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="font-medium text-foreground">
+            {displayCampaignName(campaign)}
+          </p>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {campaign.streamsLabel === "estimate" ||
+            campaign.derivedFields.length > 0 ? (
+              <StatusPill tone="warning">Derived</StatusPill>
+            ) : isSpotify ? (
+              <StatusPill tone="neutral">Measured</StatusPill>
+            ) : null}
+            {!campaign.usableForModeling ? (
+              <StatusPill tone="warning">Report only</StatusPill>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-2">
+        {status === "achieved" ? (
+          <StatusPill tone="positive">Achieved</StatusPill>
+        ) : status === "under_achieved" ? (
+          <StatusPill tone="warning">Under achieved</StatusPill>
+        ) : (
+          <span className="text-sm text-muted">—</span>
+        )}
+      </div>
+
+      <dl className="mt-3 space-y-2 text-sm">
+        <div>
+          <dt className="text-caption text-muted">Spent</dt>
+          <dd className="font-mono tabular-nums text-foreground">
+            {formatUsd(campaign.spend, 0)}
+            {campaign.budget != null && campaign.budget > 0 ? (
+              <span className="text-muted">
+                {" / "}
+                {formatUsd(campaign.budget, 0)}
+              </span>
+            ) : null}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-caption text-muted">{resultLabel}</dt>
+          <dd className="font-mono tabular-nums text-foreground">
+            {resultActual == null ? "—" : formatCount(resultActual)}
+          </dd>
+          {resultForecast != null ? (
+            <dd className="text-caption text-secondary">
+              Forecast {formatCount(resultForecast)}
+            </dd>
+          ) : null}
+        </div>
+        <div>
+          <dt className="text-caption text-muted">Cost per result</dt>
+          <dd className="font-mono tabular-nums text-foreground">
+            {fmtUsdOrDash(cpr, 2)}
+          </dd>
+        </div>
+      </dl>
+    </li>
+  );
+}
+
 function MetricValue({
   value,
   estimate,
@@ -729,7 +835,19 @@ export function AdReportDashboard({
         <p className="mt-1 text-sm text-muted">
           How campaign goals performed at a glance.
         </p>
-        <div className="mt-3 overflow-x-auto rounded-instrument border border-border bg-surface">
+        <ul className="mt-3 divide-y divide-border-subtle overflow-hidden rounded-instrument border border-border bg-surface md:hidden print:hidden">
+          {visibleCampaigns.length === 0 ? (
+            <li className="px-4 py-4 text-muted">No campaigns in snapshot.</li>
+          ) : (
+            visibleCampaigns.map((c, i) => (
+              <CampaignCompareCard
+                key={`${c.campaignName}-${i}`}
+                campaign={c}
+              />
+            ))
+          )}
+        </ul>
+        <div className="mt-3 hidden overflow-x-auto rounded-instrument border border-border bg-surface md:block print:block">
           <table className="w-full text-left text-body-sm">
             <thead>
               <tr className="border-b border-border text-muted">
@@ -752,29 +870,13 @@ export function AdReportDashboard({
                 </tr>
               ) : (
                 visibleCampaigns.map((c, i) => {
-                  const resultActual =
-                    c.resultActual ??
-                    (c.platform === "spotify"
-                      ? positiveOrNull(c.streams)
-                      : positiveOrNull(c.linkfireSpotifyClicks) ??
-                        positiveOrNull(c.clicks));
-                  const resultForecast =
-                    c.resultForecast ??
-                    positiveOrNull(c.predictedSpotifyClicks);
-                  const resultLabel =
-                    c.resultLabel ??
-                    (c.platform === "spotify" ? "Streams" : "Spotify clicks");
-                  const status =
-                    c.status ??
-                    (resultActual != null && resultForecast != null
-                      ? resultActual >= resultForecast
-                        ? "achieved"
-                        : "under_achieved"
-                      : null);
-                  const cpr =
-                    resultActual != null && resultActual > 0
-                      ? c.spend / resultActual
-                      : c.costPerStream;
+                  const {
+                    resultActual,
+                    resultForecast,
+                    resultLabel,
+                    status,
+                    cpr,
+                  } = campaignCompareMetrics(c);
                   return (
                     <tr
                       key={`${c.campaignName}-${i}`}

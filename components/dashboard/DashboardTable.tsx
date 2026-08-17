@@ -110,6 +110,35 @@ function formatFlagCountCell(
   );
 }
 
+function DashboardReleaseCard({ row }: { row: DashboardRow }) {
+  const healthConfig = HEALTH_STATUS_CONFIG[row.healthStatus];
+
+  return (
+    <Link
+      href={row.detailHref}
+      aria-label={`${row.trackName} by ${row.artistName}`}
+      className="block px-4 py-3.5 hover:bg-canvas"
+    >
+      <p className="line-clamp-2 font-semibold text-foreground">
+        {row.trackName}
+      </p>
+      <p className="truncate text-secondary">{row.artistName}</p>
+
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+        <span className="font-mono text-sm tabular-nums text-secondary">
+          {formatDayIntoCampaign(row.dayIntoCampaign)}
+        </span>
+        <StatusPill tone={healthConfig.tone}>{healthConfig.label}</StatusPill>
+        <span className="inline-flex items-center gap-1.5 text-caption text-muted">
+          Flags {formatFlagCountCell(row.flagCount, row.mostSevereFlagType)}
+        </span>
+      </div>
+
+      <div className="mt-2">{formatProjectedWk1Cell(row)}</div>
+    </Link>
+  );
+}
+
 function DashboardTableRow({ row }: { row: DashboardRow }) {
   const router = useRouter();
   const healthConfig = HEALTH_STATUS_CONFIG[row.healthStatus];
@@ -183,7 +212,15 @@ export function DashboardTable({ viewModel }: DashboardTableProps) {
           </Link>
         </div>
       ) : (
-        <div className="overflow-x-auto border-t border-border-subtle">
+        <>
+          <ul className="divide-y divide-border-subtle border-t border-border-subtle md:hidden">
+            {rows.map((row) => (
+              <li key={row.id}>
+                <DashboardReleaseCard row={row} />
+              </li>
+            ))}
+          </ul>
+          <div className="hidden overflow-x-auto border-t border-border-subtle md:block">
           <table className="min-w-[880px] w-full text-left text-body-sm">
             <thead className="border-b border-border-subtle bg-canvas text-label text-muted">
               <tr>
@@ -213,7 +250,8 @@ export function DashboardTable({ viewModel }: DashboardTableProps) {
               ))}
             </tbody>
           </table>
-        </div>
+          </div>
+        </>
       )}
     </section>
   );

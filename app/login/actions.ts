@@ -24,7 +24,7 @@ export async function requestMagicLink(
   if (!allowedEmailsConfigured()) {
     return {
       success: false,
-      error: "Login is not configured. Set AUTH_ALLOWED_EMAILS.",
+      error: "Sign-in is not set up. Ask the person who runs this tool.",
     };
   }
 
@@ -32,7 +32,8 @@ export async function requestMagicLink(
   if (!isAllowedEmail(normalized)) {
     return {
       success: false,
-      error: "That email is not authorized for this tool.",
+      error:
+        "That email is not authorized. Use an account that has access, or ask for access.",
     };
   }
 
@@ -49,7 +50,7 @@ export async function requestMagicLink(
   if (error) {
     return {
       success: false,
-      error: "Could not send sign-in link. Try again in a moment.",
+      error: "The sign-in link could not be sent. Wait a moment and try again.",
     };
   }
 

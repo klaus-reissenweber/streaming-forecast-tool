@@ -167,7 +167,7 @@ function SidebarNav({
   onNavigate?: () => void;
 }) {
   return (
-    <nav className="flex flex-1 flex-col gap-6 overflow-y-auto px-3 py-4" aria-label="Internal">
+    <nav className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-3 py-4" aria-label="Internal">
       {NAV_SECTIONS.map((section) => (
         <div key={section.id}>
           <p className="px-2 text-[10px] font-medium uppercase tracking-[0.08em] text-muted">
@@ -225,13 +225,18 @@ export function AppSidebar() {
         setOpen(false);
       }
     };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKey);
+    };
   }, [open]);
 
   return (
     <>
-      <div className="flex items-center justify-between border-b border-border bg-surface px-4 py-2.5 md:hidden">
+      <div className="fixed inset-x-0 top-0 z-50 flex h-12 items-center justify-between border-b border-border bg-surface px-4 print:hidden md:hidden">
         <Link href="/" className="min-w-0" onClick={() => setOpen(false)}>
           <Wordmark />
         </Link>
@@ -254,7 +259,7 @@ export function AppSidebar() {
       {open ? (
         <button
           type="button"
-          className="fixed inset-0 z-30 bg-foreground/20 md:hidden"
+          className="fixed inset-x-0 top-12 bottom-0 z-30 bg-foreground/20 print:hidden md:hidden"
           aria-label="Close navigation"
           onClick={() => setOpen(false)}
         />
@@ -263,11 +268,11 @@ export function AppSidebar() {
       <aside
         id="internal-sidebar"
         className={
-          "fixed inset-y-0 left-0 z-40 flex w-56 shrink-0 flex-col border-r border-border bg-canvas-subtle transition-transform duration-200 ease-out-quart md:static md:z-0 md:transition-none " +
+          "fixed top-12 bottom-0 left-0 z-40 flex w-56 shrink-0 flex-col overflow-hidden border-r border-border bg-canvas-subtle transition-transform duration-200 ease-out-quart print:hidden md:sticky md:inset-auto md:top-0 md:z-0 md:h-dvh md:self-start md:transition-none " +
           (open ? "translate-x-0" : "-translate-x-full md:translate-x-0")
         }
       >
-        <div className="hidden border-b border-border px-4 py-4 md:block">
+        <div className="hidden shrink-0 border-b border-border px-4 py-4 md:block">
           <Link href="/" className="inline-flex min-w-0 items-center">
             <Wordmark />
           </Link>

@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { SectionHeader } from "@/components/layout/SectionHeader";
 import type {
+  ArchiveRow,
   ArchiveViewModel,
   DeltaTone,
 } from "@/lib/build-archive-view-model";
@@ -90,6 +92,46 @@ function saveRateTitle(
 const NUM =
   "py-2 text-right font-mono text-[13px] tabular-nums whitespace-nowrap";
 
+function ArchiveReleaseCard({ row }: { row: ArchiveRow }) {
+  return (
+    <Link
+      href={row.detailHref}
+      aria-label={`${row.trackName} by ${row.artistName}`}
+      className="block px-4 py-3.5 hover:bg-canvas"
+    >
+      <p className="line-clamp-2 font-semibold text-foreground">
+        {row.trackName}
+      </p>
+      <p className="truncate text-secondary">{row.artistName}</p>
+
+      <p className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm">
+        <span>
+          <span className="text-secondary">Streams </span>
+          {formatDeltaPctCell(row.streamsDeltaPct, row.streamsDeltaTone)}
+        </span>
+        <span>
+          <span className="text-secondary">Saves </span>
+          {formatDeltaPctCell(row.savesDeltaPct, row.savesDeltaTone)}
+        </span>
+      </p>
+
+      <p className="mt-1.5 text-caption">
+        <span className="text-secondary">Save rate </span>
+        {saveRateCell(row.actualSaveRate, row.saveRateVsBand)}
+        <span className="text-muted">
+          {" · expected "}
+          {row.saveRateBand.lo}–{row.saveRateBand.hi}%
+        </span>
+      </p>
+      <p className="mt-0.5 text-caption text-muted">
+        Released {row.releaseDateDisplay}
+        {" · Closed "}
+        {row.closedAtDisplay ?? "n/a"}
+      </p>
+    </Link>
+  );
+}
+
 export interface ArchiveTableProps {
   viewModel: ArchiveViewModel;
 }
@@ -113,7 +155,15 @@ export function ArchiveTable({ viewModel }: ArchiveTableProps) {
           database (auto-close on D28 arrives in step 8).
         </p>
       ) : (
-        <div className="min-w-0 overflow-hidden border-t border-border-subtle">
+        <>
+          <ul className="divide-y divide-border-subtle border-t border-border-subtle md:hidden">
+            {rows.map((row) => (
+              <li key={row.id}>
+                <ArchiveReleaseCard row={row} />
+              </li>
+            ))}
+          </ul>
+          <div className="hidden min-w-0 overflow-hidden border-t border-border-subtle md:block">
           <table className="w-full table-fixed text-left text-body-sm">
             <thead className="border-b border-border-subtle bg-canvas text-muted">
               <tr>
@@ -221,7 +271,8 @@ export function ArchiveTable({ viewModel }: ArchiveTableProps) {
               ))}
             </tbody>
           </table>
-        </div>
+          </div>
+        </>
       )}
     </section>
   );
