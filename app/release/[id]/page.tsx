@@ -129,6 +129,9 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
           reportPath={reportPath}
           reportUrl={reportUrl}
           artists={viewModel.artists}
+          forecastUsedMonthlyListeners={
+            release.monthly_listeners_at_release
+          }
         />
       </div>
 

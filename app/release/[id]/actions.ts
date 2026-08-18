@@ -7,7 +7,9 @@ import {
   deleteDailyDayRow,
   upsertDailyDayRow,
 } from "@/lib/persist-daily-data";
+import { replaceReleaseArtists } from "@/lib/persist-release-artists";
 import { isValidReleaseId, loadRelease } from "@/lib/load-release";
+import type { ReleaseArtistDraft } from "@/lib/release-artists";
 import { releaseSaveErrorMessage } from "@/lib/release-save-error";
 import { createClient } from "@/lib/supabase/server";
 import type { DailyDayFieldInput, DailyDayInput } from "@/lib/validate-daily-day";
@@ -15,6 +17,7 @@ import {
   validateBulkDailyRows,
   validateDailyDay,
 } from "@/lib/validate-daily-day";
+import { validateReleaseRoster } from "@/lib/validate-release-roster";
 
 export type DailyEntryActionResult =
   | {
@@ -37,6 +40,10 @@ export type DailyEntryActionResult =
 export type CloseReleaseResult =
   | { success: true; action: "closed" | "already_closed" }
   | { success: false; error: string };
+
+export type SaveReleaseArtistsResult =
+  | { success: true }
+  | { success: false; error: string; errors?: string[] };
 
 const RELEASE_NOT_FOUND = "Release not found.";
 const RELEASE_CLOSED =
@@ -125,6 +132,54 @@ export async function closeRelease(
   revalidatePath("/archive");
 
   return { success: true, action: "closed" };
+}
+
+/**
+ * Replace the artist roster for an active OR closed release.
+ * Narrow exception to closed read-only: writes `release_artists` only.
+ * Does not update `releases` (credit line, frozen ML, locked forecast).
+ */
+export async function saveReleaseArtists(
+  releaseId: string,
+  drafts: ReleaseArtistDraft[],
+): Promise<SaveReleaseArtistsResult> {
+  const auth = await requireAllowedUser();
+  if (!auth.ok) {
+    return { success: false, error: auth.error };
+  }
+
+  if (!isValidReleaseId(releaseId)) {
+    return { success: false, error: INVALID_RELEASE_ID };
+  }
+
+  const release = await loadRelease(releaseId);
+  if (!release) {
+    return { success: false, error: RELEASE_NOT_FOUND };
+  }
+
+  const validation = validateReleaseRoster(drafts);
+  if (!validation.valid) {
+    return {
+      success: false,
+      error: validation.errors[0] ?? "Invalid artist roster.",
+      errors: validation.errors,
+    };
+  }
+
+  const { error } = await replaceReleaseArtists(
+    auth.supabase,
+    releaseId,
+    validation.rows,
+  );
+  if (error) {
+    return { success: false, error: releaseSaveErrorMessage(error) };
+  }
+
+  revalidatePath(`/release/${releaseId}`);
+  revalidatePath("/");
+  revalidatePath("/archive");
+
+  return { success: true };
 }
 
 export async function upsertDailyDay(

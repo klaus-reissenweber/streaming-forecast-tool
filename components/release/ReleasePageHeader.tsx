@@ -18,6 +18,7 @@ export interface ReleasePageHeaderProps {
   reportPath?: string | null;
   reportUrl?: string | null;
   artists?: readonly ReleaseArtist[];
+  forecastUsedMonthlyListeners: number;
 }
 
 function formatGenreLabel(genre: Genre): string {
@@ -55,6 +56,7 @@ export function ReleasePageHeader({
   reportPath = null,
   reportUrl = null,
   artists = [],
+  forecastUsedMonthlyListeners,
 }: ReleasePageHeaderProps) {
   const tierLabel = EDITORIAL_TIER_DEFINITIONS[editorialTier].label;
   const badge = statusBadge(status);
@@ -72,7 +74,12 @@ export function ReleasePageHeader({
             {genreLabel} · Release {releaseDateDisplay} · Editorial tier{" "}
             {editorialTier} ({tierLabel})
           </p>
-          <ReleaseArtistRoster artists={artists} />
+          <ReleaseArtistRoster
+            releaseId={releaseId}
+            artists={artists}
+            forecastUsedMonthlyListeners={forecastUsedMonthlyListeners}
+            status={status}
+          />
         </div>
 
         <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">

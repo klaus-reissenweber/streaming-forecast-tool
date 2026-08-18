@@ -52,3 +52,21 @@ export function sortReleaseArtists(
 ): ReleaseArtist[] {
   return [...artists].sort((a, b) => a.position - b.position);
 }
+
+/** Draft row while editing an existing roster (empty ML string = unknown). */
+export interface ReleaseArtistDraft {
+  name: string;
+  monthlyListeners: number | string;
+  role: ArtistRole | "";
+}
+
+/** Validated roster row ready to persist. Position is 1-based list order. */
+export interface ReleaseArtistWriteRow {
+  artist_name: string;
+  monthly_listeners: number | null;
+  role: ArtistRole;
+  position: number;
+}
+
+export const MIN_ARTIST_MONTHLY_LISTENERS = 1;
+export const MAX_ARTIST_MONTHLY_LISTENERS = 500_000_000;
