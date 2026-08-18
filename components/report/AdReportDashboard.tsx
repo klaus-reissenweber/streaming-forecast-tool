@@ -20,6 +20,14 @@ import {
   variancePct,
   week1FromDaily,
 } from "@/lib/ad-report/windows";
+import { STREAM_BANDS } from "@/lib/constants";
+import {
+  classifyStreamsVsBand,
+  expectedStreamRange,
+  SAVE_RATE_BAND_LABEL,
+  saveRateToneClass,
+  streamBandCaption,
+} from "@/lib/save-rate-band-label";
 import {
   formatCompactNumber,
   formatCount,
@@ -350,6 +358,17 @@ export function AdReportDashboard({
   const week1Actual = week1.actualStreams ?? headline.actualStreams;
   const week1Days = week1.actualDaysEntered || headline.actualDaysEntered;
   const streamsVariance = variancePct(week1Forecast, week1Actual);
+  const streamBand = headline.streamBand ?? STREAM_BANDS;
+  const expectedStreams = {
+    lo: headline.expectedStreamsLo ?? expectedStreamRange(week1Forecast, streamBand).lo,
+    hi: headline.expectedStreamsHi ?? expectedStreamRange(week1Forecast, streamBand).hi,
+  };
+  const streamsVsBand =
+    headline.streamsVsBand !== undefined
+      ? headline.streamsVsBand
+      : week1Actual == null
+        ? null
+        : classifyStreamsVsBand(week1Actual, week1Forecast, streamBand);
 
   const d28 =
     headline.d28ActualStreams != null
@@ -500,23 +519,46 @@ export function AdReportDashboard({
           </div>
           <div className="rounded-instrument border border-border bg-surface px-4 py-3">
             <dt className="text-label text-muted">Week 1 actual</dt>
-            <dd className="mt-1 font-mono text-2xl font-semibold tabular-nums text-foreground">
+            <dd
+              className={`mt-1 font-mono text-2xl font-semibold tabular-nums ${
+                streamsVsBand == null
+                  ? "text-foreground"
+                  : saveRateToneClass(streamsVsBand)
+              }`}
+            >
               {week1Actual == null ? "—" : formatCompactNumber(week1Actual)}
             </dd>
+            {streamsVsBand != null ? (
+              <p className={`mt-2 text-caption ${saveRateToneClass(streamsVsBand)}`}>
+                {streamBandCaption(streamsVsBand, expectedStreams)}
+              </p>
+            ) : week1Forecast > 0 ? (
+              <p className="mt-2 text-caption text-muted">
+                Expected {formatCompactNumber(expectedStreams.lo)}–
+                {formatCompactNumber(expectedStreams.hi)}
+              </p>
+            ) : null}
           </div>
           <div className="rounded-instrument border border-border bg-surface px-4 py-3">
             <dt className="text-label text-muted">Variance</dt>
             <dd
               className={`mt-1 font-mono text-2xl font-semibold tabular-nums ${
-                streamsVariance == null
-                  ? "text-muted"
-                  : streamsVariance >= 0
-                    ? "text-semantic-positive"
-                    : "text-semantic-negative"
+                streamsVsBand != null
+                  ? saveRateToneClass(streamsVsBand)
+                  : streamsVariance == null
+                    ? "text-muted"
+                    : streamsVariance >= 0
+                      ? "text-semantic-positive"
+                      : "text-semantic-negative"
               }`}
             >
               {formatSignedPct(streamsVariance, 0)}
             </dd>
+            {streamsVsBand != null ? (
+              <p className={`mt-2 text-caption ${saveRateToneClass(streamsVsBand)}`}>
+                {SAVE_RATE_BAND_LABEL[streamsVsBand]}
+              </p>
+            ) : null}
           </div>
         </dl>
         {d28.actualStreams != null ? (

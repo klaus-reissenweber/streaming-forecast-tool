@@ -10,6 +10,7 @@ import {
   RETRAIN_THRESHOLD,
   SAVE_COUNT_BANDS,
   SAVE_RATE_BANDS,
+  STREAM_BANDS,
   STREAM_CURVE_TREND,
   STREAM_DOW_MULTIPLIER,
   STREAM_EDITORIAL_KERNEL,
@@ -55,6 +56,7 @@ export type SaveRateBands = Record<
   (typeof GENRE_KEYS)[number],
   { lo: number; hi: number }
 >;
+export type StreamBands = { lo: number; hi: number; n: number };
 export type SaveCountBands = Record<
   (typeof TIER_KEYS)[number],
   { p25: number; p50: number; p75: number; p90: number }
@@ -102,6 +104,7 @@ export type ActiveModel = {
   kernelLength: number;
   releaseTypeMagnitudeMultipliers: ReleaseTypeMagnitudeMultipliers;
   saveRateBands: SaveRateBands;
+  streamBands: StreamBands;
   saveCountBands: SaveCountBands;
   streamsD0: RegressionModel;
   config: ActiveModelConfig;
@@ -206,6 +209,21 @@ function parseSaveRateBands(raw: unknown): SaveRateBands {
     };
   }
   return out;
+}
+
+function parseStreamBands(raw: unknown): StreamBands {
+  if (raw == null) {
+    return { lo: STREAM_BANDS.lo, hi: STREAM_BANDS.hi, n: STREAM_BANDS.n };
+  }
+  if (!isRecord(raw)) {
+    throw new Error("Active model payload.stream_bands must be an object");
+  }
+  const n = requireNumber(raw.n, "stream_bands.n");
+  return {
+    lo: requireNumber(raw.lo, "stream_bands.lo"),
+    hi: requireNumber(raw.hi, "stream_bands.hi"),
+    n,
+  };
 }
 
 function parseSaveCountBands(raw: unknown): SaveCountBands {
@@ -373,6 +391,7 @@ export function parseActiveModelPayload(raw: unknown): Omit<
       raw.release_type_magnitude_multipliers,
     ),
     saveRateBands: parseSaveRateBands(raw.save_rate_bands),
+    streamBands: parseStreamBands(raw.stream_bands),
     saveCountBands: parseSaveCountBands(raw.save_count_bands),
     streamsD0: parseStreamsD0(raw.streams_d0),
     config: parseConfig(raw.config),
@@ -404,6 +423,11 @@ export function buildFallbackActiveModel(): ActiveModel {
       "melodic-bass": { ...SAVE_RATE_BANDS["melodic-bass"] },
       downtempo: { ...SAVE_RATE_BANDS.downtempo },
       "big-room": { ...SAVE_RATE_BANDS["big-room"] },
+    },
+    streamBands: {
+      lo: STREAM_BANDS.lo,
+      hi: STREAM_BANDS.hi,
+      n: STREAM_BANDS.n,
     },
     saveCountBands: {
       developing: { ...SAVE_COUNT_BANDS.developing },
@@ -493,6 +517,15 @@ export function collectConstantsParityMismatches(
       "big-room": { ...SAVE_RATE_BANDS["big-room"] },
     },
     model.saveRateBands,
+  );
+  check(
+    "streamBands",
+    {
+      lo: STREAM_BANDS.lo,
+      hi: STREAM_BANDS.hi,
+      n: STREAM_BANDS.n,
+    },
+    model.streamBands,
   );
   check(
     "saveCountBands",

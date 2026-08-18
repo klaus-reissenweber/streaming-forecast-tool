@@ -150,6 +150,11 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
           actualSaveRate={viewModel.actualSaveRate}
           actualSaveRateVsBand={viewModel.actualSaveRateVsBand}
           saveRateBand={viewModel.locked.saveRateBand}
+          actualStreams={
+            viewModel.wk1Complete ? viewModel.actualStreams : null
+          }
+          actualStreamsVsBand={viewModel.actualStreamsVsBand}
+          expectedStreamRange={viewModel.locked.expectedStreamRange}
           lockedAtDisplay={viewModel.locked.lockedAtDisplay}
           status={viewModel.header.status}
           releaseDate={viewModel.header.releaseDate}

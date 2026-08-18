@@ -268,6 +268,11 @@ export const SAVE_RATE_BANDS = {
 } as const;
 // RETRAIN:SAVE_RATE_BANDS:END
 
+/** Week-1 stream forecast-error band: actual / locked forecast (global p25/p75). */
+// RETRAIN:STREAM_BANDS:START
+export const STREAM_BANDS = { lo: 0.45, hi: 1.05, n: 58 } as const;
+// RETRAIN:STREAM_BANDS:END
+
 /** Algorithmic positioning thresholds (week-1 save counts) by artist tier. */
 // RETRAIN:SAVE_COUNT_BANDS:START
 export const SAVE_COUNT_BANDS = {

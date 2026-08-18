@@ -19,6 +19,7 @@ from fit import (
     RegressionFit,
     SaveRateBandsFit,
     SavesFit,
+    StreamBandsFit,
     StreamCurveFit,
     StreamsRefinementFit,
 )
@@ -29,7 +30,9 @@ SELECT_COLUMNS = (
 )
 
 RegressionModel = RegressionFit | StreamsRefinementFit | SavesFit
-DerivedModel = AlgoBandsFit | SaveRateBandsFit | StreamCurveFit | AdRatesFit
+DerivedModel = (
+    AlgoBandsFit | SaveRateBandsFit | StreamBandsFit | StreamCurveFit | AdRatesFit
+)
 
 
 class DbError(Exception):
@@ -352,6 +355,12 @@ def _validate_coefficients_json(model_type: str, payload: dict[str, Any]) -> Non
             raise DbError("save_rate_bands payload is empty")
         return
 
+    if model_type == "stream_bands":
+        for key in ("lo", "hi", "n"):
+            if key not in payload:
+                raise DbError(f"stream_bands coefficients_json missing '{key}'")
+        return
+
     if model_type == "stream_curve":
         has_curve_keys = all(
             key in payload for key in ("curve_median", "curve_p25", "curve_p75")
@@ -426,6 +435,7 @@ def build_insert_records(
     derived_key_map = {
         "algo_bands": "algo_bands",
         "save_rate_bands": "save_rate_bands",
+        "stream_bands": "stream_bands",
         "stream_curve": "stream_curve",
         "ad_rates": "ad_rates",
     }

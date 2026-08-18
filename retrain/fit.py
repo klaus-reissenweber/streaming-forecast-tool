@@ -2,7 +2,7 @@
 OLS regression fitting and band derivations for the retrain script.
 
 Regression: streams_d0–d7 and saves. Derived: algo_bands, save_rate_bands,
-stream_curve, Spotify ad_rates (Meta copied from active row).
+stream_bands, stream_curve, Spotify ad_rates (Meta copied from active row).
 
 Output shapes match lib/forecast.ts and lib/constants.ts (see RETRAINING.md).
 """
@@ -118,6 +118,20 @@ class SaveRateBandsFit:
 
     def to_coefficients_json(self) -> dict[str, dict[str, float]]:
         return dict(self.bands)
+
+
+@dataclass(frozen=True)
+class StreamBandsFit:
+    """Global actual/forecast ratio band (p25/p75 multipliers)."""
+
+    sample_size: int
+    lo: float
+    hi: float
+    percentile_lo: float = 25.0
+    percentile_hi: float = 75.0
+
+    def to_coefficients_json(self) -> dict[str, float | int]:
+        return {"lo": self.lo, "hi": self.hi, "n": self.sample_size}
 
 
 @dataclass(frozen=True)
@@ -240,6 +254,15 @@ def _round_percentile_count(value: float) -> int:
 
 def _round_rate(value: float) -> float:
     return float(round(value, 1))
+
+
+def _round_ratio(value: float) -> float:
+    return float(round(value, 2))
+
+
+def _band_eligible_row(row: TrainingRow) -> bool:
+    """Eligibility shared by save_rate_bands and stream_bands."""
+    return row.wk1_streams > 0 and row.wk1_saves > 0 and row.genre in config.GENRES
 
 
 def _saves_feature_matrix(
@@ -534,9 +557,7 @@ def derive_save_rate_bands(
     by_genre: dict[str, list[float]] = {genre: [] for genre in config.GENRES}
 
     for row in rows:
-        if row.wk1_streams <= 0 or row.wk1_saves <= 0:
-            continue
-        if row.genre not in by_genre:
+        if not _band_eligible_row(row):
             continue
         rate = (row.wk1_saves / row.wk1_streams) * 100.0
         by_genre[row.genre].append(rate)
@@ -582,6 +603,45 @@ def derive_save_rate_bands(
     return SaveRateBandsFit(
         sample_size=used_rows,
         bands=bands,
+        percentile_lo=percentile_lo,
+        percentile_hi=percentile_hi,
+    )
+
+
+def derive_stream_bands(
+    rows: list[TrainingRow],
+    percentile_lo: float = config.STREAM_BANDS_PERCENTILE_LO,
+    percentile_hi: float = config.STREAM_BANDS_PERCENTILE_HI,
+) -> StreamBandsFit:
+    """
+    Global p25/p75 of actual_wk1 / locked_forecast_streams.
+
+    Uses the same eligibility filter as save_rate_bands so the two bands
+    describe the same closed-release set, then requires a positive locked
+    forecast so the ratio is defined. Not split by genre or tier.
+    """
+    ratios: list[float] = []
+    for row in rows:
+        if not _band_eligible_row(row):
+            continue
+        if row.locked_forecast_streams <= 0:
+            continue
+        ratios.append(float(row.wk1_streams) / float(row.locked_forecast_streams))
+
+    n = len(ratios)
+    if n == 0:
+        lo = float(config.STREAM_BANDS_SEED_PRIOR["lo"])
+        hi = float(config.STREAM_BANDS_SEED_PRIOR["hi"])
+    else:
+        lo = float(np.percentile(ratios, percentile_lo))
+        hi = float(np.percentile(ratios, percentile_hi))
+        if hi < lo:
+            lo, hi = hi, lo
+
+    return StreamBandsFit(
+        sample_size=n,
+        lo=_round_ratio(lo),
+        hi=_round_ratio(hi),
         percentile_lo=percentile_lo,
         percentile_hi=percentile_hi,
     )
@@ -1121,13 +1181,14 @@ def fit_all_derived_models(
     """
     All non-regression model_coefficients payloads for this slice.
 
-    Save-count / save-rate bands always use `band_rows` when provided so they
-    can be decoupled from the Cook's D regression filter (`rows`).
+    Save-count / save-rate / stream bands always use `band_rows` when provided
+    so they can be decoupled from the Cook's D regression filter (`rows`).
     """
     bands_source = band_rows if band_rows is not None else rows
     return {
         "algo_bands": derive_algo_bands(bands_source),
         "save_rate_bands": derive_save_rate_bands(bands_source),
+        "stream_bands": derive_stream_bands(bands_source),
         "stream_curve": derive_stream_curve(rows),
         "ad_rates": build_ad_rates(rows, active_ad_rates),
         # Sync-only (not promoted to model_coefficients): see constants_sync.py.

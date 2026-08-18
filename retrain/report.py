@@ -69,6 +69,10 @@ def _format_rate(value: float) -> str:
     return f"{rounded:.1f}"
 
 
+def _format_ratio(value: float) -> str:
+    return f"{round(value, 2):.2f}"
+
+
 def print_retrain_report(report: RetrainReport) -> None:
     mode = "DRY RUN" if report.dry_run else "LIVE"
     outcome = "PASSED" if report.success else "FAILED"
@@ -147,9 +151,11 @@ def build_band_deltas(
     *,
     active_algo_bands: dict[str, dict[str, int]] | None,
     active_save_rate_bands: dict[str, dict[str, float]] | None,
+    active_stream_bands: dict[str, float] | None,
     active_stream_curve: dict[str, list[float]] | None,
     new_algo_bands: dict[str, dict[str, int]] | None,
     new_save_rate_bands: dict[str, dict[str, float]] | None,
+    new_stream_bands: dict[str, float] | None,
     new_stream_curve: dict[str, list[float]] | None,
 ) -> tuple[BandDeltaLine, ...]:
     deltas: list[BandDeltaLine] = []
@@ -184,6 +190,30 @@ def build_band_deltas(
                 summary="; ".join(parts) if parts else "no comparable genres",
             )
         )
+
+    if active_stream_bands and new_stream_bands:
+        old_lo = active_stream_bands.get("lo")
+        old_hi = active_stream_bands.get("hi")
+        old_n = active_stream_bands.get("n")
+        new_lo = new_stream_bands.get("lo")
+        new_hi = new_stream_bands.get("hi")
+        new_n = new_stream_bands.get("n")
+        if old_lo is not None and new_lo is not None and old_hi is not None and new_hi is not None:
+            n_bit = (
+                f", n {int(old_n)}→{int(new_n)}"
+                if old_n is not None and new_n is not None
+                else ""
+            )
+            deltas.append(
+                BandDeltaLine(
+                    block_name="STREAM_BANDS",
+                    summary=(
+                        f"lo {_format_ratio(float(old_lo))}→{_format_ratio(float(new_lo))}, "
+                        f"hi {_format_ratio(float(old_hi))}→{_format_ratio(float(new_hi))}"
+                        f"{n_bit}"
+                    ),
+                )
+            )
 
     if active_stream_curve and new_stream_curve:
         old_median = active_stream_curve.get("curve_median") or active_stream_curve.get("median")

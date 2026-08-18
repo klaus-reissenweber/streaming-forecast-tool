@@ -15,6 +15,7 @@ from fit import (
     AlgoBandsFit,
     ReleaseTypeMagnitudeFit,
     SaveRateBandsFit,
+    StreamBandsFit,
     StreamCurveFit,
 )
 
@@ -172,6 +173,10 @@ def _format_ts_array(
     return lines
 
 
+def _format_ratio(value: float) -> str:
+    return f"{round(value, 2):.2f}"
+
+
 def format_save_count_bands(algo_bands: AlgoBandsFit) -> str:
     lines = ["export const SAVE_COUNT_BANDS = {"]
     for tier in config.ARTIST_TIERS:
@@ -197,6 +202,16 @@ def format_save_rate_bands(save_rate_bands: SaveRateBandsFit) -> str:
     lines[-1] = lines[-1][:-1]
     lines.append("} as const;")
     return "\n".join(lines)
+
+
+def format_stream_bands(stream_bands: StreamBandsFit) -> str:
+    lo = _format_ratio(stream_bands.lo)
+    hi = _format_ratio(stream_bands.hi)
+    return (
+        "export const STREAM_BANDS = { "
+        f"lo: {lo}, hi: {hi}, n: {stream_bands.sample_size} "
+        "} as const;"
+    )
 
 
 def format_stream_dow_multiplier(stream_curve: StreamCurveFit) -> str:
@@ -263,12 +278,14 @@ def build_marker_replacements(
     *,
     algo_bands: AlgoBandsFit,
     save_rate_bands: SaveRateBandsFit,
+    stream_bands: StreamBandsFit,
     stream_curve: StreamCurveFit,
     release_type_magnitude: ReleaseTypeMagnitudeFit,
 ) -> dict[str, str]:
     return {
         "SAVE_COUNT_BANDS": format_save_count_bands(algo_bands),
         "SAVE_RATE_BANDS": format_save_rate_bands(save_rate_bands),
+        "STREAM_BANDS": format_stream_bands(stream_bands),
         "STREAM_DOW_MULTIPLIER": format_stream_dow_multiplier(stream_curve),
         "STREAM_EDITORIAL_KERNEL": format_stream_editorial_kernel(stream_curve),
         "STREAM_CURVE_TREND": format_stream_curve_trend(stream_curve),
@@ -316,6 +333,7 @@ def sync_constants(
     *,
     algo_bands: AlgoBandsFit,
     save_rate_bands: SaveRateBandsFit,
+    stream_bands: StreamBandsFit,
     stream_curve: StreamCurveFit,
     release_type_magnitude: ReleaseTypeMagnitudeFit,
     path: Path | None = None,
@@ -326,6 +344,7 @@ def sync_constants(
     replacements = build_marker_replacements(
         algo_bands=algo_bands,
         save_rate_bands=save_rate_bands,
+        stream_bands=stream_bands,
         stream_curve=stream_curve,
         release_type_magnitude=release_type_magnitude,
     )

@@ -8,6 +8,7 @@ import type { ReleaseStatus } from "@/lib/map-release-row";
 import {
   saveRateBandCaption,
   saveRateToneClass,
+  streamBandCaption,
   type SaveRateVsBand,
 } from "@/lib/save-rate-band-label";
 
@@ -18,6 +19,9 @@ export interface LockedForecastBannerProps {
   actualSaveRate?: number | null;
   actualSaveRateVsBand?: SaveRateVsBand | null;
   saveRateBand: { lo: number; hi: number };
+  actualStreams?: number | null;
+  actualStreamsVsBand?: SaveRateVsBand | null;
+  expectedStreamRange: { lo: number; hi: number };
   lockedAtDisplay: string;
   status: ReleaseStatus;
   releaseDate: string;
@@ -116,6 +120,9 @@ export function LockedForecastBanner({
   actualSaveRate = null,
   actualSaveRateVsBand = null,
   saveRateBand,
+  actualStreams = null,
+  actualStreamsVsBand = null,
+  expectedStreamRange,
   lockedAtDisplay,
   status,
   releaseDate,
@@ -169,6 +176,22 @@ export function LockedForecastBanner({
           />
         </MetricColumn>
 
+        {actualStreams != null && actualStreamsVsBand != null ? (
+          <MetricColumn
+            label="Actual week-1 streams"
+            valueClassName={saveRateToneClass(actualStreamsVsBand)}
+            caption={streamBandCaption(
+              actualStreamsVsBand,
+              expectedStreamRange,
+            )}
+          >
+            <AnimatedCompactMetric
+              value={actualStreams}
+              delay={COUNT_UP_STAGGER_MS * 3}
+            />
+          </MetricColumn>
+        ) : null}
+
         {actualSaveRate != null && actualSaveRateVsBand != null ? (
           <MetricColumn
             label="Actual save rate"
@@ -177,7 +200,7 @@ export function LockedForecastBanner({
           >
             <AnimatedPercentMetric
               value={actualSaveRate}
-              delay={COUNT_UP_STAGGER_MS * 3}
+              delay={COUNT_UP_STAGGER_MS * 4}
             />
           </MetricColumn>
         ) : null}

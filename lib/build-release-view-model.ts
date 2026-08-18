@@ -38,6 +38,8 @@ import {
 import { computeWeek1Actuals } from "@/lib/compute-week1-actuals";
 import {
   classifySaveRateVsBand,
+  classifyStreamsVsBand,
+  expectedStreamRange,
   type SaveRateVsBand,
 } from "@/lib/save-rate-band-label";
 import {
@@ -52,6 +54,8 @@ export interface LockedForecastSummary {
   saves: number;
   impliedSaveRate: number;
   saveRateBand: { lo: number; hi: number };
+  streamBand: { lo: number; hi: number; n: number };
+  expectedStreamRange: { lo: number; hi: number };
   lockedAt: string;
   lockedAtDisplay: string;
 }
@@ -85,6 +89,9 @@ export interface ReleaseViewModel {
   flags: readonly ReleaseFlag[];
   actualSaveRate: number | null;
   actualSaveRateVsBand: SaveRateVsBand | null;
+  actualStreams: number | null;
+  actualStreamsVsBand: SaveRateVsBand | null;
+  wk1Complete: boolean;
 }
 
 function chartSeriesFromDailyData(dailyData: DailyDataPoint[]): {
@@ -129,6 +136,7 @@ export function buildReleaseViewModel(
     release.locked_forecast_saves,
   );
   const saveRateBand = forecastModel.saveRateBands[release.genre];
+  const streamBand = forecastModel.streamBands;
   const wk1Actuals = computeWeek1Actuals(dailyData);
   const actualSaveRate =
     wk1Actuals.streams != null &&
@@ -140,11 +148,25 @@ export function buildReleaseViewModel(
     actualSaveRate == null
       ? null
       : classifySaveRateVsBand(actualSaveRate, saveRateBand);
+  const expectedRange = expectedStreamRange(
+    release.locked_forecast_streams,
+    streamBand,
+  );
+  const actualStreamsVsBand =
+    wk1Actuals.isComplete && wk1Actuals.streams != null
+      ? classifyStreamsVsBand(
+          wk1Actuals.streams,
+          release.locked_forecast_streams,
+          streamBand,
+        )
+      : null;
   const locked: LockedForecastSummary = {
     streams: release.locked_forecast_streams,
     saves: release.locked_forecast_saves,
     impliedSaveRate,
     saveRateBand,
+    streamBand,
+    expectedStreamRange: expectedRange,
     lockedAt: release.created_at,
     lockedAtDisplay: formatLockTimestamp(release.created_at),
   };
@@ -224,5 +246,8 @@ export function buildReleaseViewModel(
     flags,
     actualSaveRate,
     actualSaveRateVsBand,
+    actualStreams: wk1Actuals.streams,
+    actualStreamsVsBand,
+    wk1Complete: wk1Actuals.isComplete,
   };
 }

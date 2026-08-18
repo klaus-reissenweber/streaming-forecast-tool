@@ -14,6 +14,7 @@ from fit import (
     derive_algo_bands,
     derive_release_type_magnitude_multipliers,
     derive_save_rate_bands,
+    derive_stream_bands,
     derive_stream_curve,
     fit_all_streams_models,
     fit_streams_refinement,
@@ -181,6 +182,12 @@ def test_streams_refinement_and_derivations_bounds() -> None:
     for genre in config.GENRES:
         assert save_rates.bands[genre]["lo"] < save_rates.bands[genre]["hi"]
 
+    stream_bands = derive_stream_bands(rows)
+    # Synthetic rows lock forecast = actual, so the ratio band collapses to 1.
+    assert stream_bands.sample_size == len(rows)
+    assert stream_bands.lo == 1.0
+    assert stream_bands.hi == 1.0
+
     weekday_rows = make_synthetic_weekday_rows(n_per_weekday=6)
     curve = derive_stream_curve(weekday_rows)
     assert len(curve.trend_median) == 28
@@ -276,6 +283,83 @@ def test_save_rate_bands_shrink_sparse_genres_toward_prior() -> None:
     assert fit.bands["big-room"]["lo"] > 2.0
     assert fit.bands["big-room"]["hi"] > fit.bands["big-room"]["lo"]
     assert fit.bands["house"]["lo"] < fit.bands["house"]["hi"]
+
+
+def test_stream_bands_p25_p75_global_ratio() -> None:
+    from dataclasses import replace
+
+    base = make_derivation_training_rows(n=3, seed=4)[0]
+    locked = 100_000
+    # 20 ratios spanning 0.20 … 2.10 so p25/p75 are interior, not the min/max.
+    ratios = [0.20 + 0.10 * i for i in range(20)]
+    rows: list[TrainingRow] = []
+    for i, ratio in enumerate(ratios):
+        rows.append(
+            replace(
+                base,
+                release_id=f"ratio-{i}",
+                genre=config.GENRES[i % len(config.GENRES)],
+                locked_forecast_streams=locked,
+                wk1_streams=int(round(locked * ratio)),
+                wk1_saves=5_000,
+            )
+        )
+
+    fit = derive_stream_bands(rows)
+    computed = [
+        float(row.wk1_streams) / float(row.locked_forecast_streams) for row in rows
+    ]
+    expected_lo = round(float(np.percentile(computed, 25)), 2)
+    expected_hi = round(float(np.percentile(computed, 75)), 2)
+    assert fit.sample_size == 20
+    assert fit.lo == expected_lo
+    assert fit.hi == expected_hi
+    assert fit.hi > fit.lo
+    assert fit.to_coefficients_json() == {
+        "lo": expected_lo,
+        "hi": expected_hi,
+        "n": 20,
+    }
+
+
+def test_stream_bands_uses_same_eligibility_as_save_rate_bands() -> None:
+    from dataclasses import replace
+
+    base = make_derivation_training_rows(n=3, seed=5)[0]
+    eligible = replace(
+        base,
+        release_id="eligible",
+        wk1_streams=80_000,
+        wk1_saves=8_000,
+        locked_forecast_streams=100_000,
+    )
+    no_saves = replace(
+        eligible,
+        release_id="no-saves",
+        wk1_saves=0,
+        locked_forecast_streams=100_000,
+        wk1_streams=80_000,
+    )
+    no_locked = replace(
+        eligible,
+        release_id="no-locked",
+        locked_forecast_streams=0,
+    )
+
+    save_fit = derive_save_rate_bands([eligible, no_saves, no_locked])
+    stream_fit = derive_stream_bands([eligible, no_saves, no_locked])
+
+    assert save_fit.sample_size == 2  # eligible + no_locked (saves still present)
+    # Stream bands drop no_saves (shared filter) and no_locked (undefined ratio).
+    assert stream_fit.sample_size == 1
+    assert stream_fit.lo == stream_fit.hi == 0.8
+
+
+def test_stream_bands_cold_start_uses_seed_prior() -> None:
+    fit = derive_stream_bands([])
+    assert fit.sample_size == 0
+    assert fit.lo == config.STREAM_BANDS_SEED_PRIOR["lo"]
+    assert fit.hi == config.STREAM_BANDS_SEED_PRIOR["hi"]
 
 
 def test_release_type_magnitude_shrinkage_toward_one() -> None:

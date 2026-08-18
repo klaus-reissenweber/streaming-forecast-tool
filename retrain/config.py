@@ -110,6 +110,7 @@ REGRESSION_MODEL_TYPES: tuple[str, ...] = STREAM_MODEL_TYPES + ("saves",)
 DERIVED_MODEL_TYPES: tuple[str, ...] = (
     "algo_bands",
     "save_rate_bands",
+    "stream_bands",
     "stream_curve",
     "ad_rates",
 )
@@ -142,6 +143,14 @@ SAVE_RATE_BANDS_SEED_PRIOR: dict[str, dict[str, float]] = {
     "big-room": {"lo": 5.0, "hi": 10.0},
     "downtempo": {"lo": 10.0, "hi": 16.0},
 }
+
+# STREAM_BANDS: global p25/p75 of (actual_wk1 / locked_forecast_streams).
+# Same eligible set as save_rate_bands. Soft guardrail requires n ≥ this.
+STREAM_BANDS_MIN_SAMPLE = 20
+STREAM_BANDS_PERCENTILE_LO = 25.0
+STREAM_BANDS_PERCENTILE_HI = 75.0
+# Seed used only when the catalog has zero eligible ratios (cold start).
+STREAM_BANDS_SEED_PRIOR: dict[str, float] = {"lo": 0.45, "hi": 1.05}
 
 # --- Wk1 window (must match lib/compute-week1-actuals.ts) ---
 
@@ -180,6 +189,10 @@ CONSTANTS_MARKERS: dict[str, tuple[str, str]] = {
     "SAVE_RATE_BANDS": (
         "// RETRAIN:SAVE_RATE_BANDS:START",
         "// RETRAIN:SAVE_RATE_BANDS:END",
+    ),
+    "STREAM_BANDS": (
+        "// RETRAIN:STREAM_BANDS:START",
+        "// RETRAIN:STREAM_BANDS:END",
     ),
     "STREAM_DOW_MULTIPLIER": (
         "// RETRAIN:STREAM_DOW_MULTIPLIER:START",

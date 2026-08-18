@@ -30,6 +30,7 @@ from fit import (
     RegressionFit,
     SaveRateBandsFit,
     SavesFit,
+    StreamBandsFit,
     StreamCurveFit,
     StreamsRefinementFit,
 )
@@ -108,6 +109,7 @@ def _sample_derived_models() -> dict[str, Any]:
                 "big-room": {"lo": 5.0, "hi": 10.0},
             },
         ),
+        "stream_bands": StreamBandsFit(sample_size=57, lo=0.45, hi=1.05),
         "stream_curve": StreamCurveFit(
             sample_size=57,
             trend_median=[5.8, 5.7],
@@ -163,6 +165,8 @@ def _active_row(
             coefficients_json = {
                 genre: {"lo": 9.0, "hi": 16.0} for genre in config.GENRES
             }
+        elif model_type == "stream_bands":
+            coefficients_json = {"lo": 0.45, "hi": 1.05, "n": 58}
         elif model_type == "stream_curve":
             coefficients_json = {
                 "curve_median": [0.5],
@@ -314,7 +318,7 @@ def test_fetch_active_rows_and_load_snapshot() -> None:
     client = MockSupabaseClient(rows)
 
     active = fetch_active_rows(client)
-    assert len(active) == 13
+    assert len(active) == len(config.ALL_MODEL_TYPES)
 
     snapshot = load_active_snapshot(client)
     assert set(snapshot.by_type.keys()) == set(config.ALL_MODEL_TYPES)
@@ -341,14 +345,14 @@ def test_load_active_r2_uses_column_and_null_on_derived() -> None:
     assert len(active_r2) == len(config.REGRESSION_MODEL_TYPES)
 
 
-def test_build_insert_records_produces_thirteen_rows() -> None:
+def test_build_insert_records_produces_fourteen_rows() -> None:
     records = build_insert_records(
         regression_models=_sample_regression_models(),
         derived_models=_sample_derived_models(),
         fitted_at="2026-06-23T12:00:00.000Z",
     )
 
-    assert len(records) == 13
+    assert len(records) == 14
     by_type = {record.model_type: record for record in records}
 
     assert by_type["streams_d0"].r_squared == 0.91
@@ -357,6 +361,12 @@ def test_build_insert_records_produces_thirteen_rows() -> None:
     assert by_type["saves"].sample_size == 57
     assert by_type["algo_bands"].r_squared is None
     assert by_type["save_rate_bands"].r_squared is None
+    assert by_type["stream_bands"].r_squared is None
+    assert by_type["stream_bands"].coefficients_json == {
+        "lo": 0.45,
+        "hi": 1.05,
+        "n": 57,
+    }
     assert by_type["stream_curve"].r_squared is None
     assert by_type["ad_rates"].r_squared is None
     assert by_type["ad_rates"].sample_size == 30
@@ -407,8 +417,9 @@ def test_promote_batch_demotes_before_promotes_per_type() -> None:
     promote_batch(client, _inserted_batch())
 
     op_sequence = [call[0] for call in client.calls if call[0] in {"demote", "promote"}]
-    assert len(op_sequence) == 26
-    for index in range(0, 26, 2):
+    expected_ops = 2 * len(config.ALL_MODEL_TYPES)
+    assert len(op_sequence) == expected_ops
+    for index in range(0, expected_ops, 2):
         assert op_sequence[index] == "demote"
         assert op_sequence[index + 1] == "promote"
 
@@ -529,6 +540,6 @@ def test_build_insert_records_report(capsys: pytest.CaptureFixture[str]) -> None
 
     print("=== build_insert_records (mock batch) ===")
     print(json.dumps(summary, indent=2))
-    assert summary["count"] == 13
-    assert len(summary["derived_r_squared_null"]) == 4
+    assert summary["count"] == 14
+    assert len(summary["derived_r_squared_null"]) == 5
     print("PASS: build_insert_records")

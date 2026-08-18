@@ -125,6 +125,11 @@ export type AdReportMetricsSnapshot = {
     pctOfForecast: number | null;
     /** (actual − forecast) / forecast × 100 when actual present. */
     variancePct: number | null;
+    /** Catalog p25/p75 multipliers of actual/forecast. */
+    streamBand?: { lo: number; hi: number; n: number };
+    expectedStreamsLo?: number;
+    expectedStreamsHi?: number;
+    streamsVsBand?: "below" | "within" | "above" | null;
     /** Locked week-1 saves forecast from the release. */
     forecastSaves: number;
     /** Week-1 organic saves from daily data. */

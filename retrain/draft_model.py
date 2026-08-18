@@ -13,6 +13,7 @@ from fit import (
     RegressionFit,
     ReleaseTypeMagnitudeFit,
     SaveRateBandsFit,
+    StreamBandsFit,
     StreamCurveFit,
 )
 from forward_bias import (
@@ -35,6 +36,7 @@ def build_forecast_model_payload(
     release_type_magnitude: ReleaseTypeMagnitudeFit,
     algo_bands: AlgoBandsFit,
     save_rate_bands: SaveRateBandsFit,
+    stream_bands: StreamBandsFit,
     ad_model: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if len(stream_curve.dow_multiplier) != 7:
@@ -60,6 +62,7 @@ def build_forecast_model_payload(
         "save_rate_bands": {
             genre: dict(band) for genre, band in save_rate_bands.bands.items()
         },
+        "stream_bands": stream_bands.to_coefficients_json(),
         "save_count_bands": {
             tier: dict(band) for tier, band in algo_bands.bands.items()
         },

@@ -57,6 +57,7 @@ const LARGE_MOVE_ABS = {
   saveCountRel: 0.15,
 } as const;
 const SAVE_RATE_MIN_WIDTH = 1.0;
+const STREAM_BANDS_MIN_SAMPLE = 20;
 
 export type DiffRow = {
   label: string;
@@ -73,6 +74,7 @@ export type ModelDiff = {
   trendP75: DiffRow[];
   releaseTypeMagnitude: DiffRow[];
   saveRateBands: DiffRow[];
+  streamBands: DiffRow[];
   saveCountBands: DiffRow[];
   /** Fitted ad_model scalars + genre priors + sample sizes. */
   adModel: DiffRow[];
@@ -197,6 +199,12 @@ export function buildModelDiff(
     );
   }
 
+  const streamBands: DiffRow[] = [
+    row("lo", active.streamBands.lo, draft.streamBands.lo),
+    row("hi", active.streamBands.hi, draft.streamBands.hi),
+    row("n", active.streamBands.n, draft.streamBands.n),
+  ];
+
   const saveCountBands: DiffRow[] = [];
   for (const tier of TIER_KEYS) {
     for (const pct of BAND_PCTS) {
@@ -218,6 +226,7 @@ export function buildModelDiff(
     trendP75,
     releaseTypeMagnitude,
     saveRateBands,
+    streamBands,
     saveCountBands,
     adModel: buildAdModelDiff(draft.adModel, active.adModel),
   };
@@ -567,6 +576,20 @@ function evaluateSaveRateNotCollapsed(draft: ActiveModel): GuardrailCheck {
   };
 }
 
+function evaluateStreamBandsNotCollapsed(draft: ActiveModel): GuardrailCheck {
+  const { lo, hi, n } = draft.streamBands;
+  const collapsed = !(hi > lo) || n < STREAM_BANDS_MIN_SAMPLE;
+  return {
+    id: "stream_band_width",
+    severity: "soft",
+    label: "Stream band not collapsed",
+    passed: !collapsed,
+    value: collapsed
+      ? `lo=${fmtNum(lo, 2)} hi=${fmtNum(hi, 2)} n=${n} (need hi > lo, n ≥ ${STREAM_BANDS_MIN_SAMPLE})`
+      : `hi > lo, n=${n} (≥ ${STREAM_BANDS_MIN_SAMPLE})`,
+  };
+}
+
 function evaluateLargeParameterMove(
   draft: ActiveModel,
   active: ActiveModel,
@@ -855,6 +878,7 @@ export function buildDraftReview(
     evaluateInsufficientSample(draft),
     evaluateNewest10Bias(draft),
     evaluateSaveRateNotCollapsed(draft),
+    evaluateStreamBandsNotCollapsed(draft),
     evaluateLargeParameterMove(draft, active, diff),
     evaluateAdModelBands(draft),
     evaluateAdModelSampleSize(draft),

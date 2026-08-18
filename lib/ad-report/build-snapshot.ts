@@ -25,6 +25,10 @@ import { logActiveModelSource } from "@/lib/model/forecast-model";
 import { createServiceClient } from "@/lib/supabase/service";
 import { variancePct } from "@/lib/ad-report/windows";
 import { computeWeek1Actuals } from "@/lib/compute-week1-actuals";
+import {
+  classifyStreamsVsBand,
+  expectedStreamRange,
+} from "@/lib/save-rate-band-label";
 
 function num(v: unknown): number {
   const n = typeof v === "number" ? v : Number(v);
@@ -260,6 +264,12 @@ export async function buildAdReportSnapshot(
   const forecastStreams = release.locked_forecast_streams;
   const actualStreams = wk1.streams;
   const actualDaysEntered = wk1.daysWithStreams;
+  const streamBand = model.streamBands;
+  const expectedRange = expectedStreamRange(forecastStreams, streamBand);
+  const streamsVsBand =
+    actualStreams == null
+      ? null
+      : classifyStreamsVsBand(actualStreams, forecastStreams, streamBand);
   const delta =
     actualStreams == null ? null : actualStreams - forecastStreams;
   const pctOfForecast =
@@ -657,6 +667,10 @@ export async function buildAdReportSnapshot(
       delta,
       pctOfForecast,
       variancePct: variancePct(forecastStreams, actualStreams),
+      streamBand,
+      expectedStreamsLo: expectedRange.lo,
+      expectedStreamsHi: expectedRange.hi,
+      streamsVsBand,
       forecastSaves,
       actualSaves: actualSavesSum,
       savesDelta,

@@ -214,15 +214,17 @@ def _combine_regression_models(
 def _active_band_payloads(snapshot: Any) -> tuple[
     dict[str, dict[str, int]] | None,
     dict[str, dict[str, float]] | None,
+    dict[str, float] | None,
     dict[str, list[float]] | None,
 ]:
     try:
         algo = snapshot.require("algo_bands").coefficients_json
         save_rate = snapshot.require("save_rate_bands").coefficients_json
+        stream_bands = snapshot.require("stream_bands").coefficients_json
         stream = snapshot.require("stream_curve").coefficients_json
-        return algo, save_rate, stream
+        return algo, save_rate, stream_bands, stream
     except DbError:
-        return None, None, None
+        return None, None, None, None
 
 
 def run_stamp_last_retrain() -> int:
@@ -354,8 +356,8 @@ def run(flags: config.RetrainFlags) -> int:
             if row.release_id not in guardrail_result.excluded_release_ids
         ]
         # Curve / ad_rates / magnitude: full eligible when holding through
-        # sample-size failure; otherwise post-Cook's. Save bands always use
-        # the full eligible set (decoupled from wk1 Cook's D drops).
+        # sample-size failure; otherwise post-Cook's. Save-rate and stream
+        # bands always use the full eligible set (decoupled from wk1 Cook's D).
         derived_rows = training_rows if hold_through_guardrail else filtered_rows
         regression_rows = filtered_rows if len(filtered_rows) >= 2 else training_rows
 
@@ -368,13 +370,17 @@ def run(flags: config.RetrainFlags) -> int:
             band_rows=training_rows,
         )
 
-        active_algo, active_save_rate, active_stream = _active_band_payloads(active_snapshot)
+        active_algo, active_save_rate, active_stream_bands, active_stream = (
+            _active_band_payloads(active_snapshot)
+        )
         band_deltas = build_band_deltas(
             active_algo_bands=active_algo,
             active_save_rate_bands=active_save_rate,
+            active_stream_bands=active_stream_bands,
             active_stream_curve=active_stream,
             new_algo_bands=derived_models["algo_bands"].bands,
             new_save_rate_bands=derived_models["save_rate_bands"].bands,
+            new_stream_bands=derived_models["stream_bands"].to_coefficients_json(),
             new_stream_curve=derived_models["stream_curve"].to_coefficients_json(),
         )
 
@@ -438,6 +444,7 @@ def run(flags: config.RetrainFlags) -> int:
                 release_type_magnitude=derived_models["release_type_magnitude"],
                 algo_bands=derived_models["algo_bands"],
                 save_rate_bands=derived_models["save_rate_bands"],
+                stream_bands=derived_models["stream_bands"],
                 ad_model=ad_model_for_draft,
             )
             live_scorer = scorer_from_payload(live_payload)
@@ -527,6 +534,7 @@ def run(flags: config.RetrainFlags) -> int:
             sync_constants(
                 algo_bands=derived_models["algo_bands"],
                 save_rate_bands=derived_models["save_rate_bands"],
+                stream_bands=derived_models["stream_bands"],
                 stream_curve=derived_models["stream_curve"],
                 release_type_magnitude=derived_models["release_type_magnitude"],
                 dry_run=False,
@@ -572,7 +580,9 @@ def run(flags: config.RetrainFlags) -> int:
             derived_models=derived_models,
             fitted_at=fitted_at,
         )
-        promotion_status = "promoted (13 model_coefficients rows)"
+        promotion_status = (
+            f"promoted ({len(config.ALL_MODEL_TYPES)} model_coefficients rows)"
+        )
         if hold_through_guardrail and flags.override_insufficient_sample:
             promotion_status += (
                 f"; insufficient_sample overridden "
@@ -585,6 +595,7 @@ def run(flags: config.RetrainFlags) -> int:
             sync_constants(
                 algo_bands=derived_models["algo_bands"],
                 save_rate_bands=derived_models["save_rate_bands"],
+                stream_bands=derived_models["stream_bands"],
                 stream_curve=derived_models["stream_curve"],
                 release_type_magnitude=derived_models["release_type_magnitude"],
                 dry_run=False,

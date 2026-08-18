@@ -98,6 +98,7 @@ function main(): void {
       trendP75: [],
       releaseTypeMagnitude: [],
       saveRateBands: [],
+      streamBands: [],
       saveCountBands: [],
       adModel: moveDiff,
     },

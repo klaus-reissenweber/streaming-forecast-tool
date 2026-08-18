@@ -87,6 +87,7 @@ console.log(
       streamsDeltaTone: row.streamsDeltaTone,
       actualSaveRate: Number(row.actualSaveRate?.toFixed(1)),
       saveRateVsBand: row.saveRateVsBand,
+      streamsVsBand: row.streamsVsBand,
       wk1Complete: row.wk1Complete,
       summary: archive.summary,
     },
@@ -118,6 +119,9 @@ if (row.streamsDeltaTone !== "on_track") {
 }
 if (row.saveRateVsBand !== "within") {
   throw new Error(`Expected saveRateVsBand within, got ${row.saveRateVsBand}`);
+}
+if (row.streamsVsBand !== "within") {
+  throw new Error(`Expected streamsVsBand within, got ${row.streamsVsBand}`);
 }
 if (archive.summary.retrainEligible !== 1) {
   throw new Error(

@@ -14,6 +14,8 @@ import {
 } from "@/lib/monitoring";
 import {
   classifySaveRateVsBand,
+  classifyStreamsVsBand,
+  expectedStreamRange,
   type SaveRateVsBand,
 } from "@/lib/save-rate-band-label";
 
@@ -58,6 +60,10 @@ export interface ArchiveRow {
 
   saveRateBand: { lo: number; hi: number };
   saveRateVsBand: SaveRateVsBand | null;
+
+  streamBand: { lo: number; hi: number; n: number };
+  expectedStreamRange: { lo: number; hi: number };
+  streamsVsBand: SaveRateVsBand | null;
 
   detailHref: string;
 }
@@ -190,6 +196,20 @@ function buildArchiveRow(
         : classifySaveRateVsBand(
             actualSaveRate,
             model.saveRateBands[release.genre],
+          ),
+
+    streamBand: model.streamBands,
+    expectedStreamRange: expectedStreamRange(
+      release.locked_forecast_streams,
+      model.streamBands,
+    ),
+    streamsVsBand:
+      wk1.streams == null
+        ? null
+        : classifyStreamsVsBand(
+            wk1.streams,
+            release.locked_forecast_streams,
+            model.streamBands,
           ),
 
     detailHref: `/release/${release.id}`,

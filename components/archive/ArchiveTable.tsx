@@ -15,8 +15,10 @@ import {
   formatPercent,
 } from "@/lib/format";
 import {
+  SAVE_RATE_BAND_LABEL,
   saveRateBandCaption,
   saveRateToneClass,
+  streamBandCaption,
   type SaveRateVsBand,
 } from "@/lib/save-rate-band-label";
 
@@ -45,6 +47,37 @@ function forecastActualTitle(
   const actualLabel =
     actual == null ? "n/a" : formatCompactNumber(actual);
   return `${formatCompactNumber(forecast)} forecast → ${actualLabel} actual`;
+}
+
+function streamsDeltaCell(row: ArchiveRow): ReactNode {
+  if (row.streamsDeltaPct == null) {
+    return <span className="text-muted">n/a</span>;
+  }
+
+  const vsBand = row.streamsVsBand;
+  return (
+    <span
+      className={`font-mono tabular-nums ${saveRateToneClass(vsBand)}`}
+    >
+      {formatSignedPercent(row.streamsDeltaPct)}
+      {vsBand != null ? (
+        <span className="font-sans">
+          {` · ${SAVE_RATE_BAND_LABEL[vsBand]}`}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+function streamsDeltaTitle(row: ArchiveRow): string {
+  const forecastActual = forecastActualTitle(
+    row.lockedStreams,
+    row.actualStreams,
+  );
+  if (row.streamsVsBand == null) {
+    return forecastActual;
+  }
+  return `${forecastActual} · ${streamBandCaption(row.streamsVsBand, row.expectedStreamRange)}`;
 }
 
 function formatDeltaPctCell(
@@ -107,7 +140,7 @@ function ArchiveReleaseCard({ row }: { row: ArchiveRow }) {
       <p className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm">
         <span>
           <span className="text-secondary">Streams </span>
-          {formatDeltaPctCell(row.streamsDeltaPct, row.streamsDeltaTone)}
+          {streamsDeltaCell(row)}
         </span>
         <span>
           <span className="text-secondary">Saves </span>
@@ -229,15 +262,9 @@ export function ArchiveTable({ viewModel }: ArchiveTableProps) {
                   </td>
                   <td
                     className="px-2 py-2 text-right"
-                    title={forecastActualTitle(
-                      row.lockedStreams,
-                      row.actualStreams,
-                    )}
+                    title={streamsDeltaTitle(row)}
                   >
-                    {formatDeltaPctCell(
-                      row.streamsDeltaPct,
-                      row.streamsDeltaTone,
-                    )}
+                    {streamsDeltaCell(row)}
                   </td>
                   <td
                     className="px-2 py-2 text-right"

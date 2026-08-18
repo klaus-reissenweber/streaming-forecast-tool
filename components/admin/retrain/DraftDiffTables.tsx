@@ -108,6 +108,11 @@ export function DraftDiffTables({ diff }: { diff: ModelDiff }) {
           compact
         />
         <DiffTable
+          title="Stream bands"
+          rows={diff.streamBands}
+          digits={2}
+        />
+        <DiffTable
           title="Save-count bands"
           rows={diff.saveCountBands}
           digits={0}

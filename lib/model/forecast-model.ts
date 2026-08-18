@@ -26,6 +26,7 @@ export type ForecastModel = {
     "dubstep" | "house" | "melodic-bass" | "downtempo" | "big-room",
     { lo: number; hi: number }
   >;
+  streamBands: { lo: number; hi: number; n: number };
   saveCountBands: Record<
     "developing" | "mid" | "established",
     { p25: number; p50: number; p75: number; p90: number }

@@ -15,12 +15,19 @@ from constants_sync import (
     find_marker_regions,
     format_save_count_bands,
     format_save_rate_bands,
+    format_stream_bands,
     format_stream_curve_trend,
     format_stream_dow_multiplier,
     format_stream_editorial_kernel,
     sync_constants,
 )
-from fit import AlgoBandsFit, ReleaseTypeMagnitudeFit, SaveRateBandsFit, StreamCurveFit
+from fit import (
+    AlgoBandsFit,
+    ReleaseTypeMagnitudeFit,
+    SaveRateBandsFit,
+    StreamBandsFit,
+    StreamCurveFit,
+)
 
 
 def _sample_algo_bands() -> AlgoBandsFit:
@@ -45,6 +52,10 @@ def _sample_save_rate_bands() -> SaveRateBandsFit:
             "big-room": {"lo": 5.0, "hi": 10.0},
         },
     )
+
+
+def _sample_stream_bands() -> StreamBandsFit:
+    return StreamBandsFit(sample_size=58, lo=0.45, hi=1.05)
 
 
 def _sample_stream_curve() -> StreamCurveFit:
@@ -95,6 +106,7 @@ def _marker_kwargs() -> dict:
     return {
         "algo_bands": _sample_algo_bands(),
         "save_rate_bands": _sample_save_rate_bands(),
+        "stream_bands": _sample_stream_bands(),
         "stream_curve": _sample_stream_curve(),
         "release_type_magnitude": _sample_release_type_magnitude(),
     }
@@ -134,6 +146,12 @@ def _fixture_constants_with_markers() -> str:
             _marker_block(
                 "SAVE_RATE_BANDS",
                 "export const SAVE_RATE_BANDS = {\n  house: { lo: 1, hi: 2 },\n} as const;",
+            ),
+            "",
+            "/** Week-1 stream forecast-error band (actual / locked), global. */",
+            _marker_block(
+                "STREAM_BANDS",
+                "export const STREAM_BANDS = { lo: 0.4, hi: 1.0, n: 10 } as const;",
             ),
             "",
             "/** Algorithmic positioning thresholds (week-1 save counts) by artist tier. */",
@@ -204,6 +222,7 @@ def test_find_marker_regions_failure_without_markers() -> None:
     assert "Missing RETRAIN marker comments" in message
     assert "SAVE_COUNT_BANDS (MISSING)" in message
     assert "SAVE_RATE_BANDS (MISSING)" in message
+    assert "STREAM_BANDS (MISSING)" in message
     assert "STREAM_DOW_MULTIPLIER (MISSING)" in message
     assert "STREAM_EDITORIAL_KERNEL (MISSING)" in message
     assert "STREAM_CURVE_TREND (MISSING)" in message
@@ -240,6 +259,9 @@ def test_build_marker_replacements_formats_expected_blocks() -> None:
         "SAVE_COUNT_BANDS"
     ]
     assert '"melodic-bass": { lo: 13, hi: 23 }' in replacements["SAVE_RATE_BANDS"]
+    assert replacements["STREAM_BANDS"] == (
+        "export const STREAM_BANDS = { lo: 0.45, hi: 1.05, n: 58 } as const;"
+    )
     assert "Fri: 1.262" in replacements["STREAM_DOW_MULTIPLIER"]
     assert "export const STREAM_EDITORIAL_KERNEL = [21.33, 5.49] as const;" in replacements[
         "STREAM_EDITORIAL_KERNEL"
@@ -321,12 +343,16 @@ def test_sync_constants_writes_updated_file(tmp_path: Path) -> None:
 def test_format_helpers_match_typescript_conventions() -> None:
     save_count = format_save_count_bands(_sample_algo_bands())
     save_rate = format_save_rate_bands(_sample_save_rate_bands())
+    stream_bands = format_stream_bands(_sample_stream_bands())
     dow = format_stream_dow_multiplier(_sample_stream_curve())
     kernel = format_stream_editorial_kernel(_sample_stream_curve())
     trend = format_stream_curve_trend(_sample_stream_curve())
 
     assert save_count.endswith("} as const;")
     assert '"big-room": { lo: 5, hi: 10 }' in save_rate
+    assert stream_bands == (
+        "export const STREAM_BANDS = { lo: 0.45, hi: 1.05, n: 58 } as const;"
+    )
     assert "Mon: 0.912" in dow
     assert kernel == "export const STREAM_EDITORIAL_KERNEL = [21.33, 5.49] as const;"
     assert "5.8, 5.7, 8.2" in trend
