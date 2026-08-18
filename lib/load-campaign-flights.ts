@@ -2,8 +2,10 @@
  * Load campaign flight windows for a release (by seed-style release_key).
  */
 
-import { createServiceClient } from "@/lib/supabase/service";
+import { readableCampaignName } from "@/lib/campaign-display-name";
 import type { CampaignFlight } from "@/lib/campaign-flights";
+import { coerceMetaObjective } from "@/lib/meta-objective";
+import { createServiceClient } from "@/lib/supabase/service";
 
 function strOrNull(value: unknown): string | null {
   if (value == null) return null;
@@ -28,11 +30,13 @@ export async function loadCampaignFlightsForReleaseKey(
   const [spotifyRes, metaRes] = await Promise.all([
     sb
       .from("ad_spotify_campaigns")
-      .select("id, campaign_uid, format, start_date, end_date, spend_usd")
+      .select("id, format, start_date, end_date, spend_usd")
       .eq("release_key", key),
     sb
       .from("ad_meta_campaigns")
-      .select("id, campaign_uid, campaign_name, start_date, end_date, spend_usd")
+      .select(
+        "id, campaign_uid, campaign_name, objective, start_date, end_date, spend_usd",
+      )
       .eq("release_key", key),
   ]);
 
@@ -46,12 +50,12 @@ export async function loadCampaignFlightsForReleaseKey(
   const flights: CampaignFlight[] = [];
 
   for (const row of spotifyRes.data ?? []) {
-    const format = strOrNull(row.format);
-    const uid = strOrNull(row.campaign_uid);
-    const name = [format, uid].filter(Boolean).join(" · ") || "Spotify";
     flights.push({
       id: String(row.id),
-      name,
+      name: readableCampaignName({
+        platform: "spotify",
+        format: strOrNull(row.format),
+      }),
       startDate: strOrNull(row.start_date),
       endDate: strOrNull(row.end_date),
       platform: "spotify",
@@ -60,13 +64,17 @@ export async function loadCampaignFlightsForReleaseKey(
   }
 
   for (const row of metaRes.data ?? []) {
-    const name =
-      strOrNull(row.campaign_name) ??
-      strOrNull(row.campaign_uid) ??
-      "Meta";
     flights.push({
       id: String(row.id),
-      name,
+      name: readableCampaignName({
+        campaignName: strOrNull(row.campaign_name),
+        campaignUid: strOrNull(row.campaign_uid),
+        platform: "meta",
+        objective: coerceMetaObjective(
+          strOrNull(row.objective),
+          "traffic",
+        ),
+      }),
       startDate: strOrNull(row.start_date),
       endDate: strOrNull(row.end_date),
       platform: "meta",

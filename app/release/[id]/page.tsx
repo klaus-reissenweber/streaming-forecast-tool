@@ -201,7 +201,6 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
             phase={viewModel.phase}
             status={viewModel.header.status}
             releaseDate={viewModel.header.releaseDate}
-            campaignFlights={campaignFlights}
           />
         ) : null}
 

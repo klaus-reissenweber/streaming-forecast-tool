@@ -28,6 +28,7 @@ import {
   saveRateToneClass,
   streamBandCaption,
 } from "@/lib/save-rate-band-label";
+import { readableCampaignName } from "@/lib/campaign-display-name";
 import {
   formatCompactNumber,
   formatCount,
@@ -53,26 +54,8 @@ function formatSignedPct(v: number | null | undefined, decimals = 0): string {
   return `${sign}${formatPercent(rounded, decimals)}`;
 }
 
-function looksLikeCampaignUid(value: string): boolean {
-  if (
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-      value,
-    )
-  ) {
-    return true;
-  }
-  return !/\s/.test(value) && value.length >= 12 && /[0-9]/.test(value);
-}
-
 function displayCampaignName(row: AdReportCampaignRow): string {
-  if (row.campaignName && !looksLikeCampaignUid(row.campaignName)) {
-    return row.campaignName;
-  }
-  if (row.format === "marquee") return "Marquee";
-  if (row.format === "showcase") return "Showcase";
-  if (row.objective === "awareness") return "Meta awareness";
-  if (row.objective === "traffic") return "Meta traffic";
-  return row.platform === "spotify" ? "Spotify" : "Meta";
+  return readableCampaignName(row);
 }
 
 function campaignCompareMetrics(c: AdReportCampaignRow) {

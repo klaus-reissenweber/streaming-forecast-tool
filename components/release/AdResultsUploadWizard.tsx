@@ -26,6 +26,10 @@ import {
 } from "@/lib/ad-upload/canonical";
 import { StatusPill } from "@/components/ui/StatusPill";
 import {
+  looksLikeCampaignUid,
+  readableCampaignName,
+} from "@/lib/campaign-display-name";
+import {
   applyGapFill,
   type GapFillAction,
   type GapNeed,
@@ -462,7 +466,9 @@ export function AdResultsUploadWizard({
         setError(result.error);
         return;
       }
-      setCreativeStatus(`Uploaded creative for ${campaign.campaignName}.`);
+      setCreativeStatus(
+        `Uploaded creative for ${readableCampaignName(campaign)}.`,
+      );
       if (result.reportPath) setReportPath(result.reportPath);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -1007,7 +1013,10 @@ export function AdResultsUploadWizard({
               >
                 <p className="font-mono text-xs text-secondary">
                   Row {gap.displayRow}
-                  {row?.campaign_name ? ` · ${row.campaign_name}` : ""}
+                  {row?.campaign_name &&
+                  !looksLikeCampaignUid(row.campaign_name)
+                    ? ` · ${row.campaign_name}`
+                    : ""}
                   {row?.spend != null
                     ? ` · spend ${formatCount(Math.round(row.spend))}`
                     : ""}
@@ -1179,7 +1188,7 @@ export function AdResultsUploadWizard({
                   className="rounded border border-border bg-surface p-3"
                 >
                   <p className="text-body-sm font-medium text-foreground">
-                    {camp.campaignName}
+                    {readableCampaignName(camp)}
                     <span className="ml-2 text-caption font-normal text-muted">
                       {camp.platform}
                       {camp.format ? ` · ${camp.format}` : ""}

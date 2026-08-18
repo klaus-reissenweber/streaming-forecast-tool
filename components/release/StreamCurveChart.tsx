@@ -13,7 +13,6 @@ import {
   YAxis,
   type XAxisTickContentProps,
 } from "recharts";
-import { CampaignFlightBands } from "@/components/charts/CampaignFlightBands";
 import { SectionHeader } from "@/components/layout/SectionHeader";
 import {
   ChartSeriesCards,
@@ -21,10 +20,6 @@ import {
   type ChartSeriesId,
 } from "@/components/release/ChartSeriesCards";
 import type { ReleasePhase } from "@/lib/build-release-view-model";
-import {
-  flightsToChartBands,
-  type CampaignFlight,
-} from "@/lib/campaign-flights";
 import { formatCompactNumber } from "@/lib/format";
 import type { StreamCurveForecast } from "@/lib/forecast";
 import type { ReleaseStatus } from "@/lib/map-release-row";
@@ -49,7 +44,6 @@ export interface StreamCurveChartProps {
   phase: ReleasePhase;
   status: ReleaseStatus;
   releaseDate: string;
-  campaignFlights?: CampaignFlight[];
 }
 
 interface ChartRow {
@@ -75,6 +69,8 @@ interface ChartPalette {
 }
 
 const WEEK_MARKS = [1, 7, 14, 21, 28] as const;
+const COMPACT_X_MARKS = [1, 14, 28] as const;
+const MD_MIN_WIDTH_PX = 768;
 const CHART_Y_AXIS_WIDTH = 48;
 const CHART_MARGIN_TOP = 28;
 const CHART_X_AXIS_HEIGHT = 32;
@@ -203,9 +199,9 @@ function getLastActualDay(actualStreamsByDay: (number | null)[]): number {
 }
 
 /** Week marks that fall inside 1…endDay, always including both ends. */
-function xAxisTicks(endDay: number): number[] {
+function xAxisTicks(endDay: number, marks: readonly number[]): number[] {
   const end = Math.max(1, Math.min(CAMPAIGN_WINDOW_DAYS, endDay));
-  const ticks: number[] = WEEK_MARKS.filter((day) => day < end);
+  const ticks: number[] = marks.filter((day) => day < end);
   if (ticks[0] !== 1) {
     ticks.unshift(1);
   }
@@ -213,6 +209,20 @@ function xAxisTicks(endDay: number): number[] {
     ticks.push(end);
   }
   return ticks;
+}
+
+function useMdUp(): boolean {
+  const [mdUp, setMdUp] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia(`(min-width: ${MD_MIN_WIDTH_PX}px)`);
+    const sync = () => setMdUp(media.matches);
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
+
+  return mdUp;
 }
 
 function DayAxisTick({ x, y, payload }: XAxisTickContentProps) {
@@ -331,9 +341,9 @@ export function StreamCurveChart({
   phase,
   status,
   releaseDate,
-  campaignFlights = [],
 }: StreamCurveChartProps) {
   const palette = useChartPalette();
+  const mdUp = useMdUp();
   const projectedDraw = useLineDrawIn(DRAW_STAGGER_MS.projected, {
     dashedWhenDone: true,
   });
@@ -352,7 +362,7 @@ export function StreamCurveChart({
     metaAdDaily,
     actualStreamsByDay,
   ).slice(0, xMax);
-  const axisTicks = xAxisTicks(xMax);
+  const axisTicks = xAxisTicks(xMax, mdUp ? WEEK_MARKS : COMPACT_X_MARKS);
   const hasActuals = actualStreamsByDay.some((value) => value != null);
   const hasProjected =
     projectedStreamCurve != null && status !== "closed";
@@ -369,10 +379,6 @@ export function StreamCurveChart({
     }
     return day;
   }, [phase, releaseDate, status, xMax]);
-  const flightBands = useMemo(
-    () => flightsToChartBands(campaignFlights, releaseDate, xMax),
-    [campaignFlights, releaseDate, xMax],
-  );
 
   const availableIds = useMemo(() => {
     const ids: ChartSeriesId[] = ["locked"];
@@ -492,7 +498,7 @@ export function StreamCurveChart({
 
   return (
     <section
-      className="motion-fade-up relative overflow-hidden rounded-instrument border border-border bg-surface p-5"
+      className="motion-fade-up relative min-w-0 overflow-hidden rounded-instrument border border-border bg-surface p-4 md:p-5"
       aria-label="Stream curve"
     >
       <span
@@ -508,7 +514,7 @@ export function StreamCurveChart({
 
       <ChartSeriesCards series={seriesCards} onToggle={onToggleSeries} />
 
-      <div className="motion-chart-grid-in relative mt-5 h-72 w-full">
+      <div className="motion-chart-grid-in relative mt-5 h-52 w-full min-w-0 md:h-72">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={chartData}
@@ -703,14 +709,6 @@ export function StreamCurveChart({
           </ComposedChart>
         </ResponsiveContainer>
       </div>
-
-      <CampaignFlightBands
-        bands={flightBands}
-        axisWidth={CHART_Y_AXIS_WIDTH}
-        rightMargin={rightMargin}
-        windowDays={xMax}
-        plotInset={AXIS_POINT_PAD}
-      />
     </section>
   );
 }

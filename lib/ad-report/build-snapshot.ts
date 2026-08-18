@@ -25,6 +25,7 @@ import { logActiveModelSource } from "@/lib/model/forecast-model";
 import { createServiceClient } from "@/lib/supabase/service";
 import { variancePct } from "@/lib/ad-report/windows";
 import { computeWeek1Actuals } from "@/lib/compute-week1-actuals";
+import { readableCampaignName } from "@/lib/campaign-display-name";
 import {
   classifyStreamsVsBand,
   expectedStreamRange,
@@ -72,35 +73,6 @@ function addCaptured(
 ): number | null {
   if (value == null || value === 0) return current;
   return (current ?? 0) + value;
-}
-
-function looksLikeCampaignUid(value: string): boolean {
-  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)) {
-    return true;
-  }
-  if (!/\s/.test(value) && value.length >= 12 && /[0-9]/.test(value)) {
-    return true;
-  }
-  return false;
-}
-
-function readableCampaignName(input: {
-  campaignName: string | null;
-  campaignUid: string | null;
-  platform: "spotify" | "meta";
-  format: string | null;
-  objective: string | null;
-}): string {
-  const named = input.campaignName;
-  if (named && !looksLikeCampaignUid(named)) {
-    return named;
-  }
-  if (input.format === "marquee") return "Marquee";
-  if (input.format === "showcase") return "Showcase";
-  if (input.objective === "awareness") return "Meta awareness";
-  if (input.objective === "traffic") return "Meta traffic";
-  if (input.platform === "spotify") return "Spotify";
-  return "Meta";
 }
 
 function isBlankCampaign(row: AdReportCampaignRow): boolean {

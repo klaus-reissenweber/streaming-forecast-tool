@@ -18,6 +18,7 @@ import {
   spotifyDbPayloadRejectReason,
 } from "@/lib/ad-upload/column-map";
 import { spotifyRowRejectReason } from "@/lib/ad-upload/gap-fill";
+import { readableCampaignName } from "@/lib/campaign-display-name";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export type { UpsertedCampaignRef };
@@ -242,9 +243,12 @@ export async function upsertCanonicalRows(options: {
       campaigns.push({
         campaignUid: String(mapped.row.campaign_uid),
         platform: "spotify",
-        campaignName:
-          row.campaign_name?.trim() ||
-          `${row.format ?? "spotify"} campaign`,
+        campaignName: readableCampaignName({
+          campaignName: row.campaign_name,
+          campaignUid: String(mapped.row.campaign_uid),
+          platform: "spotify",
+          format: row.format,
+        }),
         format: row.format,
         objective: null,
       });
@@ -260,9 +264,12 @@ export async function upsertCanonicalRows(options: {
       campaigns.push({
         campaignUid: String(mapped.campaign_uid),
         platform: "meta",
-        campaignName:
-          row.campaign_name?.trim() ||
-          `Meta ${row.objective ?? "traffic"}`,
+        campaignName: readableCampaignName({
+          campaignName: row.campaign_name,
+          campaignUid: String(mapped.campaign_uid),
+          platform: "meta",
+          objective: row.objective,
+        }),
         format: null,
         objective: row.objective,
       });

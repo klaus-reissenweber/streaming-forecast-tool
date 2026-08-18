@@ -189,6 +189,93 @@ function VarianceCell({
   );
 }
 
+const COMPACT_FIGURE_CLASS =
+  "font-mono text-xl font-semibold tabular-nums leading-none tracking-[-0.02em]";
+
+function MobileMetricBlock({
+  header,
+  forecast,
+  forecastNote,
+  actual,
+  variance,
+  vsBand,
+  expected,
+  showActuals,
+}: {
+  header: string;
+  forecast: ReactNode;
+  forecastNote?: string | null;
+  actual: ReactNode;
+  variance: number | null;
+  vsBand?: SaveRateVsBand | null;
+  expected?: string | null;
+  showActuals: boolean;
+}) {
+  const hasBand = vsBand != null && expected != null;
+
+  if (!showActuals) {
+    return (
+      <div className="border-t border-border/40 py-3 first:border-t-0 first:pt-0">
+        <p className="text-center text-label uppercase text-muted">{header}</p>
+        <div className={`${FIGURE_CLASS} mt-2 text-center text-foreground`}>
+          {forecast}
+        </div>
+        {forecastNote ? (
+          <p className="mt-1 text-center font-mono text-[0.95rem] font-medium leading-none tracking-normal text-muted">
+            {forecastNote}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-t border-border/40 py-3 first:border-t-0 first:pt-0">
+      <p className="text-center text-label uppercase text-muted">{header}</p>
+      <div className="mt-2 grid grid-cols-3 text-center">
+        <div className="min-w-0 px-1">
+          <p className="text-caption text-muted">Forecast</p>
+          <div className={`${COMPACT_FIGURE_CLASS} mt-1 text-foreground`}>
+            {forecast}
+          </div>
+          {forecastNote ? (
+            <p className="mt-1 font-mono text-caption font-medium text-muted">
+              {forecastNote}
+            </p>
+          ) : null}
+        </div>
+        <div className={`min-w-0 px-1 ${ACTUAL_ROW_TONE}`}>
+          <p className="text-caption text-muted">Actual</p>
+          <div className={`${COMPACT_FIGURE_CLASS} mt-1 text-foreground`}>
+            {actual}
+          </div>
+        </div>
+        <div className="min-w-0 px-1">
+          <p className="text-caption text-muted">Difference</p>
+          <div
+            className={
+              `${COMPACT_FIGURE_CLASS} mt-1 ` +
+              (variance != null
+                ? varianceToneClass(variance, vsBand)
+                : "text-muted")
+            }
+          >
+            {variance != null ? formatSignedPct(variance) : null}
+          </div>
+          {hasBand ? (
+            <p className="mt-1 text-caption leading-snug">
+              <span className={`block ${saveRateToneClass(vsBand)}`}>
+                {SAVE_RATE_BAND_LABEL[vsBand]}
+              </span>
+              <span className="block text-muted">{expected}</span>
+            </p>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function LockedForecastBanner({
   streams,
   saves,
@@ -230,22 +317,16 @@ export function LockedForecastBanner({
   const showActuals =
     streamActual != null || saveActual != null || saveRateActual != null;
 
-  const streamsForecast = (
-    <AnimatedCompactMetric value={streams} delay={0} />
-  );
-  const savesForecast = (
-    <AnimatedCompactMetric value={saves} delay={COUNT_UP_STAGGER_MS} />
-  );
-  const saveRateForecast = (
-    <AnimatedPercentMetric
-      value={forecastSaveRate}
-      delay={COUNT_UP_STAGGER_MS * 2}
-    />
-  );
+  const streamsExpected = streamActual
+    ? `${formatCompactNumber(expectedStreamRange.lo)}–${formatCompactNumber(expectedStreamRange.hi)}`
+    : null;
+  const saveRateExpected = saveRateActual
+    ? `${saveRateBand.lo}–${saveRateBand.hi}%`
+    : null;
 
   return (
     <section
-      className="motion-fade-up relative overflow-hidden rounded-instrument border border-border bg-accent-tint px-5 py-3.5"
+      className="motion-fade-up relative min-w-0 overflow-hidden rounded-instrument border border-border bg-accent-tint px-4 py-3.5 md:px-5"
       aria-label="Week-1 forecast"
     >
       <span
@@ -257,9 +338,66 @@ export function LockedForecastBanner({
         Week-1 forecast
       </SectionHeader>
 
+      <div className="mt-3 md:hidden">
+        <MobileMetricBlock
+          header="Streams"
+          forecast={<AnimatedCompactMetric value={streams} delay={0} />}
+          forecastNote={adsLiftLabel}
+          actual={
+            streamActual ? (
+              <AnimatedCompactMetric
+                value={streamActual.value}
+                delay={COUNT_UP_STAGGER_MS}
+              />
+            ) : null
+          }
+          variance={streamsVariance}
+          vsBand={streamActual?.vsBand}
+          expected={streamsExpected}
+          showActuals={showActuals}
+        />
+        <MobileMetricBlock
+          header="Saves"
+          forecast={
+            <AnimatedCompactMetric value={saves} delay={COUNT_UP_STAGGER_MS} />
+          }
+          actual={
+            saveActual ? (
+              <AnimatedCompactMetric
+                value={saveActual.value}
+                delay={COUNT_UP_STAGGER_MS * 2}
+              />
+            ) : null
+          }
+          variance={savesVariance}
+          showActuals={showActuals}
+        />
+        <MobileMetricBlock
+          header="Save rate"
+          forecast={
+            <AnimatedPercentMetric
+              value={forecastSaveRate}
+              delay={COUNT_UP_STAGGER_MS * 2}
+            />
+          }
+          actual={
+            saveRateActual ? (
+              <AnimatedPercentMetric
+                value={saveRateActual.value}
+                delay={COUNT_UP_STAGGER_MS * 3}
+              />
+            ) : null
+          }
+          variance={saveRateVariance}
+          vsBand={saveRateActual?.vsBand}
+          expected={saveRateExpected}
+          showActuals={showActuals}
+        />
+      </div>
+
       <div
         className={
-          "mt-3 grid w-full " +
+          "mt-3 hidden w-full md:grid " +
           (showActuals
             ? "grid-cols-[max-content_repeat(3,minmax(0,1fr))]"
             : "grid-cols-3")
@@ -286,10 +424,17 @@ export function LockedForecastBanner({
 
         {showActuals ? <RowLabel>Forecast</RowLabel> : null}
         <MetricFigure col={0} note={adsLiftLabel}>
-          {streamsForecast}
+          <AnimatedCompactMetric value={streams} delay={0} />
         </MetricFigure>
-        <MetricFigure col={1}>{savesForecast}</MetricFigure>
-        <MetricFigure col={2}>{saveRateForecast}</MetricFigure>
+        <MetricFigure col={1}>
+          <AnimatedCompactMetric value={saves} delay={COUNT_UP_STAGGER_MS} />
+        </MetricFigure>
+        <MetricFigure col={2}>
+          <AnimatedPercentMetric
+            value={forecastSaveRate}
+            delay={COUNT_UP_STAGGER_MS * 2}
+          />
+        </MetricFigure>
 
         {showActuals ? (
           <>
@@ -324,22 +469,14 @@ export function LockedForecastBanner({
               col={0}
               variance={streamsVariance}
               vsBand={streamActual?.vsBand}
-              expected={
-                streamActual
-                  ? `${formatCompactNumber(expectedStreamRange.lo)}–${formatCompactNumber(expectedStreamRange.hi)}`
-                  : null
-              }
+              expected={streamsExpected}
             />
             <VarianceCell col={1} variance={savesVariance} />
             <VarianceCell
               col={2}
               variance={saveRateVariance}
               vsBand={saveRateActual?.vsBand}
-              expected={
-                saveRateActual
-                  ? `${saveRateBand.lo}–${saveRateBand.hi}%`
-                  : null
-              }
+              expected={saveRateExpected}
             />
           </>
         ) : null}

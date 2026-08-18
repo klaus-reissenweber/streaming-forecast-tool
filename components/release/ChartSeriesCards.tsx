@@ -77,7 +77,7 @@ export function ChartSeriesCards({
 
   return (
     <div
-      className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6"
+      className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-6"
       role="group"
       aria-label="Chart series"
     >
@@ -88,18 +88,18 @@ export function ChartSeriesCards({
           onClick={() => onToggle(item.id)}
           aria-pressed={item.enabled}
           className={
-            "rounded-instrument border border-border bg-surface px-3 py-3 text-left transition-opacity " +
+            "min-w-0 rounded-instrument border border-border bg-surface px-3 py-3 text-left transition-opacity " +
             (item.enabled ? "opacity-100" : "opacity-50")
           }
         >
-          <span className="flex items-center gap-1.5">
+          <span className="flex min-w-0 items-center gap-1.5">
             <SeriesCheckbox color={item.color} checked={item.enabled} />
-            <span className="text-[10px] font-medium uppercase tracking-[0.06em] text-muted">
+            <span className="min-w-0 text-[10px] font-medium uppercase leading-tight tracking-[0.06em] text-muted">
               {item.label}
             </span>
           </span>
           <span
-            className="mt-1 block font-mono text-lg font-semibold tabular-nums leading-none tracking-[-0.02em]"
+            className="mt-1 block truncate font-mono text-lg font-semibold tabular-nums leading-none tracking-[-0.02em]"
             style={{ color: item.enabled ? item.color : undefined }}
           >
             {formatCompactNumber(item.value)}

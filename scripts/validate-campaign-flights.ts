@@ -8,6 +8,11 @@ import {
   flightBandPlotStyle,
   isoDateToCampaignDay,
 } from "../lib/campaign-flights";
+import {
+  campaignNameContainsUid,
+  looksLikeCampaignUid,
+  readableCampaignName,
+} from "../lib/campaign-display-name";
 import { activeNavItemId, adResultsHref, isPublicPath } from "../lib/nav";
 
 function assert(condition: boolean, message: string): void {
@@ -46,6 +51,72 @@ assert(bands[0]!.startDay === 1 && bands[0]!.endDay === 2, "marquee days");
 
 const plot = flightBandPlotStyle(1, 2);
 assert(plot.left === "0%", "band starts at 0");
+
+const uid = "4ca37558add91253fb3bac367e6011a5";
+assert(looksLikeCampaignUid(uid), "hex hash is a uid");
+assert(
+  campaignNameContainsUid(`showcase · ${uid}`),
+  "format · uid is unusable",
+);
+assert(looksLikeCampaignUid("a1b2c3d4-e5f6-7890-abcd-ef1234567890"), "uuid is a uid");
+assert(!looksLikeCampaignUid("Summer campaign"), "human name is not a uid");
+assert(
+  readableCampaignName({
+    campaignName: null,
+    campaignUid: uid,
+    platform: "spotify",
+    format: "showcase",
+  }) === "Showcase",
+  "spotify format fallback",
+);
+assert(
+  readableCampaignName({
+    campaignName: `showcase · ${uid}`,
+    campaignUid: uid,
+    platform: "spotify",
+    format: "showcase",
+  }) === "Showcase",
+  "concatenated format · uid is not a display name",
+);
+assert(
+  readableCampaignName({
+    campaignName: uid,
+    campaignUid: uid,
+    platform: "meta",
+    objective: "traffic",
+  }) === "Meta traffic",
+  "meta uid falls back to objective",
+);
+assert(
+  readableCampaignName({
+    campaignName: "Partner Probe",
+    campaignUid: uid,
+    platform: "spotify",
+    format: "marquee",
+  }) === "Partner Probe",
+  "real name wins",
+);
+assert(
+  readableCampaignName({
+    campaignName: null,
+    platform: "spotify",
+    format: "marquee",
+  }) === "Marquee",
+  "marquee format",
+);
+
+const uidBand = flightsToChartBands(
+  [
+    {
+      id: "uid-flight",
+      name: uid,
+      startDate: "2026-08-01",
+      endDate: "2026-08-07",
+    },
+  ],
+  "2026-08-01",
+);
+assert(uidBand[0]!.name === "Campaign", "chart band never shows a uid");
 
 assert(isPublicPath("/report/abc") === true, "public report");
 assert(isPublicPath("/reports") === false, "internal reports");

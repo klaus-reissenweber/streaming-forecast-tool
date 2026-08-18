@@ -3,6 +3,8 @@
  * Pure — used by the release chart and the public report chart.
  */
 
+import { campaignNameContainsUid } from "./campaign-display-name";
+
 export const CAMPAIGN_FLIGHT_WINDOW_DAYS = 28;
 
 export type CampaignFlight = {
@@ -66,9 +68,10 @@ export function flightsToChartBands(
     if (!clamped) {
       continue;
     }
+    const rawName = flight.name.trim() || "Campaign";
     bands.push({
       id: flight.id,
-      name: flight.name.trim() || "Campaign",
+      name: campaignNameContainsUid(rawName) ? "Campaign" : rawName,
       startDay: clamped.startDay,
       endDay: clamped.endDay,
     });
