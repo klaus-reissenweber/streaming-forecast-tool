@@ -61,14 +61,36 @@ export async function loadAdFitInputs(): Promise<AdFitInputs> {
 
   const { data: releases, error: relErr } = await sb
     .from("releases")
-    .select("artist_name, genre");
+    .select("id, genre");
   if (relErr) throw new Error(`releases: ${relErr.message}`);
 
-  const artistGenreByKey = new Map<string, AdGenre>();
+  const genreByReleaseId = new Map<string, AdGenre>();
   for (const r of releases ?? []) {
-    const key = normalizeArtistKey(String(r.artist_name ?? ""));
+    const id = String(r.id ?? "");
     const genre = r.genre as AdGenre;
-    if (key && genre) artistGenreByKey.set(key, genre);
+    if (id && genre) genreByReleaseId.set(id, genre);
+  }
+
+  const artistGenreByKey = new Map<string, AdGenre>();
+  const roster = await sb
+    .from("release_artists")
+    .select("release_id, artist_name");
+  if (roster.error) {
+    const message = roster.error.message.toLowerCase();
+    const tableMissing =
+      message.includes("release_artists") &&
+      (message.includes("does not exist") ||
+        message.includes("schema cache") ||
+        message.includes("could not find"));
+    if (!tableMissing) {
+      throw new Error(`release_artists: ${roster.error.message}`);
+    }
+  } else {
+    for (const row of roster.data ?? []) {
+      const key = normalizeArtistKey(String(row.artist_name ?? ""));
+      const genre = genreByReleaseId.get(String(row.release_id ?? ""));
+      if (key && genre) artistGenreByKey.set(key, genre);
+    }
   }
 
   const spotify: SpotifyCampaignFitRow[] = (camps ?? []).map((r) => ({

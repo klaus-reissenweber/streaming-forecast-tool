@@ -40,6 +40,10 @@ import {
   classifySaveRateVsBand,
   type SaveRateVsBand,
 } from "@/lib/save-rate-band-label";
+import {
+  primaryReleaseArtist,
+  type ReleaseArtist,
+} from "@/lib/release-artists";
 
 export type ReleasePhase = "pre-release" | "monitoring";
 
@@ -68,6 +72,7 @@ export interface ReleaseViewModel {
     editorialTier: ReleaseRecord["editorial_tier"];
     status: ReleaseRecord["status"];
   };
+  artists: ReleaseArtist[];
   algoPositioning: AlgoPositioningResult;
   modelConfidenceR2: number;
   /** DB row id / fitted_at, or "fallback" — for prod observability. */
@@ -112,6 +117,7 @@ export function buildReleaseViewModel(
   _adRates: AdRates,
   streamsD0R2: number,
   model: ActiveModel,
+  artists: readonly ReleaseArtist[] = [],
 ): ReleaseViewModel {
   const daysEntered = dailyData.length;
   const phase: ReleasePhase = daysEntered === 0 ? "pre-release" : "monitoring";
@@ -152,7 +158,10 @@ export function buildReleaseViewModel(
     tier,
     forecastModel.saveCountBands,
   );
-  const adPlan = adSpendPlanFromRelease(release);
+  const adPlan = adSpendPlanFromRelease(
+    release,
+    primaryReleaseArtist(artists)?.artist_name ?? "",
+  );
   const streamCurve = buildStreamCurve(
     forecastModel,
     release.locked_forecast_streams,
@@ -204,6 +213,7 @@ export function buildReleaseViewModel(
       editorialTier: release.editorial_tier,
       status: release.status,
     },
+    artists: [...artists],
     algoPositioning,
     modelConfidenceR2: streamsD0R2,
     activeModelSource: formatActiveModelSource(model),

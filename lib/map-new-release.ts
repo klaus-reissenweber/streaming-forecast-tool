@@ -2,8 +2,14 @@ import type { ReleaseForecastInputs } from "@/lib/forecast";
 import type { NewReleaseFormValues } from "@/lib/validate-new-release";
 import {
   DEFAULT_MONTHLY_LISTENERS,
+  defaultNewReleaseArtists,
   type NewReleaseFormRawValues,
 } from "@/lib/validate-new-release";
+import {
+  isArtistRole,
+  type ArtistRole,
+  type ReleaseArtistInsert,
+} from "@/lib/release-artists";
 
 /** Row shape for inserting a new release at creation time. */
 export interface NewReleaseInsertRow {
@@ -57,12 +63,19 @@ export function toNewReleaseInsertRow(
     modelVersionId: string;
   },
 ): NewReleaseInsertRow {
+  const primary = values.artists.find((row) => row.role === "primary");
+  const primaryName = (primary?.name ?? values.artistName).trim();
+  const primaryMl =
+    primary?.monthlyListeners != null
+      ? primary.monthlyListeners
+      : values.monthlyListeners;
+
   return {
     track_name: values.trackName.trim(),
-    artist_name: values.artistName.trim(),
+    artist_name: values.artistName.trim() || primaryName,
     genre: values.genre,
-    monthly_listeners: values.monthlyListeners,
-    monthly_listeners_at_release: values.monthlyListeners,
+    monthly_listeners: primaryMl,
+    monthly_listeners_at_release: primaryMl,
     is_feature: values.isFeature,
     editorial_tier: values.editorialTier,
     release_date: values.releaseDate,
@@ -82,10 +95,31 @@ export function toNewReleaseInsertRow(
   };
 }
 
+/** Roster rows to insert after the release exists. Primary ML only — no blend. */
+export function toReleaseArtistInsertRows(
+  releaseId: string,
+  values: NewReleaseFormValues,
+): ReleaseArtistInsert[] {
+  return values.artists
+    .filter(
+      (row): row is NewReleaseFormValues["artists"][number] & { role: ArtistRole } =>
+        Boolean(row.name.trim()) && isArtistRole(row.role),
+    )
+    .slice(0, 4)
+    .map((row, index) => ({
+      release_id: releaseId,
+      artist_name: row.name.trim(),
+      monthly_listeners: row.monthlyListeners,
+      role: row.role,
+      position: index + 1,
+    }));
+}
+
 /** Defaults for a fresh form (numeric fields use coerced defaults when empty). */
 export const DEFAULT_NEW_RELEASE_FORM_VALUES: NewReleaseFormRawValues = {
   trackName: "",
   artistName: "",
+  artists: defaultNewReleaseArtists(),
   genre: "house",
   monthlyListeners: DEFAULT_MONTHLY_LISTENERS,
   isFeature: false,

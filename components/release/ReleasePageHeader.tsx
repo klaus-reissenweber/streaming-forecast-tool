@@ -1,9 +1,11 @@
 import { CloseReleaseButton } from "@/components/release/CloseReleaseButton";
+import { ReleaseArtistRoster } from "@/components/release/ReleaseArtistRoster";
 import { ReleaseReportActions } from "@/components/release/ReleaseReportActions";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { EDITORIAL_TIER_DEFINITIONS } from "@/lib/constants";
 import type { EditorialTier, Genre } from "@/lib/forecast";
 import type { ReleaseStatus } from "@/lib/map-release-row";
+import type { ReleaseArtist } from "@/lib/release-artists";
 
 export interface ReleasePageHeaderProps {
   releaseId: string;
@@ -15,6 +17,7 @@ export interface ReleasePageHeaderProps {
   status: ReleaseStatus;
   reportPath?: string | null;
   reportUrl?: string | null;
+  artists?: readonly ReleaseArtist[];
 }
 
 function formatGenreLabel(genre: Genre): string {
@@ -51,6 +54,7 @@ export function ReleasePageHeader({
   status,
   reportPath = null,
   reportUrl = null,
+  artists = [],
 }: ReleasePageHeaderProps) {
   const tierLabel = EDITORIAL_TIER_DEFINITIONS[editorialTier].label;
   const badge = statusBadge(status);
@@ -68,6 +72,7 @@ export function ReleasePageHeader({
             {genreLabel} · Release {releaseDateDisplay} · Editorial tier{" "}
             {editorialTier} ({tierLabel})
           </p>
+          <ReleaseArtistRoster artists={artists} />
         </div>
 
         <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">

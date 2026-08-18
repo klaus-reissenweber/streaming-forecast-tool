@@ -9,7 +9,7 @@ interface ToggleGroupProps<T extends string | number> {
   name: string;
   label: string;
   options: ToggleOption<T>[];
-  value: T;
+  value: T | "";
   onChange: (value: T) => void;
   disabled?: boolean;
   error?: string;

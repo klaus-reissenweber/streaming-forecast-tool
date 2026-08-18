@@ -22,6 +22,8 @@ interface MonthlyListenersFieldProps {
   onChange: (value: number | string) => void;
   disabled?: boolean;
   error?: string;
+  inputId?: string;
+  label?: string;
 }
 
 function coerceDisplayValue(value: number | string): number {
@@ -57,6 +59,8 @@ export function MonthlyListenersField({
   onChange,
   disabled = false,
   error,
+  inputId = "monthlyListeners",
+  label = "Monthly listeners",
 }: MonthlyListenersFieldProps) {
   const displayValue = coerceDisplayValue(value);
   const artistTier = artistTierFromMonthlyListeners(displayValue);
@@ -65,15 +69,15 @@ export function MonthlyListenersField({
   return (
     <div className="flex flex-col gap-2">
       <label
-        htmlFor="monthlyListeners"
+        htmlFor={inputId}
         className="text-body-sm font-medium text-foreground"
       >
-        Monthly listeners
+        {label}
       </label>
 
       <div className="flex flex-wrap items-center gap-3">
         <input
-          id="monthlyListeners"
+          id={inputId}
           type="range"
           min={SLIDER_MIN}
           max={SLIDER_MAX}

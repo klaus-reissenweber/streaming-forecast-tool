@@ -77,7 +77,7 @@ class ReleaseRecord:
 
     id: str
     track_name: str
-    artist_name: str
+    artist_name: str  # Primary from release_artists (label only).
     genre: str
     monthly_listeners: float
     is_feature: bool
@@ -101,7 +101,7 @@ class TrainingRow:
 
     release_id: str
     track_name: str
-    artist_name: str
+    artist_name: str  # Primary from release_artists (report label only).
     genre: str
     monthly_listeners: float
     is_feature: bool
@@ -140,6 +140,7 @@ def build_training_row(
     No wk1 volume floor — zero-stream complete weeks are included; individual
     model fits still skip non-positive targets where log() requires it.
     ML feature is monthly_listeners_at_release (creation snapshot).
+    Not a blend/sum/max of release_artists.monthly_listeners.
     """
     if release.status != "closed":
         return None

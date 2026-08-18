@@ -10,11 +10,32 @@ import type {
   SpotifyFormat,
 } from "@/lib/forecast";
 import { deriveMetaObjectiveFromSpends } from "@/lib/meta-objective";
+import {
+  MAX_RELEASE_ARTISTS,
+  isArtistRole,
+  type ArtistRole,
+} from "@/lib/release-artists";
+
+/** One credited artist on the create form (1–4). */
+export interface NewReleaseArtistValues {
+  name: string;
+  /** Null when unknown (non-primary only). */
+  monthlyListeners: number | null;
+  role: ArtistRole | "";
+}
+
+/** Raw roster row while typing. Empty ML string = unknown. */
+export interface NewReleaseArtistDraft {
+  name: string;
+  monthlyListeners: number | string;
+  role: ArtistRole | "";
+}
 
 /** Coerced, typed values used by validation and forecast mapping. */
 export interface NewReleaseFormValues {
   trackName: string;
   artistName: string;
+  artists: NewReleaseArtistValues[];
   genre: Genre | "";
   monthlyListeners: number;
   isFeature: boolean;
@@ -43,6 +64,7 @@ export interface NewReleaseFormValues {
 export interface NewReleaseFormRawValues {
   trackName: string;
   artistName: string;
+  artists: NewReleaseArtistDraft[];
   genre: Genre | "";
   monthlyListeners: number | string;
   isFeature: boolean;
@@ -65,6 +87,16 @@ export interface NewReleaseValidationResult {
 }
 
 export const DEFAULT_MONTHLY_LISTENERS = 500_000;
+
+export const DEFAULT_RELEASE_ARTIST_DRAFT: NewReleaseArtistDraft = {
+  name: "",
+  monthlyListeners: DEFAULT_MONTHLY_LISTENERS,
+  role: "primary",
+};
+
+export function defaultNewReleaseArtists(): NewReleaseArtistDraft[] {
+  return [{ ...DEFAULT_RELEASE_ARTIST_DRAFT }];
+}
 
 const EDITORIAL_TIERS: EditorialTier[] = [0, 1, 2, 3];
 
@@ -115,6 +147,33 @@ function coerceNumericInput(
   }
 
   return { ok: true, value: parsed };
+}
+
+function draftHasContent(draft: NewReleaseArtistDraft): boolean {
+  const name = draft.name.trim();
+  const ml =
+    typeof draft.monthlyListeners === "string"
+      ? draft.monthlyListeners.trim()
+      : draft.monthlyListeners;
+  const hasMl =
+    ml !== "" && ml != null && !(typeof ml === "number" && !Number.isFinite(ml));
+  return Boolean(name || draft.role || hasMl);
+}
+
+function coerceOptionalMl(
+  raw: number | string | null | undefined,
+): { value: number | null; error?: string } {
+  if (raw === null || raw === undefined) {
+    return { value: null };
+  }
+  if (typeof raw === "string" && raw.trim() === "") {
+    return { value: null };
+  }
+  const result = coerceNumericInput(raw, 0, "Monthly listeners");
+  if (!result.ok) {
+    return { value: null, error: result.error };
+  }
+  return { value: result.value };
 }
 
 function coerceEditorialTier(
@@ -188,11 +247,67 @@ export function coerceNewReleaseFormValues(
   const spotifyFormat: SpotifyFormat =
     showcase > 0 && marquee === 0 ? "showcase" : "marquee";
 
+  const creditLine = raw.artistName;
+  const artistDrafts =
+    raw.artists && raw.artists.length > 0
+      ? raw.artists.slice(0, MAX_RELEASE_ARTISTS)
+      : defaultNewReleaseArtists();
+
+  const artists: NewReleaseArtistValues[] = [];
+  for (const draft of artistDrafts) {
+    if (artists.length > 0 && !draftHasContent(draft)) {
+      continue;
+    }
+    const isPrimary = draft.role === "primary";
+    let monthlyListeners: number | null;
+    if (isPrimary) {
+      const rowMl = coerceNumericInput(
+        draft.monthlyListeners,
+        ml.ok ? ml.value : DEFAULT_MONTHLY_LISTENERS,
+        "Monthly listeners",
+      );
+      if (!rowMl.ok) {
+        fieldErrors.monthlyListeners = rowMl.error;
+        monthlyListeners = DEFAULT_MONTHLY_LISTENERS;
+      } else {
+        monthlyListeners = rowMl.value;
+      }
+    } else {
+      const optional = coerceOptionalMl(draft.monthlyListeners);
+      if (optional.error) {
+        fieldErrors.artists = optional.error;
+      }
+      monthlyListeners = optional.value;
+    }
+    artists.push({
+      name: draft.name.trim(),
+      monthlyListeners,
+      role: isArtistRole(draft.role) ? draft.role : "",
+    });
+  }
+  if (artists.length === 0) {
+    artists.push({
+      name: creditLine.trim(),
+      monthlyListeners: ml.ok ? ml.value : DEFAULT_MONTHLY_LISTENERS,
+      role: "primary",
+    });
+  }
+
+  const primary = artists.find((row) => row.role === "primary");
+  const primaryMl =
+    primary?.monthlyListeners != null && Number.isFinite(primary.monthlyListeners)
+      ? primary.monthlyListeners
+      : ml.ok
+        ? ml.value
+        : DEFAULT_MONTHLY_LISTENERS;
+  const artistName = creditLine.trim() || (primary?.name ?? "");
+
   const values: NewReleaseFormValues = {
     trackName: raw.trackName,
-    artistName: raw.artistName,
+    artistName,
+    artists,
     genre: raw.genre,
-    monthlyListeners: ml.ok ? ml.value : DEFAULT_MONTHLY_LISTENERS,
+    monthlyListeners: primaryMl,
     isFeature: raw.isFeature,
     editorialTier: coerceEditorialTier(raw.editorialTier),
     releaseDate: raw.releaseDate,
@@ -272,6 +387,37 @@ export function validateNewReleaseForm(
   const artistName = values.artistName.trim();
   if (!artistName) {
     fieldErrors.artistName = "Artist name is required.";
+  }
+
+  const artists = values.artists;
+  if (artists.length < 1) {
+    fieldErrors.artists = "Add at least one artist with an explicit role.";
+  } else if (artists.length > MAX_RELEASE_ARTISTS) {
+    fieldErrors.artists = `At most ${MAX_RELEASE_ARTISTS} artists.`;
+  } else {
+    const primaryRows = artists.filter((row) => row.role === "primary");
+    if (primaryRows.length !== 1) {
+      fieldErrors.artists =
+        "Exactly one artist must have the primary role (the forecast uses that artist's ML).";
+    }
+    for (let index = 0; index < artists.length; index += 1) {
+      const row = artists[index]!;
+      const label = `Artist ${index + 1}`;
+      if (!row.name.trim()) {
+        formErrors.push(`${label}: name is required.`);
+      }
+      if (!isArtistRole(row.role)) {
+        formErrors.push(`${label}: pick an explicit role.`);
+      }
+      if (row.role !== "primary" && row.monthlyListeners != null) {
+        const rowMl = row.monthlyListeners;
+        if (!Number.isFinite(rowMl) || !Number.isInteger(rowMl) || rowMl < 1) {
+          formErrors.push(
+            `${label}: monthly listeners must be a whole number greater than 0, or left blank.`,
+          );
+        }
+      }
+    }
   }
 
   if (!values.genre || !GENRES.includes(values.genre)) {

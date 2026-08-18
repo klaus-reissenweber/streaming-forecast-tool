@@ -24,6 +24,7 @@ import { summarizeAdCampaigns } from "@/lib/ad-results-summary";
 import { loadActiveModel } from "@/lib/load-active-model";
 import { loadForecastData } from "@/lib/load-forecast-data";
 import { loadDailyData, loadRelease } from "@/lib/load-release";
+import { loadReleaseArtists } from "@/lib/load-release-artists";
 import { logActiveModelSource } from "@/lib/model/forecast-model";
 
 interface ReleasePageProps {
@@ -55,7 +56,7 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
   }
 
   const dailyData = await loadDailyData(id);
-  const [model, { adRates, coefficients }, existingReport, campaignFlights] =
+  const [model, { adRates, coefficients }, existingReport, campaignFlights, artists] =
     await Promise.all([
       loadActiveModel(),
       loadForecastData(),
@@ -63,6 +64,7 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
       loadCampaignFlightsForReleaseKey(
         releaseKeyFromTrackName(release.track_name),
       ).catch(() => []),
+      loadReleaseArtists(id).catch(() => []),
     ]);
   logActiveModelSource(model, `release/${id}`);
   const siteOrigin =
@@ -80,6 +82,7 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
     adRates,
     model.source === "db" ? model.streamsD0.r2 : coefficients.streams.streams_d0.r2,
     model,
+    artists,
   );
 
   const { health, saveVelocity, liveAlgoPositioning } = viewModel.monitoring;
@@ -125,6 +128,7 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
           status={viewModel.header.status}
           reportPath={reportPath}
           reportUrl={reportUrl}
+          artists={viewModel.artists}
         />
       </div>
 

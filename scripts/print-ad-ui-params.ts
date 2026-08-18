@@ -21,20 +21,22 @@ async function main() {
   const model = await loadActiveModel();
   const ad = model.adModel;
 
-  const plan = adSpendPlanFromRelease({
-    artist_name: TEST_ARTIST,
-    genre: TEST_GENRE,
-    spotify_format: "marquee",
-    spotify_spend_planned: 0,
-    meta_spend_planned: META_SPEND,
-    meta_objective: "traffic",
-    meta_traffic_spend_planned: META_SPEND,
-    meta_awareness_spend_planned: 0,
-    spotify_marquee_spend_planned: MARQUEE_SPEND,
-    spotify_showcase_spend_planned: SHOWCASE_SPEND,
-    campaign_start_offset_days: 0,
-    campaign_duration_days: 14,
-  });
+  const plan = adSpendPlanFromRelease(
+    {
+      genre: TEST_GENRE,
+      spotify_format: "marquee",
+      spotify_spend_planned: 0,
+      meta_spend_planned: META_SPEND,
+      meta_objective: "traffic",
+      meta_traffic_spend_planned: META_SPEND,
+      meta_awareness_spend_planned: 0,
+      spotify_marquee_spend_planned: MARQUEE_SPEND,
+      spotify_showcase_spend_planned: SHOWCASE_SPEND,
+      campaign_start_offset_days: 0,
+      campaign_duration_days: 14,
+    },
+    TEST_ARTIST,
+  );
   const totals = computeAdAttributedTotals(plan, ad);
   const funnel = computeAdMetaFunnelDisplay(
     META_SPEND,

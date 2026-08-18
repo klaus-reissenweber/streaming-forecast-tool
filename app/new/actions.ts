@@ -6,6 +6,7 @@ import { loadActiveModel } from "@/lib/load-active-model";
 import { loadForecastData } from "@/lib/load-forecast-data";
 import {
   toNewReleaseInsertRow,
+  toReleaseArtistInsertRows,
   toReleaseForecastInputs,
 } from "@/lib/map-new-release";
 import { logActiveModelSource } from "@/lib/model/forecast-model";
@@ -142,6 +143,35 @@ export async function createRelease(
         success: false,
         error: RELEASE_SAVE_ERROR_FATAL,
       };
+    }
+
+    const artistRows = toReleaseArtistInsertRows(data.id, parsed.values);
+    if (artistRows.length > 0) {
+      const { error: artistError } = await supabase
+        .from("release_artists")
+        .insert(artistRows);
+      if (artistError) {
+        const message = artistError.message.toLowerCase();
+        const tableMissing =
+          message.includes("release_artists") &&
+          (message.includes("does not exist") ||
+            message.includes("schema cache") ||
+            message.includes("could not find"));
+        if (!tableMissing) {
+          console.error("release_artists insert failed:", {
+            message: artistError.message,
+            details: artistError.details,
+            hint: artistError.hint,
+            code: artistError.code,
+            releaseId: data.id,
+          });
+          return {
+            success: false,
+            error:
+              "Release was created but the artist roster failed to save. Open the release and retry after checking release_artists.",
+          };
+        }
+      }
     }
 
     redirect(`/release/${data.id}`);

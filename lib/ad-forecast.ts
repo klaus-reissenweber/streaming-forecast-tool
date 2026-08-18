@@ -359,20 +359,23 @@ export function buildAdDailyLayer(
  * - Meta: prefers meta_traffic / meta_awareness spends; else splits meta_spend_planned
  *   by objective so awareness is never silently funneled.
  */
-export function adSpendPlanFromRelease(release: {
-  artist_name: string;
-  genre: Genre;
-  spotify_format: SpotifyFormat;
-  spotify_spend_planned: number;
-  meta_spend_planned: number;
-  meta_objective?: MetaObjective | string | null;
-  meta_traffic_spend_planned?: number | null;
-  meta_awareness_spend_planned?: number | null;
-  spotify_marquee_spend_planned?: number | null;
-  spotify_showcase_spend_planned?: number | null;
-  campaign_start_offset_days?: number | null;
-  campaign_duration_days?: number | null;
-}): AdSpendPlan {
+export function adSpendPlanFromRelease(
+  release: {
+    genre: Genre;
+    spotify_format: SpotifyFormat;
+    spotify_spend_planned: number;
+    meta_spend_planned: number;
+    meta_objective?: MetaObjective | string | null;
+    meta_traffic_spend_planned?: number | null;
+    meta_awareness_spend_planned?: number | null;
+    spotify_marquee_spend_planned?: number | null;
+    spotify_showcase_spend_planned?: number | null;
+    campaign_start_offset_days?: number | null;
+    campaign_duration_days?: number | null;
+  },
+  /** Primary artist from release_artists — never releases.artist_name. */
+  primaryArtistName: string,
+): AdSpendPlan {
   let marquee = release.spotify_marquee_spend_planned ?? null;
   let showcase = release.spotify_showcase_spend_planned ?? null;
 
@@ -406,7 +409,7 @@ export function adSpendPlanFromRelease(release: {
   }
 
   return {
-    artistName: release.artist_name,
+    artistName: primaryArtistName,
     genre: release.genre,
     marqueeSpend: Math.max(0, marquee ?? 0),
     showcaseSpend: Math.max(0, showcase ?? 0),

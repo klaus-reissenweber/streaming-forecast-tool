@@ -1,12 +1,13 @@
 """
-Supabase reads for closed releases and daily_data (see RETRAINING.md).
+Supabase reads for closed releases, daily_data, and release_artists labels.
 
-Mirrors lib/load-closed-releases.ts — two batched queries, no writes.
+Mirrors lib/load-closed-releases.ts for releases + daily_data. Artist labels
+come from release_artists (primary), never releases.artist_name.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from supabase import Client
@@ -21,21 +22,23 @@ from dataset import (
 
 RELEASES_TABLE = "releases"
 DAILY_DATA_TABLE = "daily_data"
+RELEASE_ARTISTS_TABLE = "release_artists"
 
 RELEASE_SELECT_COLUMNS_BASE = (
-    "id, track_name, artist_name, genre, monthly_listeners, is_feature, "
+    "id, track_name, genre, monthly_listeners, is_feature, "
     "editorial_tier, release_type, spotify_format, meta_spend_planned, "
     "spotify_spend_planned, locked_forecast_streams, status, release_date, "
     "created_at, closed_at"
 )
 RELEASE_SELECT_COLUMNS = (
-    "id, track_name, artist_name, genre, monthly_listeners, "
+    "id, track_name, genre, monthly_listeners, "
     "monthly_listeners_at_release, is_feature, editorial_tier, release_type, "
     "spotify_format, meta_spend_planned, spotify_spend_planned, "
     "locked_forecast_streams, status, release_date, created_at, closed_at"
 )
 
 _HAS_ML_AT_RELEASE: bool | None = None
+_HAS_RELEASE_ARTISTS: bool | None = None
 
 
 def _releases_have_ml_at_release(client: Client) -> bool:
@@ -49,6 +52,19 @@ def _releases_have_ml_at_release(client: Client) -> bool:
     except Exception:
         _HAS_ML_AT_RELEASE = False
     return _HAS_ML_AT_RELEASE
+
+
+def _releases_have_artist_roster(client: Client) -> bool:
+    """Probe once — 202608170001 may not be applied yet."""
+    global _HAS_RELEASE_ARTISTS
+    if _HAS_RELEASE_ARTISTS is not None:
+        return _HAS_RELEASE_ARTISTS
+    try:
+        client.table(RELEASE_ARTISTS_TABLE).select("id").limit(1).execute()
+        _HAS_RELEASE_ARTISTS = True
+    except Exception:
+        _HAS_RELEASE_ARTISTS = False
+    return _HAS_RELEASE_ARTISTS
 
 DAILY_DATA_SELECT_COLUMNS = (
     "id, release_id, day_number, streams, saves, recorded_at"
@@ -168,7 +184,7 @@ def _parse_release_row(row: dict[str, Any]) -> ReleaseRecord:
     return ReleaseRecord(
         id=release_id,
         track_name=_parse_required_string(row.get("track_name"), "track_name"),
-        artist_name=_parse_required_string(row.get("artist_name"), "artist_name"),
+        artist_name="",
         genre=genre,
         monthly_listeners=_parse_number(row.get("monthly_listeners"), "monthly_listeners"),
         is_feature=is_feature,
@@ -212,6 +228,33 @@ def _parse_daily_data_row(row: dict[str, Any]) -> DailyDataPoint:
     )
 
 
+def fetch_primary_artist_names(
+    client: Client,
+    release_ids: list[str],
+) -> dict[str, str]:
+    """Map release_id → primary artist_name from release_artists (never releases)."""
+    if not release_ids or not _releases_have_artist_roster(client):
+        return {}
+
+    names: dict[str, str] = {}
+    for start in range(0, len(release_ids), 100):
+        chunk = release_ids[start : start + 100]
+        response = (
+            client.table(RELEASE_ARTISTS_TABLE)
+            .select("release_id, artist_name, role, position")
+            .in_("release_id", chunk)
+            .eq("role", "primary")
+            .order("position")
+            .execute()
+        )
+        for row in response.data or []:
+            release_id = str(row.get("release_id") or "")
+            artist_name = str(row.get("artist_name") or "").strip()
+            if release_id and artist_name and release_id not in names:
+                names[release_id] = artist_name
+    return names
+
+
 def fetch_closed_releases(client: Client) -> list[ReleaseRecord]:
     select_columns = (
         RELEASE_SELECT_COLUMNS
@@ -238,7 +281,19 @@ def fetch_closed_releases(client: Client) -> list[ReleaseRecord]:
         except (TypeError, ValueError) as error:
             release_id = row.get("id", "<unknown>")
             raise FetchError(f"releases.id={release_id}: invalid row.") from error
-    return releases
+
+    primary_names = fetch_primary_artist_names(client, [release.id for release in releases])
+    if not primary_names:
+        return releases
+
+    labeled: list[ReleaseRecord] = []
+    for release in releases:
+        name = primary_names.get(release.id, "")
+        if not name:
+            labeled.append(release)
+            continue
+        labeled.append(replace(release, artist_name=name))
+    return labeled
 
 
 def fetch_daily_data_for_releases(

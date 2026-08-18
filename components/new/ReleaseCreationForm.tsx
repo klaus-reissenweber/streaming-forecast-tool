@@ -17,10 +17,23 @@ import type { EditorialTier, Genre } from "@/lib/forecast";
 import { DEFAULT_NEW_RELEASE_FORM_VALUES } from "@/lib/map-new-release";
 import type { AdModel } from "@/lib/model/ad-model";
 import {
+  ARTIST_ROLE_LABELS,
+  ARTIST_ROLES,
+  MAX_RELEASE_ARTISTS,
+  type ArtistRole,
+} from "@/lib/release-artists";
+import {
+  defaultNewReleaseArtists,
   parseAndValidateNewReleaseForm,
+  type NewReleaseArtistDraft,
   type NewReleaseFieldKey,
   type NewReleaseFormRawValues,
 } from "@/lib/validate-new-release";
+
+const ROLE_OPTIONS = ARTIST_ROLES.map((role) => ({
+  value: role,
+  label: ARTIST_ROLE_LABELS[role],
+}));
 
 const FEATURE_OPTIONS = [
   { value: "solo", label: "Solo release" },
@@ -134,7 +147,70 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
     key: K,
     value: NewReleaseFormRawValues[K],
   ) {
-    setValues((current) => ({ ...current, [key]: value }));
+    setValues((current) => {
+      if (key === "artistName" && typeof value === "string") {
+        const artists = [...current.artists];
+        const first = artists[0] ?? defaultNewReleaseArtists()[0]!;
+        if (!first.name.trim() || first.name === current.artistName) {
+          artists[0] = { ...first, name: value };
+        }
+        return { ...current, artistName: value, artists };
+      }
+      return { ...current, [key]: value };
+    });
+    setSubmitError(null);
+    setServerFieldErrors({});
+  }
+
+  function setArtist(index: number, patch: Partial<NewReleaseArtistDraft>) {
+    setValues((current) => {
+      const artists = current.artists.map((row, rowIndex) =>
+        rowIndex === index ? { ...row, ...patch } : row,
+      );
+      const primary = artists.find((row) => row.role === "primary");
+      const next: NewReleaseFormRawValues = {
+        ...current,
+        artists,
+        monthlyListeners: primary
+          ? primary.monthlyListeners
+          : current.monthlyListeners,
+      };
+      if (index === 0 && patch.name != null) {
+        if (!current.artistName.trim() || current.artistName === current.artists[0]?.name) {
+          next.artistName = patch.name;
+        }
+      }
+      return next;
+    });
+    setSubmitError(null);
+    setServerFieldErrors({});
+  }
+
+  function addArtist() {
+    setValues((current) => {
+      if (current.artists.length >= MAX_RELEASE_ARTISTS) {
+        return current;
+      }
+      return {
+        ...current,
+        artists: [
+          ...current.artists,
+          { name: "", monthlyListeners: "", role: "" },
+        ],
+      };
+    });
+    setSubmitError(null);
+    setServerFieldErrors({});
+  }
+
+  function removeArtist(index: number) {
+    if (index === 0) {
+      return;
+    }
+    setValues((current) => ({
+      ...current,
+      artists: current.artists.filter((_, rowIndex) => rowIndex !== index),
+    }));
     setSubmitError(null);
     setServerFieldErrors({});
   }
@@ -165,6 +241,9 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
   const editorialTier = values.editorialTier as EditorialTier;
   const genre = (values.genre || "house") as Genre;
   const coerced = validation.values;
+  const primaryArtistName =
+    values.artists.find((row) => row.role === "primary")?.name ??
+    values.artistName;
 
   return (
     <form
@@ -195,7 +274,123 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
               onChange={(event) => setField("artistName", event.target.value)}
               disabled={pending}
             />
+            <span className="text-caption text-muted">
+              Spotify credit line (display only). Forecast ML comes from the
+              primary artist below.
+            </span>
           </label>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          <div>
+            <h3 className="text-body-sm font-medium text-foreground">
+              Artists on this release
+            </h3>
+            <p className="mt-1 text-caption text-muted">
+              Up to {MAX_RELEASE_ARTISTS}. Roles must be explicit. The forecast
+              uses the primary artist&apos;s monthly listeners only — no blend.
+            </p>
+          </div>
+
+          {(values.artists.length > 0
+            ? values.artists
+            : defaultNewReleaseArtists()
+          ).map((artist, index) => {
+            const isPrimary = artist.role === "primary";
+            return (
+              <div
+                key={`artist-${index}`}
+                className="rounded-instrument border border-border bg-canvas-subtle p-3 sm:p-4"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-mono text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
+                    Artist {index + 1}
+                    {isPrimary ? " · forecast ML" : ""}
+                  </span>
+                  {index > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => removeArtist(index)}
+                      disabled={pending}
+                      className="text-caption text-secondary hover:text-foreground disabled:opacity-50"
+                    >
+                      Remove
+                    </button>
+                  ) : null}
+                </div>
+
+                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <label className="flex flex-col gap-1">
+                    <span className="text-body-sm font-medium text-foreground">
+                      Name
+                    </span>
+                    <input
+                      className={TEXT_INPUT_CLASS}
+                      value={artist.name}
+                      onChange={(event) =>
+                        setArtist(index, { name: event.target.value })
+                      }
+                      disabled={pending}
+                    />
+                  </label>
+                </div>
+
+                <div className="mt-3">
+                  <ToggleGroup
+                    name={`artist-role-${index}`}
+                    label="Role"
+                    options={ROLE_OPTIONS}
+                    value={artist.role}
+                    onChange={(role) => setArtist(index, { role })}
+                    disabled={pending}
+                  />
+                </div>
+
+                <div className="mt-3">
+                  {isPrimary ? (
+                    <MonthlyListenersField
+                      inputId={`artist-ml-${index}`}
+                      label="Monthly listeners (primary — used by the forecast)"
+                      value={artist.monthlyListeners}
+                      onChange={(monthlyListeners) =>
+                        setArtist(index, { monthlyListeners })
+                      }
+                      disabled={pending}
+                    />
+                  ) : (
+                    <label className="flex flex-col gap-1 sm:max-w-xs">
+                      <span className="text-body-sm font-medium text-foreground">
+                        Monthly listeners (optional)
+                      </span>
+                      <input
+                        className={NUMERIC_INPUT_CLASS}
+                        inputMode="numeric"
+                        value={artist.monthlyListeners}
+                        onChange={(event) =>
+                          setArtist(index, {
+                            monthlyListeners: event.target.value,
+                          })
+                        }
+                        disabled={pending}
+                        placeholder="Unknown"
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+
+          {values.artists.length < MAX_RELEASE_ARTISTS ? (
+            <button
+              type="button"
+              onClick={addArtist}
+              disabled={pending}
+              className="text-body-sm font-medium text-accent-readable hover:underline disabled:opacity-50"
+            >
+              Add artist
+            </button>
+          ) : null}
         </div>
 
         <div className="mt-4">
@@ -205,16 +400,6 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
             options={GENRES.map((g) => ({ value: g, label: g }))}
             value={values.genre}
             onChange={(next) => setField("genre", next as Genre)}
-            disabled={pending}
-          />
-        </div>
-
-        <div className="mt-4">
-          <MonthlyListenersField
-            value={values.monthlyListeners}
-            onChange={(monthlyListeners) =>
-              setField("monthlyListeners", monthlyListeners)
-            }
             disabled={pending}
           />
         </div>
@@ -328,7 +513,7 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
 
           {values.genre ? (
             <AdSpendLiveForecast
-              artistName={values.artistName}
+              artistName={primaryArtistName}
               genre={genre}
               marqueeSpend={coerced.spotifyMarqueeSpendPlanned}
               showcaseSpend={coerced.spotifyShowcaseSpendPlanned}
