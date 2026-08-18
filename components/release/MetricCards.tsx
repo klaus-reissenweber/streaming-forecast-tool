@@ -2,51 +2,12 @@
 
 import type { ReactNode } from "react";
 import { SectionHeader } from "@/components/layout/SectionHeader";
-import { formatCompactNumber } from "@/lib/format";
 import { useCountUp } from "@/lib/hooks/use-count-up";
 
 export interface MetricCardsProps {
-  projectedWk1Streams: number;
-  projectedWk1Sublabel: string;
   saveVelocity: string | null;
-  algoBandLabel: string;
+  algoBandLabel: string | null;
   algoBandSublabel: string;
-  modelConfidenceR2: number;
-}
-
-const COUNT_UP_STAGGER_MS = 40;
-
-function formatR2(value: number): string {
-  if (!Number.isFinite(value)) {
-    return "n/a";
-  }
-  return value.toFixed(2);
-}
-
-function AnimatedCompactMetric({
-  value,
-  delay,
-}: {
-  value: number;
-  delay: number;
-}) {
-  const animated = useCountUp(value, { delay });
-
-  return (
-    <span>{formatCompactNumber(Math.round(animated))}</span>
-  );
-}
-
-function AnimatedR2Metric({
-  value,
-  delay,
-}: {
-  value: number;
-  delay: number;
-}) {
-  const animated = useCountUp(value, { delay });
-
-  return <span>{formatR2(animated)}</span>;
 }
 
 function AnimatedSaveVelocityMetric({
@@ -101,13 +62,17 @@ function MetricCell({
 }
 
 export function MetricCards({
-  projectedWk1Streams,
-  projectedWk1Sublabel,
   saveVelocity,
   algoBandLabel,
   algoBandSublabel,
-  modelConfidenceR2,
 }: MetricCardsProps) {
+  const showSaveVelocity = saveVelocity != null;
+  const showAlgo = algoBandLabel != null;
+
+  if (!showSaveVelocity && !showAlgo) {
+    return null;
+  }
+
   return (
     <section
       className="motion-fade-up"
@@ -117,48 +82,26 @@ export function MetricCards({
 
       <div className="mt-4 overflow-hidden rounded-instrument border border-border bg-surface">
         <dl className="flex flex-col sm:flex-row sm:items-stretch sm:divide-x sm:divide-border-subtle">
-          <MetricCell
-            label="Projected wk1"
-            sublabel={projectedWk1Sublabel}
-            value={
-              <AnimatedCompactMetric
-                value={projectedWk1Streams}
-                delay={0}
-              />
-            }
-          />
-
-          <MetricCell
-            label="Save velocity"
-            sublabel={saveVelocity ? "Vs tier p50" : "Needs daily saves"}
-            value={
-              saveVelocity ? (
+          {showSaveVelocity ? (
+            <MetricCell
+              label="Save velocity"
+              sublabel="Vs median week-1 saves for this artist size"
+              value={
                 <AnimatedSaveVelocityMetric
                   display={saveVelocity}
-                  delay={COUNT_UP_STAGGER_MS}
+                  delay={0}
                 />
-              ) : (
-                "Awaiting data"
-              )
-            }
-          />
+              }
+            />
+          ) : null}
 
-          <MetricCell
-            label="Algo positioning"
-            sublabel={algoBandSublabel}
-            value={algoBandLabel}
-          />
-
-          <MetricCell
-            label="Model confidence"
-            sublabel="streams_d0 R²"
-            value={
-              <AnimatedR2Metric
-                value={modelConfidenceR2}
-                delay={COUNT_UP_STAGGER_MS * 3}
-              />
-            }
-          />
+          {showAlgo ? (
+            <MetricCell
+              label="Algo positioning"
+              sublabel={algoBandSublabel}
+              value={algoBandLabel}
+            />
+          ) : null}
         </dl>
       </div>
     </section>

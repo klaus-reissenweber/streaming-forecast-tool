@@ -14,7 +14,7 @@ import { ReleasePageHeader } from "@/components/release/ReleasePageHeader";
 import { StreamCurveChart } from "@/components/release/StreamCurveChart";
 import {
   ALGO_BAND_DISPLAY,
-  algoBandCutoffCaption,
+  algoBandThresholdPlain,
 } from "@/lib/algo-positioning-display";
 import { buildReleaseViewModel } from "@/lib/build-release-view-model";
 import { loadAdReportByReleaseId, reportPublicUrl } from "@/lib/ad-report/load";
@@ -85,7 +85,7 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
     artists,
   );
 
-  const { health, saveVelocity, liveAlgoPositioning } = viewModel.monitoring;
+  const { saveVelocity, liveAlgoPositioning } = viewModel.monitoring;
   const algoPositioningForMetrics =
     liveAlgoPositioning ?? viewModel.algoPositioning;
   const lockedAlgoBandLabel =
@@ -94,16 +94,12 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
     ? ALGO_BAND_DISPLAY[liveAlgoPositioning.band].label
     : lockedAlgoBandLabel;
 
-  const projectedWk1Sublabel =
-    health.streamDaysEntered > 0
-      ? health.streamDaysEntered === 1
-        ? "D1 pace"
-        : `D1–D${health.streamDaysEntered} pace`
-      : "Forecast";
-
-  const algoBandSublabel = liveAlgoPositioning
-    ? `Live pace · ${algoBandCutoffCaption(algoPositioningForMetrics)}`
-    : algoBandCutoffCaption(algoPositioningForMetrics);
+  const algoBandSublabel = algoBandThresholdPlain(algoPositioningForMetrics);
+  const hasStreamActuals = viewModel.actualStreamsByDay.some(
+    (value) => value != null,
+  );
+  const showMetrics =
+    saveVelocity.display != null || liveAlgoPositioning != null;
 
   return (
     <main className="mx-auto max-w-6xl px-5 py-8">
@@ -135,64 +131,66 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
         />
       </div>
 
-      <div className="mt-6">
-        <AdResultsStatus
-          summary={summarizeAdCampaigns(campaignFlights)}
-          href={`/release/${id}/ad-upload`}
-        />
-      </div>
-
-      <div className="mt-6">
+      <div className="mt-6 flex flex-col gap-6">
         <LockedForecastBanner
           streams={viewModel.locked.streams}
           saves={viewModel.locked.saves}
           forecastSaveRate={viewModel.locked.impliedSaveRate}
-          actualSaveRate={viewModel.actualSaveRate}
-          actualSaveRateVsBand={viewModel.actualSaveRateVsBand}
+          actualSaveRate={
+            viewModel.wk1Complete ? viewModel.actualSaveRate : null
+          }
+          actualSaveRateVsBand={
+            viewModel.wk1Complete ? viewModel.actualSaveRateVsBand : null
+          }
           saveRateBand={viewModel.locked.saveRateBand}
           actualStreams={
             viewModel.wk1Complete ? viewModel.actualStreams : null
           }
-          actualStreamsVsBand={viewModel.actualStreamsVsBand}
+          actualStreamsVsBand={
+            viewModel.wk1Complete ? viewModel.actualStreamsVsBand : null
+          }
+          actualSaves={
+            viewModel.wk1Complete ? viewModel.actualSaves : null
+          }
           expectedStreamRange={viewModel.locked.expectedStreamRange}
           lockedAtDisplay={viewModel.locked.lockedAtDisplay}
-          status={viewModel.header.status}
-          releaseDate={viewModel.header.releaseDate}
           week1WithAds={viewModel.adLayer.week1WithAds}
-          week1AdMarquee={viewModel.adLayer.week1AdMarquee}
-          week1AdShowcase={viewModel.adLayer.week1AdShowcase}
-          week1AdMeta={viewModel.adLayer.week1AdMeta}
-          metaAwarenessSpend={viewModel.adLayer.plan.metaAwarenessSpend}
         />
 
-        <section className="mt-6" aria-label="Monitoring summary">
-          <HealthBanner health={viewModel.monitoring.health} />
+        <HealthBanner health={viewModel.monitoring.health} />
 
-          <div className="mt-4">
-            <MetricCards
-              projectedWk1Streams={health.projectedWk1}
-              projectedWk1Sublabel={projectedWk1Sublabel}
-              saveVelocity={saveVelocity.display}
-              algoBandLabel={liveAlgoBandLabel}
-              algoBandSublabel={algoBandSublabel}
-              modelConfidenceR2={viewModel.modelConfidenceR2}
-            />
-          </div>
-        </section>
+        {showMetrics ? (
+          <MetricCards
+            saveVelocity={saveVelocity.display}
+            algoBandLabel={
+              liveAlgoPositioning ? liveAlgoBandLabel : null
+            }
+            algoBandSublabel={algoBandSublabel}
+          />
+        ) : null}
 
-        <div className="mt-8">
-          <FlagsPanel phase={viewModel.phase} flags={viewModel.flags} />
-        </div>
+        <AdResultsStatus
+          summary={summarizeAdCampaigns(campaignFlights)}
+          href={`/release/${id}/ad-upload`}
+        />
 
-        <div className="mt-8">
+        <ChannelMixForecast
+          plan={viewModel.adLayer.plan}
+          genre={release.genre}
+          adModel={model.adModel}
+        />
+
+        <FlagsPanel phase={viewModel.phase} flags={viewModel.flags} />
+
+        {viewModel.daysEntered > 0 ? (
           <DailyEntrySection
             releaseId={id}
             initialDailyData={viewModel.dailyData}
             status={viewModel.header.status}
           />
-        </div>
+        ) : null}
 
-        <div className="mt-8">
+        {hasStreamActuals ? (
           <StreamCurveChart
             lockedStreamCurve={viewModel.streamCurve}
             projectedStreamCurve={viewModel.monitoring.projectedStreamCurve}
@@ -201,22 +199,15 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
             metaAdDaily={viewModel.adLayer.metaDaily}
             actualStreamsByDay={viewModel.actualStreamsByDay}
             phase={viewModel.phase}
+            status={viewModel.header.status}
             releaseDate={viewModel.header.releaseDate}
             campaignFlights={campaignFlights}
           />
-        </div>
+        ) : null}
 
-        <section className="mt-8 space-y-8" aria-label="Reference modules">
-          <AlgoPositioningModule positioning={viewModel.algoPositioning} />
+        <AlgoPositioningModule positioning={viewModel.algoPositioning} />
 
-          <ChannelMixForecast
-            plan={viewModel.adLayer.plan}
-            genre={release.genre}
-            adModel={model.adModel}
-          />
-
-          <GenrePlaybook genre={viewModel.header.genre} />
-        </section>
+        <GenrePlaybook genre={viewModel.header.genre} />
       </div>
     </main>
   );

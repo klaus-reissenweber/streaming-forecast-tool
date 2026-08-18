@@ -4,11 +4,9 @@ import { SectionHeader } from "@/components/layout/SectionHeader";
 import type { ReactNode } from "react";
 import { formatCompactNumber, formatPercent } from "@/lib/format";
 import { useCountUp } from "@/lib/hooks/use-count-up";
-import type { ReleaseStatus } from "@/lib/map-release-row";
 import {
-  saveRateBandCaption,
+  SAVE_RATE_BAND_LABEL,
   saveRateToneClass,
-  streamBandCaption,
   type SaveRateVsBand,
 } from "@/lib/save-rate-band-label";
 
@@ -21,33 +19,55 @@ export interface LockedForecastBannerProps {
   saveRateBand: { lo: number; hi: number };
   actualStreams?: number | null;
   actualStreamsVsBand?: SaveRateVsBand | null;
+  actualSaves?: number | null;
   expectedStreamRange: { lo: number; hi: number };
   lockedAtDisplay: string;
-  status: ReleaseStatus;
-  releaseDate: string;
   /** Organic locked + ad attributed streams in D1–D7. */
   week1WithAds?: number;
-  week1AdMarquee?: number;
-  week1AdShowcase?: number;
-  week1AdMeta?: number;
-  /** Awareness spend is reach-only (not in attributed stream totals). */
-  metaAwarenessSpend?: number;
 }
 
 const COUNT_UP_STAGGER_MS = 50;
+const VARIANCE_NEUTRAL_ABS_PCT = 5;
 
-function forecastStatusLabel(
-  status: ReleaseStatus,
-  releaseDate: string,
-): string {
-  if (status === "closed") {
-    return "Final forecast";
+/** Two caption lines — ads note and band copy share this reserved slot. */
+const CAPTION_SLOT_CLASS = "mt-1 min-h-[2.1rem] w-full";
+
+const FIGURE_CLASS =
+  "font-mono text-[2.5rem] font-semibold tabular-nums leading-none tracking-[-0.02em]";
+const COL_HEADER_CLASS = "pb-2 text-center text-label uppercase text-muted";
+const ROW_LABEL_CLASS =
+  "whitespace-nowrap pr-3 pt-2 text-left text-caption text-muted";
+const METRIC_PAD = "px-3";
+const ACTUAL_ROW_TONE = "bg-surface/50";
+
+function metricColClass(index: 0 | 1 | 2, extra = ""): string {
+  return (
+    `${METRIC_PAD} text-center ` +
+    (index === 0 ? "" : "border-l border-border/40 ") +
+    extra
+  ).trim();
+}
+
+/** (actual − forecast) / forecast × 100. Same formula as the report variance. */
+function variancePct(
+  forecast: number,
+  actual: number | null | undefined,
+): number | null {
+  if (actual == null || !(forecast > 0) || !Number.isFinite(actual)) {
+    return null;
   }
-  const todayUtc = new Date().toISOString().slice(0, 10);
-  if (todayUtc < releaseDate) {
-    return "Pre-release forecast";
+  return ((actual - forecast) / forecast) * 100;
+}
+
+function formatSignedPct(value: number, decimals = 0): string {
+  const rounded = Number(value.toFixed(decimals));
+  if (rounded === 0) {
+    return formatPercent(0, decimals);
   }
-  return "Live monitoring";
+  if (rounded > 0) {
+    return `+${formatPercent(rounded, decimals)}`;
+  }
+  return `−${formatPercent(Math.abs(rounded), decimals)}`;
 }
 
 function AnimatedCompactMetric({
@@ -59,9 +79,7 @@ function AnimatedCompactMetric({
 }) {
   const animated = useCountUp(value, { delay });
 
-  return (
-    <span>{formatCompactNumber(Math.round(animated))}</span>
-  );
+  return <span>{formatCompactNumber(Math.round(animated))}</span>;
 }
 
 function AnimatedPercentMetric({
@@ -76,39 +94,97 @@ function AnimatedPercentMetric({
   return <span>{formatPercent(animated)}</span>;
 }
 
-function MetricColumn({
-  label,
+function varianceToneClass(
+  variance: number,
+  vsBand?: SaveRateVsBand | null,
+): string {
+  if (vsBand === "within") {
+    return "text-secondary";
+  }
+  if (vsBand === "above") {
+    return "text-semantic-positive";
+  }
+  if (vsBand === "below") {
+    return "text-semantic-warning";
+  }
+  if (Math.abs(variance) <= VARIANCE_NEUTRAL_ABS_PCT) {
+    return "text-secondary";
+  }
+  return variance > 0
+    ? "text-semantic-positive"
+    : "text-semantic-warning";
+}
+
+function RowLabel({
   children,
-  caption,
-  valueClassName,
+  tone,
 }: {
-  label: string;
   children: ReactNode;
-  caption?: string;
-  valueClassName?: string;
+  tone?: string;
+}) {
+  return <div className={`${ROW_LABEL_CLASS} ${tone ?? ""}`}>{children}</div>;
+}
+
+function MetricFigure({
+  children,
+  note,
+  tone,
+  col,
+}: {
+  children: ReactNode;
+  note?: ReactNode | null;
+  tone?: string;
+  col: 0 | 1 | 2;
 }) {
   return (
-    <div className="min-w-0 flex-1 border-t-2 border-accent/40 py-1 sm:px-4 sm:py-0 sm:pt-3 sm:first:pl-0 sm:last:pr-0">
-      <dt className="text-[10px] font-medium uppercase tracking-[0.06em] text-muted">
-        {label}
-      </dt>
-      <dd
+    <div className={metricColClass(col, `py-2 ${tone ?? ""}`)}>
+      <div className={`${FIGURE_CLASS} text-foreground`}>{children}</div>
+      <div className={CAPTION_SLOT_CLASS}>
+        {note ? (
+          <p className="font-mono text-[0.95rem] font-medium leading-none tracking-normal text-muted">
+            {note}
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function VarianceCell({
+  variance,
+  vsBand,
+  expected,
+  col,
+}: {
+  variance: number | null;
+  vsBand?: SaveRateVsBand | null;
+  expected?: string | null;
+  col: 0 | 1 | 2;
+}) {
+  const hasBand = vsBand != null && expected != null;
+
+  return (
+    <div className={metricColClass(col, "py-2")}>
+      <div
         className={
-          "mt-1 font-mono text-[3rem] font-semibold tabular-nums leading-none tracking-[-0.02em] " +
-          (valueClassName ?? "text-foreground")
+          `${FIGURE_CLASS} ` +
+          (variance != null
+            ? varianceToneClass(variance, vsBand)
+            : "text-muted")
         }
       >
-        {children}
-      </dd>
-      {caption ? (
-        <p
-          className={
-            "mt-2 text-caption " + (valueClassName ?? "text-muted")
-          }
-        >
-          {caption}
-        </p>
-      ) : null}
+        {variance != null ? formatSignedPct(variance) : null}
+      </div>
+      <div className={`${CAPTION_SLOT_CLASS} text-caption leading-snug`}>
+        {hasBand ? (
+          <>
+            <span className={`block ${saveRateToneClass(vsBand)}`}>
+              {SAVE_RATE_BAND_LABEL[vsBand]}
+            </span>
+            <span className="block text-muted">{expected}</span>
+          </>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -122,139 +198,152 @@ export function LockedForecastBanner({
   saveRateBand,
   actualStreams = null,
   actualStreamsVsBand = null,
+  actualSaves = null,
   expectedStreamRange,
   lockedAtDisplay,
-  status,
-  releaseDate,
   week1WithAds,
-  week1AdMarquee = 0,
-  week1AdShowcase = 0,
-  week1AdMeta = 0,
-  metaAwarenessSpend = 0,
 }: LockedForecastBannerProps) {
-  const adTotal = week1AdMarquee + week1AdShowcase + week1AdMeta;
-  const showAds = adTotal > 0 && week1WithAds != null;
-  const showAwarenessOnly = !showAds && metaAwarenessSpend > 0;
+  const adsLift =
+    week1WithAds != null ? Math.round(week1WithAds - streams) : 0;
+  const adsLiftLabel =
+    adsLift > 0 ? `+${formatCompactNumber(adsLift)} ads` : null;
+
+  const streamActual =
+    actualStreams != null && actualStreamsVsBand != null
+      ? { value: actualStreams, vsBand: actualStreamsVsBand }
+      : null;
+  const saveActual = actualSaves != null ? { value: actualSaves } : null;
+  const saveRateActual =
+    actualSaveRate != null && actualSaveRateVsBand != null
+      ? { value: actualSaveRate, vsBand: actualSaveRateVsBand }
+      : null;
+
+  const streamsVariance = streamActual
+    ? variancePct(streams, streamActual.value)
+    : null;
+  const savesVariance = saveActual
+    ? variancePct(saves, saveActual.value)
+    : null;
+  const saveRateVariance = saveRateActual
+    ? variancePct(forecastSaveRate, saveRateActual.value)
+    : null;
+  const showActuals =
+    streamActual != null || saveActual != null || saveRateActual != null;
+
+  const streamsForecast = (
+    <AnimatedCompactMetric value={streams} delay={0} />
+  );
+  const savesForecast = (
+    <AnimatedCompactMetric value={saves} delay={COUNT_UP_STAGGER_MS} />
+  );
+  const saveRateForecast = (
+    <AnimatedPercentMetric
+      value={forecastSaveRate}
+      delay={COUNT_UP_STAGGER_MS * 2}
+    />
+  );
 
   return (
     <section
-      className="motion-fade-up relative overflow-hidden rounded-instrument border border-border bg-accent-tint p-5"
-      aria-label="Forecast"
+      className="motion-fade-up relative overflow-hidden rounded-instrument border border-border bg-accent-tint px-5 py-3.5"
+      aria-label="Week-1 forecast"
     >
       <span
         className="pointer-events-none absolute inset-y-0 left-0 w-1 origin-top bg-accent animate-instrument-rule-grow"
         aria-hidden="true"
       />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <SectionHeader description={`Organic · ${lockedAtDisplay}`}>
-            Forecast
-          </SectionHeader>
+      <SectionHeader description={lockedAtDisplay}>
+        Week-1 forecast
+      </SectionHeader>
+
+      <div
+        className={
+          "mt-3 grid w-full " +
+          (showActuals
+            ? "grid-cols-[max-content_repeat(3,minmax(0,1fr))]"
+            : "grid-cols-3")
+        }
+        role="table"
+        aria-label={
+          showActuals ? "Week-1 forecast vs actual" : "Week-1 forecast"
+        }
+      >
+        {showActuals ? (
+          <div role="columnheader">
+            <span className="sr-only">Comparison</span>
+          </div>
+        ) : null}
+        <div className={metricColClass(0, COL_HEADER_CLASS)} role="columnheader">
+          Streams
         </div>
-        <p className="text-sm text-muted sm:text-right">
-          {forecastStatusLabel(status, releaseDate)}
-        </p>
+        <div className={metricColClass(1, COL_HEADER_CLASS)} role="columnheader">
+          Saves
+        </div>
+        <div className={metricColClass(2, COL_HEADER_CLASS)} role="columnheader">
+          Save rate
+        </div>
+
+        {showActuals ? <RowLabel>Forecast</RowLabel> : null}
+        <MetricFigure col={0} note={adsLiftLabel}>
+          {streamsForecast}
+        </MetricFigure>
+        <MetricFigure col={1}>{savesForecast}</MetricFigure>
+        <MetricFigure col={2}>{saveRateForecast}</MetricFigure>
+
+        {showActuals ? (
+          <>
+            <RowLabel tone={ACTUAL_ROW_TONE}>Actual</RowLabel>
+            <MetricFigure col={0} tone={ACTUAL_ROW_TONE}>
+              {streamActual ? (
+                <AnimatedCompactMetric
+                  value={streamActual.value}
+                  delay={COUNT_UP_STAGGER_MS}
+                />
+              ) : null}
+            </MetricFigure>
+            <MetricFigure col={1} tone={ACTUAL_ROW_TONE}>
+              {saveActual ? (
+                <AnimatedCompactMetric
+                  value={saveActual.value}
+                  delay={COUNT_UP_STAGGER_MS * 2}
+                />
+              ) : null}
+            </MetricFigure>
+            <MetricFigure col={2} tone={ACTUAL_ROW_TONE}>
+              {saveRateActual ? (
+                <AnimatedPercentMetric
+                  value={saveRateActual.value}
+                  delay={COUNT_UP_STAGGER_MS * 3}
+                />
+              ) : null}
+            </MetricFigure>
+
+            <RowLabel>Difference</RowLabel>
+            <VarianceCell
+              col={0}
+              variance={streamsVariance}
+              vsBand={streamActual?.vsBand}
+              expected={
+                streamActual
+                  ? `${formatCompactNumber(expectedStreamRange.lo)}–${formatCompactNumber(expectedStreamRange.hi)}`
+                  : null
+              }
+            />
+            <VarianceCell col={1} variance={savesVariance} />
+            <VarianceCell
+              col={2}
+              variance={saveRateVariance}
+              vsBand={saveRateActual?.vsBand}
+              expected={
+                saveRateActual
+                  ? `${saveRateBand.lo}–${saveRateBand.hi}%`
+                  : null
+              }
+            />
+          </>
+        ) : null}
       </div>
-
-      <dl className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-stretch sm:gap-0 sm:divide-x sm:divide-border-subtle">
-        <MetricColumn label="Week-1 streams (organic)">
-          <AnimatedCompactMetric value={streams} delay={0} />
-        </MetricColumn>
-
-        <MetricColumn label="Week-1 saves">
-          <AnimatedCompactMetric
-            value={saves}
-            delay={COUNT_UP_STAGGER_MS}
-          />
-        </MetricColumn>
-
-        <MetricColumn label="Forecast save rate">
-          <AnimatedPercentMetric
-            value={forecastSaveRate}
-            delay={COUNT_UP_STAGGER_MS * 2}
-          />
-        </MetricColumn>
-
-        {actualStreams != null && actualStreamsVsBand != null ? (
-          <MetricColumn
-            label="Actual week-1 streams"
-            valueClassName={saveRateToneClass(actualStreamsVsBand)}
-            caption={streamBandCaption(
-              actualStreamsVsBand,
-              expectedStreamRange,
-            )}
-          >
-            <AnimatedCompactMetric
-              value={actualStreams}
-              delay={COUNT_UP_STAGGER_MS * 3}
-            />
-          </MetricColumn>
-        ) : null}
-
-        {actualSaveRate != null && actualSaveRateVsBand != null ? (
-          <MetricColumn
-            label="Actual save rate"
-            valueClassName={saveRateToneClass(actualSaveRateVsBand)}
-            caption={saveRateBandCaption(actualSaveRateVsBand, saveRateBand)}
-          >
-            <AnimatedPercentMetric
-              value={actualSaveRate}
-              delay={COUNT_UP_STAGGER_MS * 4}
-            />
-          </MetricColumn>
-        ) : null}
-      </dl>
-
-      {showAds ? (
-        <div className="mt-5 border-t border-accent-border pt-4">
-          <p className="font-mono text-[11px] uppercase tracking-[0.06em] text-muted">
-            Wk1 with ads (organic + attributed)
-          </p>
-          <p className="mt-1 font-mono text-[1.75rem] font-semibold tabular-nums tracking-[-0.02em] text-foreground">
-            <AnimatedCompactMetric
-              value={week1WithAds}
-              delay={COUNT_UP_STAGGER_MS * 3}
-            />
-          </p>
-          <p className="mt-2 text-caption text-secondary">
-            +{adTotal.toLocaleString("en-US")} attributed
-            {" · "}
-            <span className="text-[color:var(--color-chart-spotify-marquee)]">
-              Marquee {week1AdMarquee.toLocaleString("en-US")}
-            </span>
-            {" · "}
-            <span className="text-[color:var(--color-chart-spotify-showcase)]">
-              Showcase {week1AdShowcase.toLocaleString("en-US")}
-            </span>
-            {" · "}
-            <span className="text-[color:var(--color-chart-meta-ads)]">
-              Meta traffic {week1AdMeta.toLocaleString("en-US")}
-            </span>
-            {metaAwarenessSpend > 0 ? (
-              <>
-                {" · "}
-                <span className="text-muted">
-                  Awareness ${metaAwarenessSpend.toLocaleString("en-US")}{" "}
-                  reach-only
-                </span>
-              </>
-            ) : null}
-          </p>
-        </div>
-      ) : null}
-
-      {showAwarenessOnly ? (
-        <div className="mt-5 border-t border-accent-border pt-4">
-          <p className="font-mono text-[11px] uppercase tracking-[0.06em] text-muted">
-            Meta awareness (reach-only)
-          </p>
-          <p className="mt-2 text-caption text-secondary">
-            ${metaAwarenessSpend.toLocaleString("en-US")} planned — not included
-            in attributed stream totals.
-          </p>
-        </div>
-      ) : null}
     </section>
   );
 }

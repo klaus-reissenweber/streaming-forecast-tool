@@ -81,7 +81,8 @@ function ForecastUsedNote({
   }
   return (
     <p className="mt-2 text-caption text-muted">
-      Forecast used {formatCount(forecastUsedMonthlyListeners)}.
+      Forecast used {formatCount(forecastUsedMonthlyListeners)} monthly
+      listeners.
     </p>
   );
 }
@@ -182,7 +183,7 @@ export function ReleaseArtistRoster({
   function onSave() {
     const validation = validateReleaseRoster(drafts);
     if (!validation.valid) {
-      setError(validation.errors[0] ?? "Invalid artist roster.");
+      setError(validation.errors[0] ?? "Invalid release artists.");
       return;
     }
 
@@ -209,7 +210,7 @@ export function ReleaseArtistRoster({
     return (
       <div className="mt-3">
         {artists.length === 0 ? (
-          <p className="text-body-sm text-muted">No artists on this roster yet.</p>
+          <p className="text-body-sm text-muted">No release artists yet.</p>
         ) : (
           <ul className="divide-y divide-border-subtle rounded-instrument border border-border bg-canvas-subtle">
             {sortReleaseArtists(artists).map((artist) => (
@@ -226,8 +227,8 @@ export function ReleaseArtistRoster({
                 </span>
                 <span className="font-mono tabular-nums text-secondary">
                   {artist.monthly_listeners == null
-                    ? "ML unknown"
-                    : `${formatCompactNumber(artist.monthly_listeners)} ML`}
+                    ? "Monthly listeners unknown"
+                    : `${formatCompactNumber(artist.monthly_listeners)} monthly listeners`}
                 </span>
               </li>
             ))}
@@ -243,11 +244,11 @@ export function ReleaseArtistRoster({
             onClick={beginEdit}
             className="text-body-sm font-medium text-accent-readable hover:underline"
           >
-            Edit roster
+            Edit release artists
           </button>
           {status === "closed" ? (
             <span className="text-caption text-muted">
-              Closed releases stay read-only except this roster.
+              Closed releases stay read-only except release artists.
             </span>
           ) : null}
         </div>
@@ -411,7 +412,7 @@ export function ReleaseArtistRoster({
               : "border-accent-border bg-accent-tint text-accent-readable hover:border-accent")
           }
         >
-          {pending ? "Saving…" : "Save roster"}
+          {pending ? "Saving…" : "Save release artists"}
         </button>
         <button
           type="button"

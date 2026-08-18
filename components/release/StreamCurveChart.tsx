@@ -11,6 +11,7 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  type XAxisTickContentProps,
 } from "recharts";
 import { CampaignFlightBands } from "@/components/charts/CampaignFlightBands";
 import { SectionHeader } from "@/components/layout/SectionHeader";
@@ -26,6 +27,14 @@ import {
 } from "@/lib/campaign-flights";
 import { formatCompactNumber } from "@/lib/format";
 import type { StreamCurveForecast } from "@/lib/forecast";
+import type { ReleaseStatus } from "@/lib/map-release-row";
+
+const SERIES_OFF_BY_DEFAULT: ChartSeriesId[] = [
+  "marqueeAds",
+  "showcaseAds",
+  "metaAds",
+  "projected",
+];
 
 export interface StreamCurveChartProps {
   lockedStreamCurve: StreamCurveForecast;
@@ -38,6 +47,7 @@ export interface StreamCurveChartProps {
   metaAdDaily?: number[];
   actualStreamsByDay: (number | null)[];
   phase: ReleasePhase;
+  status: ReleaseStatus;
   releaseDate: string;
   campaignFlights?: CampaignFlight[];
 }
@@ -64,14 +74,13 @@ interface ChartPalette {
   accent: string;
 }
 
-const BRACKET_AXIS_DAYS = [1, 7, 14, 21, 28] as const;
+const WEEK_MARKS = [1, 7, 14, 21, 28] as const;
 const CHART_Y_AXIS_WIDTH = 48;
 const CHART_MARGIN_TOP = 28;
-const CHART_MARGIN_BOTTOM = 40;
+const CHART_X_AXIS_HEIGHT = 32;
 const CAMPAIGN_WINDOW_DAYS = 28;
-const TODAY_LABEL_OFFSET = 42;
-const AXIS_BRACKET_LABEL_BOTTOM = 8;
-const AXIS_BRACKET_LABEL_HALF_WIDTH = 14;
+/** Inset so the first/last dots and their labels sit inside the plot, not on the clip edge. */
+const AXIS_POINT_PAD = 12;
 const DRAW_PATH_LENGTH = 2000;
 const DRAW_STAGGER_MS = { projected: 200, actual: 400 } as const;
 
@@ -193,15 +202,55 @@ function getLastActualDay(actualStreamsByDay: (number | null)[]): number {
   return 0;
 }
 
-function getPlotDayLeft(
-  day: number,
-  labelOffsetPx: number,
-  rightMargin: number,
-): string {
-  const plotProgress = (day - 1) / (CAMPAIGN_WINDOW_DAYS - 1);
-  const horizontalInset = CHART_Y_AXIS_WIDTH + rightMargin;
+/** Week marks that fall inside 1…endDay, always including both ends. */
+function xAxisTicks(endDay: number): number[] {
+  const end = Math.max(1, Math.min(CAMPAIGN_WINDOW_DAYS, endDay));
+  const ticks: number[] = WEEK_MARKS.filter((day) => day < end);
+  if (ticks[0] !== 1) {
+    ticks.unshift(1);
+  }
+  if (ticks[ticks.length - 1] !== end) {
+    ticks.push(end);
+  }
+  return ticks;
+}
 
-  return `calc(${CHART_Y_AXIS_WIDTH}px + (100% - ${horizontalInset}px) * ${plotProgress} - ${labelOffsetPx}px)`;
+function DayAxisTick({ x, y, payload }: XAxisTickContentProps) {
+  const px = typeof x === "number" ? x : Number(x);
+  const py = typeof y === "number" ? y : Number(y);
+  if (!Number.isFinite(px) || !Number.isFinite(py)) {
+    return null;
+  }
+  const day = Number(payload.value);
+  if (!Number.isFinite(day)) {
+    return null;
+  }
+
+  return (
+    <g transform={`translate(${px},${py})`}>
+      <rect
+        x={-14}
+        y={6}
+        width={28}
+        height={14}
+        rx={2}
+        fill="var(--color-bracket-bg)"
+      />
+      <text
+        x={0}
+        y={13}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fill="var(--color-chart-axis)"
+        fontFamily="var(--font-plex-mono)"
+        fontSize={9}
+        fontWeight={600}
+        letterSpacing="0.03em"
+      >
+        {`D${day}`}
+      </text>
+    </g>
+  );
 }
 
 function useChartPalette(): ChartPalette {
@@ -217,7 +266,7 @@ function useLineDrawIn(
 ) {
   const { dashedWhenDone = false } = options ?? {};
   const [offset, setOffset] = useState(DRAW_PATH_LENGTH);
-  const [dashPattern, setDashPattern] = useState<string | number>(
+  const [dashPattern, setDashPattern] = useState<string | number | undefined>(
     DRAW_PATH_LENGTH,
   );
 
@@ -229,18 +278,13 @@ function useLineDrawIn(
       setOffset(0);
     }, startDelay);
 
-    let dashTimer = 0;
-    if (dashedWhenDone) {
-      dashTimer = window.setTimeout(() => {
-        setDashPattern("6 4");
-      }, startDelay + durationMs);
-    }
+    const dashTimer = window.setTimeout(() => {
+      setDashPattern(dashedWhenDone ? "6 4" : undefined);
+    }, startDelay + durationMs);
 
     return () => {
       window.clearTimeout(drawTimer);
-      if (dashTimer) {
-        window.clearTimeout(dashTimer);
-      }
+      window.clearTimeout(dashTimer);
     };
   }, [delayMs, dashedWhenDone]);
 
@@ -285,6 +329,7 @@ export function StreamCurveChart({
   metaAdDaily,
   actualStreamsByDay,
   phase,
+  status,
   releaseDate,
   campaignFlights = [],
 }: StreamCurveChartProps) {
@@ -294,6 +339,11 @@ export function StreamCurveChart({
   });
   const actualDraw = useLineDrawIn(DRAW_STAGGER_MS.actual);
 
+  const lastActualDay = getLastActualDay(actualStreamsByDay);
+  const xMax = Math.min(
+    CAMPAIGN_WINDOW_DAYS,
+    Math.max(1, lastActualDay),
+  );
   const chartData = buildChartRows(
     lockedStreamCurve,
     projectedStreamCurve,
@@ -301,20 +351,27 @@ export function StreamCurveChart({
     showcaseAdDaily,
     metaAdDaily,
     actualStreamsByDay,
-  );
+  ).slice(0, xMax);
+  const axisTicks = xAxisTicks(xMax);
   const hasActuals = actualStreamsByDay.some((value) => value != null);
-  const hasProjected = projectedStreamCurve != null;
+  const hasProjected =
+    projectedStreamCurve != null && status !== "closed";
   const hasMarqueeAds = (marqueeAdDaily ?? []).some((v) => v > 0);
   const hasShowcaseAds = (showcaseAdDaily ?? []).some((v) => v > 0);
   const hasMetaAds = (metaAdDaily ?? []).some((v) => v > 0);
-  const campaignDay = useMemo(
-    () => (phase === "monitoring" ? getCampaignDay(releaseDate) : null),
-    [phase, releaseDate],
-  );
-  const lastActualDay = getLastActualDay(actualStreamsByDay);
+  const campaignDay = useMemo(() => {
+    if (status === "closed" || phase !== "monitoring") {
+      return null;
+    }
+    const day = getCampaignDay(releaseDate);
+    if (day == null || day > xMax) {
+      return null;
+    }
+    return day;
+  }, [phase, releaseDate, status, xMax]);
   const flightBands = useMemo(
-    () => flightsToChartBands(campaignFlights, releaseDate),
-    [campaignFlights, releaseDate],
+    () => flightsToChartBands(campaignFlights, releaseDate, xMax),
+    [campaignFlights, releaseDate, xMax],
   );
 
   const availableIds = useMemo(() => {
@@ -327,7 +384,9 @@ export function StreamCurveChart({
     return ids;
   }, [hasMarqueeAds, hasShowcaseAds, hasMetaAds, hasProjected, hasActuals]);
 
-  const [hiddenIds, setHiddenIds] = useState<Set<ChartSeriesId>>(new Set());
+  const [hiddenIds, setHiddenIds] = useState<Set<ChartSeriesId>>(
+    () => new Set(SERIES_OFF_BY_DEFAULT),
+  );
 
   const enabledIds = useMemo(() => {
     return new Set(availableIds.filter((id) => !hiddenIds.has(id)));
@@ -357,20 +416,6 @@ export function StreamCurveChart({
     : showProjected
       ? palette.projected
       : palette.axis;
-  const leftAxisTag = showLocked
-    ? "Forecast"
-    : showMarquee
-      ? "Marquee"
-      : showShowcase
-        ? "Showcase"
-        : showMeta
-          ? "Meta ads"
-          : null;
-  const rightAxisTag = showActual
-    ? "Actual"
-    : showProjected
-      ? "Projected"
-      : null;
 
   const seriesCards: ChartSeriesCardModel[] = [
     {
@@ -456,7 +501,7 @@ export function StreamCurveChart({
       />
 
       <div>
-        <SectionHeader description="Organic forecast curve with additive ad bands. Toggle a series from the cards.">
+        <SectionHeader description="Organic forecast vs daily actuals. Toggle ad lift or live pace from the cards.">
           Stream curve
         </SectionHeader>
       </div>
@@ -464,71 +509,6 @@ export function StreamCurveChart({
       <ChartSeriesCards series={seriesCards} onToggle={onToggleSeries} />
 
       <div className="motion-chart-grid-in relative mt-5 h-72 w-full">
-        {leftAxisTag ? (
-          <div
-            className="pointer-events-none absolute z-10"
-            style={{ top: 4, left: 4 }}
-            aria-hidden="true"
-          >
-            <span
-              className="chart-axis-bracket"
-              style={{ color: leftAxisColor }}
-            >
-              {leftAxisTag}
-            </span>
-          </div>
-        ) : null}
-        {rightAxisTag ? (
-          <div
-            className="pointer-events-none absolute z-10"
-            style={{ top: 4, right: 4 }}
-            aria-hidden="true"
-          >
-            <span
-              className="chart-axis-bracket"
-              style={{ color: rightAxisColor }}
-            >
-              {rightAxisTag}
-            </span>
-          </div>
-        ) : null}
-        {campaignDay != null ? (
-          <div
-            className="pointer-events-none absolute z-10 w-10"
-            style={{
-              top: CHART_MARGIN_TOP - 22,
-              left: getPlotDayLeft(
-                campaignDay,
-                TODAY_LABEL_OFFSET,
-                rightMargin,
-              ),
-            }}
-            aria-hidden="true"
-          >
-            <span className="chart-today-label mx-auto block w-fit">
-              Today
-            </span>
-          </div>
-        ) : null}
-        {BRACKET_AXIS_DAYS.map((day) => (
-          <div
-            key={day}
-            className="pointer-events-none absolute z-10 w-7"
-            style={{
-              bottom: AXIS_BRACKET_LABEL_BOTTOM,
-              left: getPlotDayLeft(
-                day,
-                AXIS_BRACKET_LABEL_HALF_WIDTH,
-                rightMargin,
-              ),
-            }}
-            aria-hidden="true"
-          >
-            <span className="chart-axis-bracket mx-auto block w-fit">
-              D{day}
-            </span>
-          </div>
-        ))}
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={chartData}
@@ -536,7 +516,7 @@ export function StreamCurveChart({
               top: CHART_MARGIN_TOP,
               right: rightMargin,
               left: 0,
-              bottom: CHART_MARGIN_BOTTOM,
+              bottom: 4,
             }}
           >
             <CartesianGrid
@@ -547,11 +527,16 @@ export function StreamCurveChart({
             <XAxis
               dataKey="day"
               type="number"
-              domain={[1, 28]}
-              tick={false}
+              domain={[1, xMax]}
+              ticks={axisTicks}
+              interval={0}
+              padding={{ left: AXIS_POINT_PAD, right: AXIS_POINT_PAD }}
+              allowDecimals={false}
+              niceTicks="none"
+              tick={DayAxisTick}
               axisLine={{ stroke: palette.grid }}
               tickLine={false}
-              height={CHART_MARGIN_BOTTOM}
+              height={CHART_X_AXIS_HEIGHT}
             />
             <YAxis
               yAxisId="left"
@@ -610,6 +595,14 @@ export function StreamCurveChart({
                 stroke={palette.accent}
                 strokeOpacity={0.5}
                 strokeWidth={1}
+                label={{
+                  value: "Today",
+                  position: "top",
+                  fontSize: 9,
+                  fontWeight: 600,
+                  fontFamily: "var(--font-plex-mono)",
+                  fill: "var(--color-accent-readable)",
+                }}
               />
             ) : null}
             {showLocked ? (
@@ -715,6 +708,8 @@ export function StreamCurveChart({
         bands={flightBands}
         axisWidth={CHART_Y_AXIS_WIDTH}
         rightMargin={rightMargin}
+        windowDays={xMax}
+        plotInset={AXIS_POINT_PAD}
       />
     </section>
   );

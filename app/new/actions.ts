@@ -168,7 +168,7 @@ export async function createRelease(
           return {
             success: false,
             error:
-              "Release was created but the artist roster failed to save. Open the release and retry after checking release_artists.",
+              "Release was created but release artists failed to save. Open the release and try again.",
           };
         }
       }

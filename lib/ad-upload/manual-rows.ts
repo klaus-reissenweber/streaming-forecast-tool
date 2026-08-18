@@ -22,6 +22,8 @@ import {
 } from "@/lib/ad-upload/canonical";
 
 export type ManualCampaignDraft = {
+  /** Stored ad_* campaign_uid — when set, save updates this row. */
+  campaign_uid: string | null;
   campaign_name: string;
   spend: string;
   impressions: string;
@@ -42,6 +44,7 @@ export type ManualCampaignDraft = {
 
 export function emptyManualDraft(): ManualCampaignDraft {
   return {
+    campaign_uid: null,
     campaign_name: "",
     spend: "",
     impressions: "",
@@ -91,6 +94,7 @@ export function manualDraftsToCanonicalRows(options: {
 
   return options.drafts.map((draft, index) => {
     const row = emptyCanonicalRow(index);
+    row.campaign_uid = draft.campaign_uid?.trim() || null;
     row.campaign_name = draft.campaign_name.trim() || null;
     row.spend = parseOptionalNumber(draft.spend);
     row.artist = options.artist.trim() || null;

@@ -275,8 +275,8 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
               disabled={pending}
             />
             <span className="text-caption text-muted">
-              Spotify credit line (display only). Forecast ML comes from the
-              primary artist below.
+              Spotify credit line (display only). Forecast monthly listeners
+              come from the primary artist below.
             </span>
           </label>
         </div>
@@ -284,7 +284,7 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
         <div className="mt-4 space-y-3">
           <div>
             <h3 className="text-body-sm font-medium text-foreground">
-              Artists on this release
+              Release artists
             </h3>
             <p className="mt-1 text-caption text-muted">
               Up to {MAX_RELEASE_ARTISTS}. Roles must be explicit. The forecast
@@ -305,7 +305,7 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-mono text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
                     Artist {index + 1}
-                    {isPrimary ? " · forecast ML" : ""}
+                    {isPrimary ? " · used by forecast" : ""}
                   </span>
                   {index > 0 ? (
                     <button

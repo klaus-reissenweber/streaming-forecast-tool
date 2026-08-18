@@ -1,0 +1,1772 @@
+{
+  "eligible_n": 58,
+  "closed_n": 58,
+  "multi_artist_n": 9,
+  "multi_artist_ids": [
+    "014cb496-a6b7-4808-b802-9b2e2ae58197",
+    "03cdf258-6b2e-42c9-8250-4ad3041506f1",
+    "0562db03-e2be-4398-9a92-45b5184c1dd9",
+    "06559c79-4f6b-4652-82fe-105f069045ab",
+    "2e74db2b-efb6-4170-b002-35a50e2ebff3",
+    "55c97458-59cb-48ec-b2bf-2e55b5c5a9d3",
+    "c41f626b-5ae4-4264-aa9e-a19277cb4068",
+    "cb8923f0-5d68-4ee9-82c0-21beb068c216",
+    "ebe7f034-258c-45e2-b4e1-da3c30962ad5"
+  ],
+  "frozen_vs_roster_primary_mismatches": [],
+  "secondary_definition": "E/F secondary = sum of monthly_listeners on all non-primary roster rows with known ML. Null secondary ML is skipped (not treated as 0). If no secondary has ML, secondary=0 and E/F collapse to primary. G = exp(mean(log(ml))) over every roster artist with known ML, equal weight, including primary; 3+ artists are all included.",
+  "cooks_procedure": "Live retrain: union of Cook's D > 4/n across streams_d0\u2013d7 + saves on the eligible pool; streams_d0 is then refit on the complement. streams_d0-only drop count is also reported as a diagnostic.",
+  "multi_artist_rosters": [
+    {
+      "release_id": "0562db03-e2be-4398-9a92-45b5184c1dd9",
+      "track_name": "Light Down - Kasango Remix",
+      "artist_name": "Kasango",
+      "genre": "house",
+      "release_type": "alternate_version",
+      "is_feature": true,
+      "editorial_tier": 1,
+      "wk1_streams": 3415,
+      "frozen_ml": 6200000.0,
+      "roster": [
+        {
+          "name": "Kasango",
+          "role": "primary",
+          "position": 1,
+          "ml": 6200000.0
+        },
+        {
+          "name": "Meloko",
+          "role": "original",
+          "position": 2,
+          "ml": 270000.0
+        }
+      ],
+      "secondary_count": 1,
+      "secondary_sum": 270000.0
+    },
+    {
+      "release_id": "ebe7f034-258c-45e2-b4e1-da3c30962ad5",
+      "track_name": "Everybody High - Chesster Remix",
+      "artist_name": "Caleb Jackson",
+      "genre": "house",
+      "release_type": "alternate_version",
+      "is_feature": true,
+      "editorial_tier": 0,
+      "wk1_streams": 3039,
+      "frozen_ml": 52000.0,
+      "roster": [
+        {
+          "name": "Caleb Jackson",
+          "role": "primary",
+          "position": 1,
+          "ml": 52000.0
+        },
+        {
+          "name": "Chesster",
+          "role": "remixer",
+          "position": 2,
+          "ml": 314000.0
+        }
+      ],
+      "secondary_count": 1,
+      "secondary_sum": 314000.0
+    },
+    {
+      "release_id": "06559c79-4f6b-4652-82fe-105f069045ab",
+      "track_name": "Valley Of Violence - Borgore Remix",
+      "artist_name": "Zomboy",
+      "genre": "big-room",
+      "release_type": "alternate_version",
+      "is_feature": false,
+      "editorial_tier": 1,
+      "wk1_streams": 63833,
+      "frozen_ml": 540000.0,
+      "roster": [
+        {
+          "name": "Zomboy",
+          "role": "primary",
+          "position": 1,
+          "ml": 540000.0
+        },
+        {
+          "name": "Borgore",
+          "role": "remixer",
+          "position": 2,
+          "ml": 635000.0
+        }
+      ],
+      "secondary_count": 1,
+      "secondary_sum": 635000.0
+    },
+    {
+      "release_id": "2e74db2b-efb6-4170-b002-35a50e2ebff3",
+      "track_name": "Certified - sumthin sumthin Remix",
+      "artist_name": "Eazy Baked",
+      "genre": "dubstep",
+      "release_type": "alternate_version",
+      "is_feature": true,
+      "editorial_tier": 0,
+      "wk1_streams": 26228,
+      "frozen_ml": 104000.0,
+      "roster": [
+        {
+          "name": "Eazy Baked",
+          "role": "primary",
+          "position": 1,
+          "ml": 104000.0
+        },
+        {
+          "name": "sumthin sumthin",
+          "role": "remixer",
+          "position": 2,
+          "ml": 82000.0
+        }
+      ],
+      "secondary_count": 1,
+      "secondary_sum": 82000.0
+    },
+    {
+      "release_id": "c41f626b-5ae4-4264-aa9e-a19277cb4068",
+      "track_name": "Eyes Cut Deeper - Mport Remix",
+      "artist_name": "Subtronics",
+      "genre": "dubstep",
+      "release_type": "alternate_version",
+      "is_feature": true,
+      "editorial_tier": 1,
+      "wk1_streams": 16077,
+      "frozen_ml": 2900000.0,
+      "roster": [
+        {
+          "name": "Subtronics",
+          "role": "primary",
+          "position": 1,
+          "ml": 2900000.0
+        },
+        {
+          "name": "Mport",
+          "role": "remixer",
+          "position": 2,
+          "ml": 67000.0
+        }
+      ],
+      "secondary_count": 1,
+      "secondary_sum": 67000.0
+    },
+    {
+      "release_id": "03cdf258-6b2e-42c9-8250-4ad3041506f1",
+      "track_name": "Bass Cannon (Flux's Version) - Crankdat Remix",
+      "artist_name": "Crankdat",
+      "genre": "dubstep",
+      "release_type": "alternate_version",
+      "is_feature": true,
+      "editorial_tier": 1,
+      "wk1_streams": 226684,
+      "frozen_ml": 1202000.0,
+      "roster": [
+        {
+          "name": "Crankdat",
+          "role": "primary",
+          "position": 1,
+          "ml": 1202000.0
+        },
+        {
+          "name": "Flux Pavilion",
+          "role": "original",
+          "position": 2,
+          "ml": 1690000.0
+        }
+      ],
+      "secondary_count": 1,
+      "secondary_sum": 1690000.0
+    },
+    {
+      "release_id": "014cb496-a6b7-4808-b802-9b2e2ae58197",
+      "track_name": "Its Called Freefall (Griz Remix)",
+      "artist_name": "Griz",
+      "genre": "dubstep",
+      "release_type": "alternate_version",
+      "is_feature": true,
+      "editorial_tier": 0,
+      "wk1_streams": 419766,
+      "frozen_ml": 1127000.0,
+      "roster": [
+        {
+          "name": "Griz",
+          "role": "primary",
+          "position": 1,
+          "ml": 1127000.0
+        },
+        {
+          "name": "Rainbow Kitten Surprise",
+          "role": "original",
+          "position": 2,
+          "ml": 6000000.0
+        }
+      ],
+      "secondary_count": 1,
+      "secondary_sum": 6000000.0
+    },
+    {
+      "release_id": "cb8923f0-5d68-4ee9-82c0-21beb068c216",
+      "track_name": "Ultra Love RYOS Remix",
+      "artist_name": "KSHMR",
+      "genre": "big-room",
+      "release_type": "alternate_version",
+      "is_feature": true,
+      "editorial_tier": 1,
+      "wk1_streams": 146763,
+      "frozen_ml": 4300000.0,
+      "roster": [
+        {
+          "name": "KSHMR",
+          "role": "primary",
+          "position": 1,
+          "ml": 4300000.0
+        },
+        {
+          "name": "RYOS",
+          "role": "remixer",
+          "position": 2,
+          "ml": 350000.0
+        }
+      ],
+      "secondary_count": 1,
+      "secondary_sum": 350000.0
+    },
+    {
+      "release_id": "55c97458-59cb-48ec-b2bf-2e55b5c5a9d3",
+      "track_name": "Fresh Baked Bread",
+      "artist_name": "Eazy Baked",
+      "genre": "dubstep",
+      "release_type": "single",
+      "is_feature": true,
+      "editorial_tier": 0,
+      "wk1_streams": 83040,
+      "frozen_ml": 101000.0,
+      "roster": [
+        {
+          "name": "Eazy Baked",
+          "role": "primary",
+          "position": 1,
+          "ml": 101000.0
+        },
+        {
+          "name": "Daily Bread",
+          "role": "collaborator",
+          "position": 2,
+          "ml": 250000.0
+        }
+      ],
+      "secondary_count": 1,
+      "secondary_sum": 250000.0
+    }
+  ],
+  "rules": {
+    "A": {
+      "label": "primary only (baseline)",
+      "n_differ_from_frozen": 0,
+      "cooks_d_drops": 17,
+      "cooks_d_dropped_ids": [
+        "014cb496-a6b7-4808-b802-9b2e2ae58197",
+        "0562db03-e2be-4398-9a92-45b5184c1dd9",
+        "1ab2927f-c9bf-404b-b5a0-65e0fef90553",
+        "442224b9-5178-45dc-bd78-7106fd6e3dc2",
+        "500292f3-3a9b-481d-8c44-9ed9d642d791",
+        "59d045b2-c9ed-45bb-ae34-9b3c2a0cd90f",
+        "5ec3f0bc-0cd3-4dcb-b9cd-5433b27b134d",
+        "6d761fa4-d938-4a94-84d8-73953432b604",
+        "6f456ebf-5c83-4397-b00b-2a24d4da77f2",
+        "78b3e4d8-58eb-4848-a207-f00119ae2ac3",
+        "88620604-3fed-44e0-915c-ffb2ce584aac",
+        "8988c2a1-11fb-4d6c-abbd-7822e3189a3c",
+        "c41f626b-5ae4-4264-aa9e-a19277cb4068",
+        "c49119e6-b37b-434d-a6c0-040fef4f8b59",
+        "ebe7f034-258c-45e2-b4e1-da3c30962ad5",
+        "f943607f-0f5f-42fb-a138-fd5907ad7b80",
+        "fa462427-e169-4f27-8642-fa43949bbc2c"
+      ],
+      "cooks_d_dropped_names": [
+        "Its Called Freefall (Griz Remix) (Griz)",
+        "Light Down - Kasango Remix (Kasango)",
+        "The Other Side (Level Up)",
+        "Satisfy (Pretty Girl)",
+        "Hustle (Zen Selekta)",
+        "Higher Ground (Bob Moses)",
+        "Close Your Mouth (Rhye)",
+        "Last Forever (Club Mix) (Bob Moses)",
+        "Foreva (Caleb Jackson)",
+        "Need your love (Cedric Gervais)",
+        "World is Mine (Kasbo)",
+        "Hold On (Rhye)",
+        "Eyes Cut Deeper - Mport Remix (Subtronics)",
+        "On My Mind (Bob Moses)",
+        "Everybody High - Chesster Remix (Caleb Jackson)",
+        "Khoye Yahaan Reimagined (KSHMR)",
+        "leave like this (bob moses)"
+      ],
+      "cooks_d_models_by_id": {
+        "0562db03-e2be-4398-9a92-45b5184c1dd9": [
+          "saves",
+          "streams_d0",
+          "streams_d1",
+          "streams_d2",
+          "streams_d3",
+          "streams_d7"
+        ],
+        "ebe7f034-258c-45e2-b4e1-da3c30962ad5": [
+          "streams_d0",
+          "streams_d2",
+          "streams_d4",
+          "streams_d5",
+          "streams_d6",
+          "streams_d7"
+        ],
+        "014cb496-a6b7-4808-b802-9b2e2ae58197": [
+          "saves",
+          "streams_d0",
+          "streams_d1",
+          "streams_d2",
+          "streams_d3"
+        ],
+        "6f456ebf-5c83-4397-b00b-2a24d4da77f2": [
+          "streams_d0",
+          "streams_d3"
+        ],
+        "fa462427-e169-4f27-8642-fa43949bbc2c": [
+          "streams_d1",
+          "streams_d2",
+          "streams_d3"
+        ],
+        "c41f626b-5ae4-4264-aa9e-a19277cb4068": [
+          "streams_d2",
+          "streams_d3",
+          "streams_d7"
+        ],
+        "6d761fa4-d938-4a94-84d8-73953432b604": [
+          "streams_d2",
+          "streams_d3"
+        ],
+        "5ec3f0bc-0cd3-4dcb-b9cd-5433b27b134d": [
+          "streams_d2"
+        ],
+        "c49119e6-b37b-434d-a6c0-040fef4f8b59": [
+          "streams_d3"
+        ],
+        "442224b9-5178-45dc-bd78-7106fd6e3dc2": [
+          "streams_d4",
+          "streams_d5"
+        ],
+        "8988c2a1-11fb-4d6c-abbd-7822e3189a3c": [
+          "streams_d4",
+          "streams_d6",
+          "streams_d7"
+        ],
+        "78b3e4d8-58eb-4848-a207-f00119ae2ac3": [
+          "streams_d4"
+        ],
+        "59d045b2-c9ed-45bb-ae34-9b3c2a0cd90f": [
+          "streams_d5"
+        ],
+        "f943607f-0f5f-42fb-a138-fd5907ad7b80": [
+          "streams_d5",
+          "streams_d7"
+        ],
+        "1ab2927f-c9bf-404b-b5a0-65e0fef90553": [
+          "streams_d5"
+        ],
+        "500292f3-3a9b-481d-8c44-9ed9d642d791": [
+          "streams_d7"
+        ],
+        "88620604-3fed-44e0-915c-ffb2ce584aac": [
+          "saves"
+        ]
+      },
+      "clean_set_size": 41,
+      "r2_clean": 0.4956503676520938,
+      "rmse_clean": 0.6059441048888972,
+      "intercept": 8.440023180477802,
+      "log_ml": 0.17209119038436693,
+      "feat": 0.020969395210564512,
+      "ed_tier": 0.7756369501234939,
+      "forward_bias_all_new": 0.14129100399617792,
+      "forward_bias_clean_new": -0.06967783165580954,
+      "forward_bias_all_live": 0.1927654412741685,
+      "forward_bias_clean_live": 0.0004120522318264241,
+      "ratio_median_all": 0.8762712000793851,
+      "ratio_iqr_all": 1.056339503074934,
+      "ratio_p25_all": 0.5126770657328208,
+      "ratio_p75_all": 1.5690165688077549,
+      "n_ratios": 58,
+      "streams_d0_only_drops": 4,
+      "streams_d0_threshold": 0.06896551724137931,
+      "multi_artist_in_cooks_drops": [
+        {
+          "release_id": "014cb496-a6b7-4808-b802-9b2e2ae58197",
+          "track_name": "Its Called Freefall (Griz Remix)",
+          "artist_name": "Griz",
+          "models": [
+            "saves",
+            "streams_d0",
+            "streams_d1",
+            "streams_d2",
+            "streams_d3"
+          ],
+          "cooks_d0": 0.14889916125549096
+        },
+        {
+          "release_id": "0562db03-e2be-4398-9a92-45b5184c1dd9",
+          "track_name": "Light Down - Kasango Remix",
+          "artist_name": "Kasango",
+          "models": [
+            "saves",
+            "streams_d0",
+            "streams_d1",
+            "streams_d2",
+            "streams_d3",
+            "streams_d7"
+          ],
+          "cooks_d0": 0.31275100784904547
+        },
+        {
+          "release_id": "c41f626b-5ae4-4264-aa9e-a19277cb4068",
+          "track_name": "Eyes Cut Deeper - Mport Remix",
+          "artist_name": "Subtronics",
+          "models": [
+            "streams_d2",
+            "streams_d3",
+            "streams_d7"
+          ],
+          "cooks_d0": 0.05388844848580312
+        },
+        {
+          "release_id": "ebe7f034-258c-45e2-b4e1-da3c30962ad5",
+          "track_name": "Everybody High - Chesster Remix",
+          "artist_name": "Caleb Jackson",
+          "models": [
+            "streams_d0",
+            "streams_d2",
+            "streams_d4",
+            "streams_d5",
+            "streams_d6",
+            "streams_d7"
+          ],
+          "cooks_d0": 0.1807936864889859
+        }
+      ],
+      "multi_artist_in_d0_drops": [
+        "Its Called Freefall (Griz Remix)",
+        "Light Down - Kasango Remix",
+        "Everybody High - Chesster Remix"
+      ],
+      "magnitude_multipliers": {
+        "single": 1.0,
+        "lead_single": 1.0,
+        "focus_track": 0.93,
+        "album_track": 0.86,
+        "alternate_version": 0.96
+      }
+    },
+    "B": {
+      "label": "original only (else primary)",
+      "n_differ_from_frozen": 3,
+      "cooks_d_drops": 21,
+      "cooks_d_dropped_ids": [
+        "014cb496-a6b7-4808-b802-9b2e2ae58197",
+        "0562db03-e2be-4398-9a92-45b5184c1dd9",
+        "1ab2927f-c9bf-404b-b5a0-65e0fef90553",
+        "442224b9-5178-45dc-bd78-7106fd6e3dc2",
+        "500292f3-3a9b-481d-8c44-9ed9d642d791",
+        "55c97458-59cb-48ec-b2bf-2e55b5c5a9d3",
+        "59d045b2-c9ed-45bb-ae34-9b3c2a0cd90f",
+        "5ec3f0bc-0cd3-4dcb-b9cd-5433b27b134d",
+        "6b964a04-af53-4c4d-86b1-7347d698a705",
+        "6d761fa4-d938-4a94-84d8-73953432b604",
+        "6f456ebf-5c83-4397-b00b-2a24d4da77f2",
+        "78b3e4d8-58eb-4848-a207-f00119ae2ac3",
+        "88620604-3fed-44e0-915c-ffb2ce584aac",
+        "8988c2a1-11fb-4d6c-abbd-7822e3189a3c",
+        "b02bf3e7-5d2d-4f87-988c-f871ff664f70",
+        "c41f626b-5ae4-4264-aa9e-a19277cb4068",
+        "c49119e6-b37b-434d-a6c0-040fef4f8b59",
+        "ebe7f034-258c-45e2-b4e1-da3c30962ad5",
+        "f943607f-0f5f-42fb-a138-fd5907ad7b80",
+        "f9ced8aa-e3c2-4289-aa4e-de9d50b84c4c",
+        "fa462427-e169-4f27-8642-fa43949bbc2c"
+      ],
+      "cooks_d_dropped_names": [
+        "Its Called Freefall (Griz Remix) (Griz)",
+        "Light Down - Kasango Remix (Kasango)",
+        "The Other Side (Level Up)",
+        "Satisfy (Pretty Girl)",
+        "Hustle (Zen Selekta)",
+        "Fresh Baked Bread (Eazy Baked)",
+        "Higher Ground (Bob Moses)",
+        "Close Your Mouth (Rhye)",
+        "Rump Shaker (Griz)",
+        "Last Forever (Club Mix) (Bob Moses)",
+        "Foreva (Caleb Jackson)",
+        "Need your love (Cedric Gervais)",
+        "World is Mine (Kasbo)",
+        "Hold On (Rhye)",
+        "STOMP (Cedric Gervais)",
+        "Eyes Cut Deeper - Mport Remix (Subtronics)",
+        "On My Mind (Bob Moses)",
+        "Everybody High - Chesster Remix (Caleb Jackson)",
+        "Khoye Yahaan Reimagined (KSHMR)",
+        "Crossroads City (Gramatik)",
+        "leave like this (bob moses)"
+      ],
+      "cooks_d_models_by_id": {
+        "0562db03-e2be-4398-9a92-45b5184c1dd9": [
+          "saves",
+          "streams_d0",
+          "streams_d1",
+          "streams_d2",
+          "streams_d7"
+        ],
+        "ebe7f034-258c-45e2-b4e1-da3c30962ad5": [
+          "streams_d0",
+          "streams_d2",
+          "streams_d4",
+          "streams_d5",
+          "streams_d6",
+          "streams_d7"
+        ],
+        "c41f626b-5ae4-4264-aa9e-a19277cb4068": [
+          "streams_d0",
+          "streams_d2",
+          "streams_d3",
+          "streams_d6",
+          "streams_d7"
+        ],
+        "014cb496-a6b7-4808-b802-9b2e2ae58197": [
+          "saves",
+          "streams_d0",
+          "streams_d1",
+          "streams_d2",
+          "streams_d3",
+          "streams_d6"
+        ],
+        "55c97458-59cb-48ec-b2bf-2e55b5c5a9d3": [
+          "streams_d0"
+        ],
+        "b02bf3e7-5d2d-4f87-988c-f871ff664f70": [
+          "streams_d0"
+        ],
+        "fa462427-e169-4f27-8642-fa43949bbc2c": [
+          "streams_d1",
+          "streams_d2",
+          "streams_d3"
+        ],
+        "88620604-3fed-44e0-915c-ffb2ce584aac": [
+          "saves",
+          "streams_d1"
+        ],
+        "6d761fa4-d938-4a94-84d8-73953432b604": [
+          "streams_d2"
+        ],
+        "5ec3f0bc-0cd3-4dcb-b9cd-5433b27b134d": [
+          "streams_d2"
+        ],
+        "6f456ebf-5c83-4397-b00b-2a24d4da77f2": [
+          "streams_d3"
+        ],
+        "442224b9-5178-45dc-bd78-7106fd6e3dc2": [
+          "streams_d4",
+          "streams_d5"
+        ],
+        "8988c2a1-11fb-4d6c-abbd-7822e3189a3c": [
+          "streams_d4",
+          "streams_d6",
+          "streams_d7"
+        ],
+        "78b3e4d8-58eb-4848-a207-f00119ae2ac3": [
+          "streams_d4"
+        ],
+        "59d045b2-c9ed-45bb-ae34-9b3c2a0cd90f": [
+          "streams_d5"
+        ],
+        "500292f3-3a9b-481d-8c44-9ed9d642d791": [
+          "streams_d5",
+          "streams_d7"
+        ],
+        "f943607f-0f5f-42fb-a138-fd5907ad7b80": [
+          "streams_d5",
+          "streams_d7"
+        ],
+        "1ab2927f-c9bf-404b-b5a0-65e0fef90553": [
+          "streams_d5"
+        ],
+        "6b964a04-af53-4c4d-86b1-7347d698a705": [
+          "streams_d7"
+        ],
+        "f9ced8aa-e3c2-4289-aa4e-de9d50b84c4c": [
+          "saves"
+        ],
+        "c49119e6-b37b-434d-a6c0-040fef4f8b59": [
+          "saves"
+        ]
+      },
+      "clean_set_size": 37,
+      "r2_clean": 0.6013186894486231,
+      "rmse_clean": 0.5285939587891916,
+      "intercept": 6.72357204083512,
+      "log_ml": 0.3040725790374965,
+      "feat": 0.07838076673305094,
+      "ed_tier": 0.6727039355266183,
+      "forward_bias_all_new": 0.08978679195278493,
+      "forward_bias_clean_new": -0.02209444413499389,
+      "forward_bias_all_live": 0.1927654412741685,
+      "forward_bias_clean_live": 0.0004120522318264241,
+      "ratio_median_all": 0.9176660300451648,
+      "ratio_iqr_all": 0.9805292552459586,
+      "ratio_p25_all": 0.5644566669071434,
+      "ratio_p75_all": 1.544985922153102,
+      "n_ratios": 58,
+      "streams_d0_only_drops": 6,
+      "streams_d0_threshold": 0.06896551724137931,
+      "multi_artist_in_cooks_drops": [
+        {
+          "release_id": "014cb496-a6b7-4808-b802-9b2e2ae58197",
+          "track_name": "Its Called Freefall (Griz Remix)",
+          "artist_name": "Griz",
+          "models": [
+            "saves",
+            "streams_d0",
+            "streams_d1",
+            "streams_d2",
+            "streams_d3",
+            "streams_d6"
+          ],
+          "cooks_d0": 0.1412045556831875
+        },
+        {
+          "release_id": "0562db03-e2be-4398-9a92-45b5184c1dd9",
+          "track_name": "Light Down - Kasango Remix",
+          "artist_name": "Kasango",
+          "models": [
+            "saves",
+            "streams_d0",
+            "streams_d1",
+            "streams_d2",
+            "streams_d7"
+          ],
+          "cooks_d0": 0.16035141246037168
+        },
+        {
+          "release_id": "55c97458-59cb-48ec-b2bf-2e55b5c5a9d3",
+          "track_name": "Fresh Baked Bread",
+          "artist_name": "Eazy Baked",
+          "models": [
+            "streams_d0"
+          ],
+          "cooks_d0": 0.09157045814109084
+        },
+        {
+          "release_id": "c41f626b-5ae4-4264-aa9e-a19277cb4068",
+          "track_name": "Eyes Cut Deeper - Mport Remix",
+          "artist_name": "Subtronics",
+          "models": [
+            "streams_d0",
+            "streams_d2",
+            "streams_d3",
+            "streams_d6",
+            "streams_d7"
+          ],
+          "cooks_d0": 0.07773538137762742
+        },
+        {
+          "release_id": "ebe7f034-258c-45e2-b4e1-da3c30962ad5",
+          "track_name": "Everybody High - Chesster Remix",
+          "artist_name": "Caleb Jackson",
+          "models": [
+            "streams_d0",
+            "streams_d2",
+            "streams_d4",
+            "streams_d5",
+            "streams_d6",
+            "streams_d7"
+          ],
+          "cooks_d0": 0.14167159423114903
+        }
+      ],
+      "multi_artist_in_d0_drops": [
+        "Its Called Freefall (Griz Remix)",
+        "Light Down - Kasango Remix",
+        "Fresh Baked Bread",
+        "Eyes Cut Deeper - Mport Remix",
+        "Everybody High - Chesster Remix"
+      ],
+      "magnitude_multipliers": {
+        "single": 1.0,
+        "lead_single": 1.0,
+        "focus_track": 0.82,
+        "album_track": 0.85,
+        "alternate_version": 0.94
+      }
+    },
+    "C": {
+      "label": "max across roster",
+      "n_differ_from_frozen": 5,
+      "cooks_d_drops": 18,
+      "cooks_d_dropped_ids": [
+        "014cb496-a6b7-4808-b802-9b2e2ae58197",
+        "0562db03-e2be-4398-9a92-45b5184c1dd9",
+        "1ab2927f-c9bf-404b-b5a0-65e0fef90553",
+        "442224b9-5178-45dc-bd78-7106fd6e3dc2",
+        "500292f3-3a9b-481d-8c44-9ed9d642d791",
+        "59d045b2-c9ed-45bb-ae34-9b3c2a0cd90f",
+        "5ec3f0bc-0cd3-4dcb-b9cd-5433b27b134d",
+        "6d761fa4-d938-4a94-84d8-73953432b604",
+        "6f456ebf-5c83-4397-b00b-2a24d4da77f2",
+        "78b3e4d8-58eb-4848-a207-f00119ae2ac3",
+        "88620604-3fed-44e0-915c-ffb2ce584aac",
+        "8988c2a1-11fb-4d6c-abbd-7822e3189a3c",
+        "9cd4d4f1-ff5c-42ca-9ddc-bedd621b0c3e",
+        "c41f626b-5ae4-4264-aa9e-a19277cb4068",
+        "c49119e6-b37b-434d-a6c0-040fef4f8b59",
+        "ebe7f034-258c-45e2-b4e1-da3c30962ad5",
+        "f943607f-0f5f-42fb-a138-fd5907ad7b80",
+        "fa462427-e169-4f27-8642-fa43949bbc2c"
+      ],
+      "cooks_d_dropped_names": [
+        "Its Called Freefall (Griz Remix) (Griz)",
+        "Light Down - Kasango Remix (Kasango)",
+        "The Other Side (Level Up)",
+        "Satisfy (Pretty Girl)",
+        "Hustle (Zen Selekta)",
+        "Higher Ground (Bob Moses)",
+        "Close Your Mouth (Rhye)",
+        "Last Forever (Club Mix) (Bob Moses)",
+        "Foreva (Caleb Jackson)",
+        "Need your love (Cedric Gervais)",
+        "World is Mine (Kasbo)",
+        "Hold On (Rhye)",
+        "Body Step (Pretty Girl)",
+        "Eyes Cut Deeper - Mport Remix (Subtronics)",
+        "On My Mind (Bob Moses)",
+        "Everybody High - Chesster Remix (Caleb Jackson)",
+        "Khoye Yahaan Reimagined (KSHMR)",
+        "leave like this (bob moses)"
+      ],
+      "cooks_d_models_by_id": {
+        "0562db03-e2be-4398-9a92-45b5184c1dd9": [
+          "saves",
+          "streams_d0",
+          "streams_d1",
+          "streams_d2",
+          "streams_d3",
+          "streams_d7"
+        ],
+        "ebe7f034-258c-45e2-b4e1-da3c30962ad5": [
+          "streams_d0",
+          "streams_d4",
+          "streams_d5",
+          "streams_d6",
+          "streams_d7"
+        ],
+        "014cb496-a6b7-4808-b802-9b2e2ae58197": [
+          "saves",
+          "streams_d0",
+          "streams_d1",
+          "streams_d2",
+          "streams_d3",
+          "streams_d6"
+        ],
+        "6f456ebf-5c83-4397-b00b-2a24d4da77f2": [
+          "streams_d0",
+          "streams_d3"
+        ],
+        "fa462427-e169-4f27-8642-fa43949bbc2c": [
+          "streams_d1",
+          "streams_d2",
+          "streams_d3"
+        ],
+        "c41f626b-5ae4-4264-aa9e-a19277cb4068": [
+          "streams_d2",
+          "streams_d3",
+          "streams_d6",
+          "streams_d7"
+        ],
+        "6d761fa4-d938-4a94-84d8-73953432b604": [
+          "streams_d2",
+          "streams_d3"
+        ],
+        "5ec3f0bc-0cd3-4dcb-b9cd-5433b27b134d": [
+          "streams_d2"
+        ],
+        "442224b9-5178-45dc-bd78-7106fd6e3dc2": [
+          "streams_d4",
+          "streams_d5"
+        ],
+        "8988c2a1-11fb-4d6c-abbd-7822e3189a3c": [
+          "streams_d4",
+          "streams_d6",
+          "streams_d7"
+        ],
+        "78b3e4d8-58eb-4848-a207-f00119ae2ac3": [
+          "streams_d4"
+        ],
+        "59d045b2-c9ed-45bb-ae34-9b3c2a0cd90f": [
+          "streams_d5"
+        ],
+        "f943607f-0f5f-42fb-a138-fd5907ad7b80": [
+          "streams_d5",
+          "streams_d6",
+          "streams_d7"
+        ],
+        "1ab2927f-c9bf-404b-b5a0-65e0fef90553": [
+          "streams_d5"
+        ],
+        "9cd4d4f1-ff5c-42ca-9ddc-bedd621b0c3e": [
+          "streams_d6"
+        ],
+        "500292f3-3a9b-481d-8c44-9ed9d642d791": [
+          "streams_d7"
+        ],
+        "c49119e6-b37b-434d-a6c0-040fef4f8b59": [
+          "saves"
+        ],
+        "88620604-3fed-44e0-915c-ffb2ce584aac": [
+          "saves"
+        ]
+      },
+      "clean_set_size": 40,
+      "r2_clean": 0.513630922178697,
+      "rmse_clean": 0.5897452624850417,
+      "intercept": 8.671895195853587,
+      "log_ml": 0.15560292708092205,
+      "feat": -0.04127170904819755,
+      "ed_tier": 0.8209124072041727,
+      "forward_bias_all_new": 0.191047666268431,
+      "forward_bias_clean_new": -0.07147779372247282,
+      "forward_bias_all_live": 0.1927654412741685,
+      "forward_bias_clean_live": -0.017315556295165367,
+      "ratio_median_all": 0.8396447314290609,
+      "ratio_iqr_all": 1.0073678314666945,
+      "ratio_p25_all": 0.4731913669210045,
+      "ratio_p75_all": 1.4805591983876991,
+      "n_ratios": 58,
+      "streams_d0_only_drops": 4,
+      "streams_d0_threshold": 0.06896551724137931,
+      "multi_artist_in_cooks_drops": [
+        {
+          "release_id": "014cb496-a6b7-4808-b802-9b2e2ae58197",
+          "track_name": "Its Called Freefall (Griz Remix)",
+          "artist_name": "Griz",
+          "models": [
+            "saves",
+            "streams_d0",
+            "streams_d1",
+            "streams_d2",
+            "streams_d3",
+            "streams_d6"
+          ],
+          "cooks_d0": 0.19266553922655208
+        },
+        {
+          "release_id": "0562db03-e2be-4398-9a92-45b5184c1dd9",
+          "track_name": "Light Down - Kasango Remix",
+          "artist_name": "Kasango",
+          "models": [
+            "saves",
+            "streams_d0",
+            "streams_d1",
+            "streams_d2",
+            "streams_d3",
+            "streams_d7"
+          ],
+          "cooks_d0": 0.27678737863684166
+        },
+        {
+          "release_id": "c41f626b-5ae4-4264-aa9e-a19277cb4068",
+          "track_name": "Eyes Cut Deeper - Mport Remix",
+          "artist_name": "Subtronics",
+          "models": [
+            "streams_d2",
+            "streams_d3",
+            "streams_d6",
+            "streams_d7"
+          ],
+          "cooks_d0": 0.04772241190902259
+        },
+        {
+          "release_id": "ebe7f034-258c-45e2-b4e1-da3c30962ad5",
+          "track_name": "Everybody High - Chesster Remix",
+          "artist_name": "Caleb Jackson",
+          "models": [
+            "streams_d0",
+            "streams_d4",
+            "streams_d5",
+            "streams_d6",
+            "streams_d7"
+          ],
+          "cooks_d0": 0.14351272676634536
+        }
+      ],
+      "multi_artist_in_d0_drops": [
+        "Its Called Freefall (Griz Remix)",
+        "Light Down - Kasango Remix",
+        "Everybody High - Chesster Remix"
+      ],
+      "magnitude_multipliers": {
+        "single": 1.0,
+        "lead_single": 1.0,
+        "focus_track": 1.04,
+        "album_track": 0.86,
+        "alternate_version": 0.96
+      }
+    },
+    "D": {
+      "label": "sum across roster",
+      "n_differ_from_frozen": 9,
+      "cooks_d_drops": 17,
+      "cooks_d_dropped_ids": [
+        "014cb496-a6b7-4808-b802-9b2e2ae58197",
+        "0562db03-e2be-4398-9a92-45b5184c1dd9",
+        "1ab2927f-c9bf-404b-b5a0-65e0fef90553",
+        "442224b9-5178-45dc-bd78-7106fd6e3dc2",
+        "500292f3-3a9b-481d-8c44-9ed9d642d791",
+        "59d045b2-c9ed-45bb-ae34-9b3c2a0cd90f",
+        "5ec3f0bc-0cd3-4dcb-b9cd-5433b27b134d",
+        "6d761fa4-d938-4a94-84d8-73953432b604",
+        "6f456ebf-5c83-4397-b00b-2a24d4da77f2",
+        "88620604-3fed-44e0-915c-ffb2ce584aac",
+        "8988c2a1-11fb-4d6c-abbd-7822e3189a3c",
+        "9cd4d4f1-ff5c-42ca-9ddc-bedd621b0c3e",
+        "c41f626b-5ae4-4264-aa9e-a19277cb4068",
+        "c49119e6-b37b-434d-a6c0-040fef4f8b59",
+        "ebe7f034-258c-45e2-b4e1-da3c30962ad5",
+        "f943607f-0f5f-42fb-a138-fd5907ad7b80",
+        "fa462427-e169-4f27-8642-fa43949bbc2c"
+      ],
+      "cooks_d_dropped_names": [
+        "Its Called Freefall (Griz Remix) (Griz)",
+        "Light Down - Kasango Remix (Kasango)",
+        "The Other Side (Level Up)",
+        "Satisfy (Pretty Girl)",
+        "Hustle (Zen Selekta)",
+        "Higher Ground (Bob Moses)",
+        "Close Your Mouth (Rhye)",
+        "Last Forever (Club Mix) (Bob Moses)",
+        "Foreva (Caleb Jackson)",
+        "World is Mine (Kasbo)",
+        "Hold On (Rhye)",
+        "Body Step (Pretty Girl)",
+        "Eyes Cut Deeper - Mport Remix (Subtronics)",
+        "On My Mind (Bob Moses)",
+        "Everybody High - Chesster Remix (Caleb Jackson)",
+        "Khoye Yahaan Reimagined (KSHMR)",
+        "leave like this (bob moses)"
+      ],
+      "cooks_d_models_by_id": {
+        "0562db03-e2be-4398-9a92-45b5184c1dd9": [
+          "saves",
+          "streams_d0",
+          "streams_d1",
+          "streams_d2",
+          "streams_d3",
+          "streams_d7"
+        ],
+        "ebe7f034-258c-45e2-b4e1-da3c30962ad5": [
+          "streams_d0",
+          "streams_d4",
+          "streams_d5",
+          "streams_d6",
+          "streams_d7"
+        ],
+        "014cb496-a6b7-4808-b802-9b2e2ae58197": [
+          "saves",
+          "streams_d0",
+          "streams_d1",
+          "streams_d2",
+          "streams_d3",
+          "streams_d6"
+        ],
+        "6f456ebf-5c83-4397-b00b-2a24d4da77f2": [
+          "streams_d0",
+          "streams_d3"
+        ],
+        "fa462427-e169-4f27-8642-fa43949bbc2c": [
+          "streams_d1",
+          "streams_d2",
+          "streams_d3"
+        ],
+        "c41f626b-5ae4-4264-aa9e-a19277cb4068": [
+          "streams_d2",
+          "streams_d3",
+          "streams_d6",
+          "streams_d7"
+        ],
+        "6d761fa4-d938-4a94-84d8-73953432b604": [
+          "streams_d2",
+          "streams_d3"
+        ],
+        "5ec3f0bc-0cd3-4dcb-b9cd-5433b27b134d": [
+          "streams_d2"
+        ],
+        "442224b9-5178-45dc-bd78-7106fd6e3dc2": [
+          "streams_d4",
+          "streams_d5"
+        ],
+        "8988c2a1-11fb-4d6c-abbd-7822e3189a3c": [
+          "streams_d4",
+          "streams_d6",
+          "streams_d7"
+        ],
+        "59d045b2-c9ed-45bb-ae34-9b3c2a0cd90f": [
+          "streams_d5"
+        ],
+        "f943607f-0f5f-42fb-a138-fd5907ad7b80": [
+          "streams_d5",
+          "streams_d6",
+          "streams_d7"
+        ],
+        "1ab2927f-c9bf-404b-b5a0-65e0fef90553": [
+          "streams_d5"
+        ],
+        "9cd4d4f1-ff5c-42ca-9ddc-bedd621b0c3e": [
+          "streams_d6"
+        ],
+        "500292f3-3a9b-481d-8c44-9ed9d642d791": [
+          "streams_d7"
+        ],
+        "c49119e6-b37b-434d-a6c0-040fef4f8b59": [
+          "saves"
+        ],
+        "88620604-3fed-44e0-915c-ffb2ce584aac": [
+          "saves"
+        ]
+      },
+      "clean_set_size": 41,
+      "r2_clean": 0.4831114005361171,
+      "rmse_clean": 0.6094758641018617,
+      "intercept": 9.344376346604689,
+      "log_ml": 0.10228174886756625,
+      "feat": -0.11072306541625165,
+      "ed_tier": 0.8918289783327307,
+      "forward_bias_all_new": 0.15144850373586397,
+      "forward_bias_clean_new": -0.05215850470772009,
+      "forward_bias_all_live": 0.20994014557696525,
+      "forward_bias_clean_live": 0.022827404126580193,
+      "ratio_median_all": 0.8739517545428526,
+      "ratio_iqr_all": 1.085362070767463,
+      "ratio_p25_all": 0.4686326905690512,
+      "ratio_p75_all": 1.5539947613365142,
+      "n_ratios": 58,
+      "streams_d0_only_drops": 4,
+      "streams_d0_threshold": 0.06896551724137931,
+      "multi_artist_in_cooks_drops": [
+        {
+          "release_id": "014cb496-a6b7-4808-b802-9b2e2ae58197",
+          "track_name": "Its Called Freefall (Griz Remix)",
+          "artist_name": "Griz",
+          "models": [
+            "saves",
+            "streams_d0",
+            "streams_d1",
+            "streams_d2",
+            "streams_d3",
+            "streams_d6"
+          ],
+          "cooks_d0": 0.19360397661613585
+        },
+        {
+          "release_id": "0562db03-e2be-4398-9a92-45b5184c1dd9",
+          "track_name": "Light Down - Kasango Remix",
+          "artist_name": "Kasango",
+          "models": [
+            "saves",
+            "streams_d0",
+            "streams_d1",
+            "streams_d2",
+            "streams_d3",
+            "streams_d7"
+          ],
+          "cooks_d0": 0.2740772092705556
+        },
+        {
+          "release_id": "c41f626b-5ae4-4264-aa9e-a19277cb4068",
+          "track_name": "Eyes Cut Deeper - Mport Remix",
+          "artist_name": "Subtronics",
+          "models": [
+            "streams_d2",
+            "streams_d3",
+            "streams_d6",
+            "streams_d7"
+          ],
+          "cooks_d0": 0.046426216829042986
+        },
+        {
+          "release_id": "ebe7f034-258c-45e2-b4e1-da3c30962ad5",
+          "track_name": "Everybody High - Chesster Remix",
+          "artist_name": "Caleb Jackson",
+          "models": [
+            "streams_d0",
+            "streams_d4",
+            "streams_d5",
+            "streams_d6",
+            "streams_d7"
+          ],
+          "cooks_d0": 0.14369605448022332
+        }
+      ],
+      "multi_artist_in_d0_drops": [
+        "Its Called Freefall (Griz Remix)",
+        "Light Down - Kasango Remix",
+        "Everybody High - Chesster Remix"
+      ],
+      "magnitude_multipliers": {
+        "single": 1.0,
+        "lead_single": 1.0,
+        "focus_track": 1.05,
+        "album_track": 0.87,
+        "alternate_version": 0.97
+      }
+    },
+    "E": {
+      "label": "primary + 0.25 \u00d7 secondary",
+      "n_differ_from_frozen": 9,
+      "cooks_d_drops": 18,
+      "cooks_d_dropped_ids": [
+        "014cb496-a6b7-4808-b802-9b2e2ae58197",
+        "0562db03-e2be-4398-9a92-45b5184c1dd9",
+        "1ab2927f-c9bf-404b-b5a0-65e0fef90553",
+        "442224b9-5178-45dc-bd78-7106fd6e3dc2",
+        "500292f3-3a9b-481d-8c44-9ed9d642d791",
+        "59d045b2-c9ed-45bb-ae34-9b3c2a0cd90f",
+        "5ec3f0bc-0cd3-4dcb-b9cd-5433b27b134d",
+        "6d761fa4-d938-4a94-84d8-73953432b604",
+        "6f456ebf-5c83-4397-b00b-2a24d4da77f2",
+        "78b3e4d8-58eb-4848-a207-f00119ae2ac3",
+        "88620604-3fed-44e0-915c-ffb2ce584aac",
+        "8988c2a1-11fb-4d6c-abbd-7822e3189a3c",
+        "9cd4d4f1-ff5c-42ca-9ddc-bedd621b0c3e",
+        "c41f626b-5ae4-4264-aa9e-a19277cb4068",
+        "c49119e6-b37b-434d-a6c0-040fef4f8b59",
+        "ebe7f034-258c-45e2-b4e1-da3c30962ad5",
+        "f943607f-0f5f-42fb-a138-fd5907ad7b80",
+        "fa462427-e169-4f27-8642-fa43949bbc2c"
+      ],
+      "cooks_d_dropped_names": [
+        "Its Called Freefall (Griz Remix) (Griz)",
+        "Light Down - Kasango Remix (Kasango)",
+        "The Other Side (Level Up)",
+        "Satisfy (Pretty Girl)",
+        "Hustle (Zen Selekta)",
+        "Higher Ground (Bob Moses)",
+        "Close Your Mouth (Rhye)",
+        "Last Forever (Club Mix) (Bob Moses)",
+        "Foreva (Caleb Jackson)",
+        "Need your love (Cedric Gervais)",
+        "World is Mine (Kasbo)",
+        "Hold On (Rhye)",
+        "Body Step (Pretty Girl)",
+        "Eyes Cut Deeper - Mport Remix (Subtronics)",
+        "On My Mind (Bob Moses)",
+        "Everybody High - Chesster Remix (Caleb Jackson)",
+        "Khoye Yahaan Reimagined (KSHMR)",
+        "leave like this (bob moses)"
+      ],
+      "cooks_d_models_by_id": {
+        "0562db03-e2be-4398-9a92-45b5184c1dd9": [
+          "saves",
+          "streams_d0",
+          "streams_d1",
+          "streams_d2",
+          "streams_d3",
+          "streams_d7"
+        ],
+        "ebe7f034-258c-45e2-b4e1-da3c30962ad5": [
+          "streams_d0",
+          "streams_d2",
+          "streams_d4",
+          "streams_d5",
+          "streams_d6",
+          "streams_d7"
+        ],
+        "014cb496-a6b7-4808-b802-9b2e2ae58197": [
+          "saves",
+          "streams_d0",
+          "streams_d1",
+          "streams_d2",
+          "streams_d3",
+          "streams_d6"
+        ],
+        "6f456ebf-5c83-4397-b00b-2a24d4da77f2": [
+          "streams_d0",
+          "streams_d3"
+        ],
+        "fa462427-e169-4f27-8642-fa43949bbc2c": [
+          "streams_d1",
+          "streams_d2",
+          "streams_d3"
+        ],
+        "c41f626b-5ae4-4264-aa9e-a19277cb4068": [
+          "streams_d2",
+          "streams_d3",
+          "streams_d6",
+          "streams_d7"
+        ],
+        "6d761fa4-d938-4a94-84d8-73953432b604": [
+          "streams_d2",
+          "streams_d3"
+        ],
+        "5ec3f0bc-0cd3-4dcb-b9cd-5433b27b134d": [
+          "streams_d2"
+        ],
+        "c49119e6-b37b-434d-a6c0-040fef4f8b59": [
+          "streams_d3"
+        ],
+        "442224b9-5178-45dc-bd78-7106fd6e3dc2": [
+          "streams_d4",
+          "streams_d5"
+        ],
+        "8988c2a1-11fb-4d6c-abbd-7822e3189a3c": [
+          "streams_d4",
+          "streams_d6",
+          "streams_d7"
+        ],
+        "78b3e4d8-58eb-4848-a207-f00119ae2ac3": [
+          "streams_d4"
+        ],
+        "59d045b2-c9ed-45bb-ae34-9b3c2a0cd90f": [
+          "streams_d5"
+        ],
+        "f943607f-0f5f-42fb-a138-fd5907ad7b80": [
+          "streams_d5",
+          "streams_d6",
+          "streams_d7"
+        ],
+        "1ab2927f-c9bf-404b-b5a0-65e0fef90553": [
+          "streams_d5"
+        ],
+        "9cd4d4f1-ff5c-42ca-9ddc-bedd621b0c3e": [
+          "streams_d6"
+        ],
+        "500292f3-3a9b-481d-8c44-9ed9d642d791": [
+          "streams_d7"
+        ],
+        "88620604-3fed-44e0-915c-ffb2ce584aac": [
+          "saves"
+        ]
+      },
+      "clean_set_size": 40,
+      "r2_clean": 0.5088912203692146,
+      "rmse_clean": 0.5926118507391854,
+      "intercept": 8.875580183598958,
+      "log_ml": 0.13993006017310772,
+      "feat": -0.03812470329626105,
+      "ed_tier": 0.8341749989293976,
+      "forward_bias_all_new": 0.19013938505905614,
+      "forward_bias_clean_new": -0.07139951568955957,
+      "forward_bias_all_live": 0.1927654412741685,
+      "forward_bias_clean_live": -0.014454044010030899,
+      "ratio_median_all": 0.8408015777195778,
+      "ratio_iqr_all": 1.0252819929207022,
+      "ratio_p25_all": 0.46345975578295,
+      "ratio_p75_all": 1.4887417487036523,
+      "n_ratios": 58,
+      "streams_d0_only_drops": 4,
+      "streams_d0_threshold": 0.06896551724137931,
+      "multi_artist_in_cooks_drops": [
+        {
+          "release_id": "014cb496-a6b7-4808-b802-9b2e2ae58197",
+          "track_name": "Its Called Freefall (Griz Remix)",
+          "artist_name": "Griz",
+          "models": [
+            "saves",
+            "streams_d0",
+            "streams_d1",
+            "streams_d2",
+            "streams_d3",
+            "streams_d6"
+          ],
+          "cooks_d0": 0.16542234872075395
+        },
+        {
+          "release_id": "0562db03-e2be-4398-9a92-45b5184c1dd9",
+          "track_name": "Light Down - Kasango Remix",
+          "artist_name": "Kasango",
+          "models": [
+            "saves",
+            "streams_d0",
+            "streams_d1",
+            "streams_d2",
+            "streams_d3",
+            "streams_d7"
+          ],
+          "cooks_d0": 0.29976563463222566
+        },
+        {
+          "release_id": "c41f626b-5ae4-4264-aa9e-a19277cb4068",
+          "track_name": "Eyes Cut Deeper - Mport Remix",
+          "artist_name": "Subtronics",
+          "models": [
+            "streams_d2",
+            "streams_d3",
+            "streams_d6",
+            "streams_d7"
+          ],
+          "cooks_d0": 0.05095681123015072
+        },
+        {
+          "release_id": "ebe7f034-258c-45e2-b4e1-da3c30962ad5",
+          "track_name": "Everybody High - Chesster Remix",
+          "artist_name": "Caleb Jackson",
+          "models": [
+            "streams_d0",
+            "streams_d2",
+            "streams_d4",
+            "streams_d5",
+            "streams_d6",
+            "streams_d7"
+          ],
+          "cooks_d0": 0.15406004539109636
+        }
+      ],
+      "multi_artist_in_d0_drops": [
+        "Its Called Freefall (Griz Remix)",
+        "Light Down - Kasango Remix",
+        "Everybody High - Chesster Remix"
+      ],
+      "magnitude_multipliers": {
+        "single": 1.0,
+        "lead_single": 1.0,
+        "focus_track": 1.04,
+        "album_track": 0.86,
+        "alternate_version": 0.96
+      }
+    },
+    "F": {
+      "label": "primary + 0.50 \u00d7 secondary",
+      "n_differ_from_frozen": 9,
+      "cooks_d_drops": 18,
+      "cooks_d_dropped_ids": [
+        "014cb496-a6b7-4808-b802-9b2e2ae58197",
+        "0562db03-e2be-4398-9a92-45b5184c1dd9",
+        "1ab2927f-c9bf-404b-b5a0-65e0fef90553",
+        "442224b9-5178-45dc-bd78-7106fd6e3dc2",
+        "500292f3-3a9b-481d-8c44-9ed9d642d791",
+        "59d045b2-c9ed-45bb-ae34-9b3c2a0cd90f",
+        "5ec3f0bc-0cd3-4dcb-b9cd-5433b27b134d",
+        "6d761fa4-d938-4a94-84d8-73953432b604",
+        "6f456ebf-5c83-4397-b00b-2a24d4da77f2",
+        "78b3e4d8-58eb-4848-a207-f00119ae2ac3",
+        "88620604-3fed-44e0-915c-ffb2ce584aac",
+        "8988c2a1-11fb-4d6c-abbd-7822e3189a3c",
+        "9cd4d4f1-ff5c-42ca-9ddc-bedd621b0c3e",
+        "c41f626b-5ae4-4264-aa9e-a19277cb4068",
+        "c49119e6-b37b-434d-a6c0-040fef4f8b59",
+        "ebe7f034-258c-45e2-b4e1-da3c30962ad5",
+        "f943607f-0f5f-42fb-a138-fd5907ad7b80",
+        "fa462427-e169-4f27-8642-fa43949bbc2c"
+      ],
+      "cooks_d_dropped_names": [
+        "Its Called Freefall (Griz Remix) (Griz)",
+        "Light Down - Kasango Remix (Kasango)",
+        "The Other Side (Level Up)",
+        "Satisfy (Pretty Girl)",
+        "Hustle (Zen Selekta)",
+        "Higher Ground (Bob Moses)",
+        "Close Your Mouth (Rhye)",
+        "Last Forever (Club Mix) (Bob Moses)",
+        "Foreva (Caleb Jackson)",
+        "Need your love (Cedric Gervais)",
+        "World is Mine (Kasbo)",
+        "Hold On (Rhye)",
+        "Body Step (Pretty Girl)",
+        "Eyes Cut Deeper - Mport Remix (Subtronics)",
+        "On My Mind (Bob Moses)",
+        "Everybody High - Chesster Remix (Caleb Jackson)",
+        "Khoye Yahaan Reimagined (KSHMR)",
+        "leave like this (bob moses)"
+      ],
+      "cooks_d_models_by_id": {
+        "0562db03-e2be-4398-9a92-45b5184c1dd9": [
+          "saves",
+          "streams_d0",
+          "streams_d1",
+          "streams_d2",
+          "streams_d3",
+          "streams_d7"
+        ],
+        "ebe7f034-258c-45e2-b4e1-da3c30962ad5": [
+          "streams_d0",
+          "streams_d2",
+          "streams_d4",
+          "streams_d5",
+          "streams_d6",
+          "streams_d7"
+        ],
+        "014cb496-a6b7-4808-b802-9b2e2ae58197": [
+          "saves",
+          "streams_d0",
+          "streams_d1",
+          "streams_d2",
+          "streams_d3",
+          "streams_d6"
+        ],
+        "6f456ebf-5c83-4397-b00b-2a24d4da77f2": [
+          "streams_d0",
+          "streams_d3"
+        ],
+        "fa462427-e169-4f27-8642-fa43949bbc2c": [
+          "streams_d1",
+          "streams_d2",
+          "streams_d3"
+        ],
+        "c41f626b-5ae4-4264-aa9e-a19277cb4068": [
+          "streams_d2",
+          "streams_d3",
+          "streams_d6",
+          "streams_d7"
+        ],
+        "6d761fa4-d938-4a94-84d8-73953432b604": [
+          "streams_d2",
+          "streams_d3"
+        ],
+        "5ec3f0bc-0cd3-4dcb-b9cd-5433b27b134d": [
+          "streams_d2"
+        ],
+        "442224b9-5178-45dc-bd78-7106fd6e3dc2": [
+          "streams_d4",
+          "streams_d5"
+        ],
+        "8988c2a1-11fb-4d6c-abbd-7822e3189a3c": [
+          "streams_d4",
+          "streams_d6",
+          "streams_d7"
+        ],
+        "78b3e4d8-58eb-4848-a207-f00119ae2ac3": [
+          "streams_d4"
+        ],
+        "59d045b2-c9ed-45bb-ae34-9b3c2a0cd90f": [
+          "streams_d5"
+        ],
+        "f943607f-0f5f-42fb-a138-fd5907ad7b80": [
+          "streams_d5",
+          "streams_d6",
+          "streams_d7"
+        ],
+        "1ab2927f-c9bf-404b-b5a0-65e0fef90553": [
+          "streams_d5"
+        ],
+        "9cd4d4f1-ff5c-42ca-9ddc-bedd621b0c3e": [
+          "streams_d6"
+        ],
+        "500292f3-3a9b-481d-8c44-9ed9d642d791": [
+          "streams_d7"
+        ],
+        "c49119e6-b37b-434d-a6c0-040fef4f8b59": [
+          "saves"
+        ],
+        "88620604-3fed-44e0-915c-ffb2ce584aac": [
+          "saves"
+        ]
+      },
+      "clean_set_size": 40,
+      "r2_clean": 0.5114335530609075,
+      "rmse_clean": 0.5910759676106374,
+      "intercept": 8.738408891305447,
+      "log_ml": 0.150139631763068,
+      "feat": -0.04374016747725129,
+      "ed_tier": 0.8288980932738489,
+      "forward_bias_all_new": 0.18572461333163093,
+      "forward_bias_clean_new": -0.073595209621383,
+      "forward_bias_all_live": 0.1927654412741685,
+      "forward_bias_clean_live": -0.011633151739203634,
+      "ratio_median_all": 0.8435422755754032,
+      "ratio_iqr_all": 1.013950100587573,
+      "ratio_p25_all": 0.470455239620921,
+      "ratio_p75_all": 1.484405340208494,
+      "n_ratios": 58,
+      "streams_d0_only_drops": 4,
+      "streams_d0_threshold": 0.06896551724137931,
+      "multi_artist_in_cooks_drops": [
+        {
+          "release_id": "014cb496-a6b7-4808-b802-9b2e2ae58197",
+          "track_name": "Its Called Freefall (Griz Remix)",
+          "artist_name": "Griz",
+          "models": [
+            "saves",
+            "streams_d0",
+            "streams_d1",
+            "streams_d2",
+            "streams_d3",
+            "streams_d6"
+          ],
+          "cooks_d0": 0.17759981264322902
+        },
+        {
+          "release_id": "0562db03-e2be-4398-9a92-45b5184c1dd9",
+          "track_name": "Light Down - Kasango Remix",
+          "artist_name": "Kasango",
+          "models": [
+            "saves",
+            "streams_d0",
+            "streams_d1",
+            "streams_d2",
+            "streams_d3",
+            "streams_d7"
+          ],
+          "cooks_d0": 0.2894689754568172
+        },
+        {
+          "release_id": "c41f626b-5ae4-4264-aa9e-a19277cb4068",
+          "track_name": "Eyes Cut Deeper - Mport Remix",
+          "artist_name": "Subtronics",
+          "models": [
+            "streams_d2",
+            "streams_d3",
+            "streams_d6",
+            "streams_d7"
+          ],
+          "cooks_d0": 0.04903229825728429
+        },
+        {
+          "release_id": "ebe7f034-258c-45e2-b4e1-da3c30962ad5",
+          "track_name": "Everybody High - Chesster Remix",
+          "artist_name": "Caleb Jackson",
+          "models": [
+            "streams_d0",
+            "streams_d2",
+            "streams_d4",
+            "streams_d5",
+            "streams_d6",
+            "streams_d7"
+          ],
+          "cooks_d0": 0.14652020254908577
+        }
+      ],
+      "multi_artist_in_d0_drops": [
+        "Its Called Freefall (Griz Remix)",
+        "Light Down - Kasango Remix",
+        "Everybody High - Chesster Remix"
+      ],
+      "magnitude_multipliers": {
+        "single": 1.0,
+        "lead_single": 1.0,
+        "focus_track": 1.04,
+        "album_track": 0.86,
+        "alternate_version": 0.96
+      }
+    },
+    "G": {
+      "label": "log-mean across roster",
+      "n_differ_from_frozen": 9,
+      "cooks_d_drops": 20,
+      "cooks_d_dropped_ids": [
+        "014cb496-a6b7-4808-b802-9b2e2ae58197",
+        "0562db03-e2be-4398-9a92-45b5184c1dd9",
+        "1ab2927f-c9bf-404b-b5a0-65e0fef90553",
+        "442224b9-5178-45dc-bd78-7106fd6e3dc2",
+        "500292f3-3a9b-481d-8c44-9ed9d642d791",
+        "59d045b2-c9ed-45bb-ae34-9b3c2a0cd90f",
+        "5ec3f0bc-0cd3-4dcb-b9cd-5433b27b134d",
+        "6d761fa4-d938-4a94-84d8-73953432b604",
+        "6f456ebf-5c83-4397-b00b-2a24d4da77f2",
+        "78b3e4d8-58eb-4848-a207-f00119ae2ac3",
+        "88620604-3fed-44e0-915c-ffb2ce584aac",
+        "8988c2a1-11fb-4d6c-abbd-7822e3189a3c",
+        "9cd4d4f1-ff5c-42ca-9ddc-bedd621b0c3e",
+        "b02bf3e7-5d2d-4f87-988c-f871ff664f70",
+        "c41f626b-5ae4-4264-aa9e-a19277cb4068",
+        "c49119e6-b37b-434d-a6c0-040fef4f8b59",
+        "ebe7f034-258c-45e2-b4e1-da3c30962ad5",
+        "f943607f-0f5f-42fb-a138-fd5907ad7b80",
+        "f9ced8aa-e3c2-4289-aa4e-de9d50b84c4c",
+        "fa462427-e169-4f27-8642-fa43949bbc2c"
+      ],
+      "cooks_d_dropped_names": [
+        "Its Called Freefall (Griz Remix) (Griz)",
+        "Light Down - Kasango Remix (Kasango)",
+        "The Other Side (Level Up)",
+        "Satisfy (Pretty Girl)",
+        "Hustle (Zen Selekta)",
+        "Higher Ground (Bob Moses)",
+        "Close Your Mouth (Rhye)",
+        "Last Forever (Club Mix) (Bob Moses)",
+        "Foreva (Caleb Jackson)",
+        "Need your love (Cedric Gervais)",
+        "World is Mine (Kasbo)",
+        "Hold On (Rhye)",
+        "Body Step (Pretty Girl)",
+        "STOMP (Cedric Gervais)",
+        "Eyes Cut Deeper - Mport Remix (Subtronics)",
+        "On My Mind (Bob Moses)",
+        "Everybody High - Chesster Remix (Caleb Jackson)",
+        "Khoye Yahaan Reimagined (KSHMR)",
+        "Crossroads City (Gramatik)",
+        "leave like this (bob moses)"
+      ],
+      "cooks_d_models_by_id": {
+        "0562db03-e2be-4398-9a92-45b5184c1dd9": [
+          "saves",
+          "streams_d0",
+          "streams_d1",
+          "streams_d2",
+          "streams_d3",
+          "streams_d7"
+        ],
+        "ebe7f034-258c-45e2-b4e1-da3c30962ad5": [
+          "streams_d0",
+          "streams_d2",
+          "streams_d4",
+          "streams_d5",
+          "streams_d6",
+          "streams_d7"
+        ],
+        "014cb496-a6b7-4808-b802-9b2e2ae58197": [
+          "saves",
+          "streams_d0",
+          "streams_d1",
+          "streams_d2",
+          "streams_d3"
+        ],
+        "b02bf3e7-5d2d-4f87-988c-f871ff664f70": [
+          "streams_d0"
+        ],
+        "fa462427-e169-4f27-8642-fa43949bbc2c": [
+          "streams_d1",
+          "streams_d2",
+          "streams_d3"
+        ],
+        "6d761fa4-d938-4a94-84d8-73953432b604": [
+          "streams_d2",
+          "streams_d3"
+        ],
+        "5ec3f0bc-0cd3-4dcb-b9cd-5433b27b134d": [
+          "streams_d2"
+        ],
+        "6f456ebf-5c83-4397-b00b-2a24d4da77f2": [
+          "streams_d3"
+        ],
+        "c49119e6-b37b-434d-a6c0-040fef4f8b59": [
+          "saves",
+          "streams_d3"
+        ],
+        "442224b9-5178-45dc-bd78-7106fd6e3dc2": [
+          "streams_d4",
+          "streams_d5"
+        ],
+        "8988c2a1-11fb-4d6c-abbd-7822e3189a3c": [
+          "streams_d4",
+          "streams_d6",
+          "streams_d7"
+        ],
+        "78b3e4d8-58eb-4848-a207-f00119ae2ac3": [
+          "streams_d4"
+        ],
+        "59d045b2-c9ed-45bb-ae34-9b3c2a0cd90f": [
+          "streams_d5"
+        ],
+        "f943607f-0f5f-42fb-a138-fd5907ad7b80": [
+          "streams_d5",
+          "streams_d6",
+          "streams_d7"
+        ],
+        "1ab2927f-c9bf-404b-b5a0-65e0fef90553": [
+          "streams_d5"
+        ],
+        "9cd4d4f1-ff5c-42ca-9ddc-bedd621b0c3e": [
+          "streams_d6"
+        ],
+        "c41f626b-5ae4-4264-aa9e-a19277cb4068": [
+          "streams_d7"
+        ],
+        "500292f3-3a9b-481d-8c44-9ed9d642d791": [
+          "streams_d7"
+        ],
+        "f9ced8aa-e3c2-4289-aa4e-de9d50b84c4c": [
+          "saves"
+        ],
+        "88620604-3fed-44e0-915c-ffb2ce584aac": [
+          "saves"
+        ]
+      },
+      "clean_set_size": 38,
+      "r2_clean": 0.6011846072381056,
+      "rmse_clean": 0.5256978780505477,
+      "intercept": 7.5689964230176265,
+      "log_ml": 0.24335310499852691,
+      "feat": 0.14796102404363065,
+      "ed_tier": 0.6939798924255215,
+      "forward_bias_all_new": 0.13965876038446123,
+      "forward_bias_clean_new": -0.11199405893982357,
+      "forward_bias_all_live": 0.1927654412741685,
+      "forward_bias_clean_live": -0.11833455492828131,
+      "ratio_median_all": 0.877457161473173,
+      "ratio_iqr_all": 0.8585140033942165,
+      "ratio_p25_all": 0.508211231168264,
+      "ratio_p75_all": 1.3667252345624805,
+      "n_ratios": 58,
+      "streams_d0_only_drops": 4,
+      "streams_d0_threshold": 0.06896551724137931,
+      "multi_artist_in_cooks_drops": [
+        {
+          "release_id": "014cb496-a6b7-4808-b802-9b2e2ae58197",
+          "track_name": "Its Called Freefall (Griz Remix)",
+          "artist_name": "Griz",
+          "models": [
+            "saves",
+            "streams_d0",
+            "streams_d1",
+            "streams_d2",
+            "streams_d3"
+          ],
+          "cooks_d0": 0.15381644054139634
+        },
+        {
+          "release_id": "0562db03-e2be-4398-9a92-45b5184c1dd9",
+          "track_name": "Light Down - Kasango Remix",
+          "artist_name": "Kasango",
+          "models": [
+            "saves",
+            "streams_d0",
+            "streams_d1",
+            "streams_d2",
+            "streams_d3",
+            "streams_d7"
+          ],
+          "cooks_d0": 0.13639206454258004
+        },
+        {
+          "release_id": "c41f626b-5ae4-4264-aa9e-a19277cb4068",
+          "track_name": "Eyes Cut Deeper - Mport Remix",
+          "artist_name": "Subtronics",
+          "models": [
+            "streams_d7"
+          ],
+          "cooks_d0": 0.029797328297791404
+        },
+        {
+          "release_id": "ebe7f034-258c-45e2-b4e1-da3c30962ad5",
+          "track_name": "Everybody High - Chesster Remix",
+          "artist_name": "Caleb Jackson",
+          "models": [
+            "streams_d0",
+            "streams_d2",
+            "streams_d4",
+            "streams_d5",
+            "streams_d6",
+            "streams_d7"
+          ],
+          "cooks_d0": 0.1459463438337346
+        }
+      ],
+      "multi_artist_in_d0_drops": [
+        "Its Called Freefall (Griz Remix)",
+        "Light Down - Kasango Remix",
+        "Everybody High - Chesster Remix"
+      ],
+      "magnitude_multipliers": {
+        "single": 1.0,
+        "lead_single": 1.0,
+        "focus_track": 1.02,
+        "album_track": 0.85,
+        "alternate_version": 0.94
+      }
+    }
+  }
+}

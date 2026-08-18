@@ -16,11 +16,14 @@ export function CampaignFlightBands({
   axisWidth,
   rightMargin,
   windowDays = CAMPAIGN_FLIGHT_WINDOW_DAYS,
+  plotInset = 0,
 }: {
   bands: CampaignFlightBand[];
   axisWidth: number;
   rightMargin: number;
   windowDays?: number;
+  /** Match Recharts XAxis padding so bands share the plot scale. */
+  plotInset?: number;
 }) {
   if (bands.length === 0) {
     return null;
@@ -30,8 +33,8 @@ export function CampaignFlightBands({
     <div
       className="mt-1 space-y-1"
       style={{
-        paddingLeft: axisWidth,
-        paddingRight: rightMargin,
+        paddingLeft: axisWidth + plotInset,
+        paddingRight: rightMargin + plotInset,
       }}
       aria-label="Campaign flight windows"
     >

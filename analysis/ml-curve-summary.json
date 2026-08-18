@@ -1,0 +1,1364 @@
+{
+  "n": 58,
+  "live_streams_d0": {
+    "intercept": 7.155838064745286,
+    "log_ml": 0.28317147419418953,
+    "feat": -0.025481594279002096,
+    "ed_tier": 0.6398840977129234
+  },
+  "test1_bins": [
+    {
+      "bin": "<100k",
+      "n": 3,
+      "characterize": false,
+      "median_log_resid": -1.6073395335688456,
+      "mean_log_resid": -1.4136289704079754,
+      "median_ratio": 0.20042011640058444,
+      "iqr_ratio": 0.25109373103803245,
+      "artists": {
+        "Caleb Jackson": 2,
+        "Zen Selekta": 1
+      },
+      "tracks": [
+        {
+          "track": "Hustle",
+          "artist": "Zen Selekta",
+          "ml": 17000.0,
+          "log_resid": -0.4475159456922899,
+          "ratio": 0.6392140234589385
+        },
+        {
+          "track": "Foreva",
+          "artist": "Caleb Jackson",
+          "ml": 48000.0,
+          "log_resid": -1.6073395335688456,
+          "ratio": 0.20042011640058444
+        },
+        {
+          "track": "Everybody High - Chesster Remix",
+          "artist": "Caleb Jackson",
+          "ml": 52000.0,
+          "log_resid": -2.1860314319627907,
+          "ratio": 0.13702656138287367
+        }
+      ]
+    },
+    {
+      "bin": "100k-500k",
+      "n": 13,
+      "characterize": true,
+      "median_log_resid": 0.09394081715321612,
+      "mean_log_resid": -0.0699760975854412,
+      "median_ratio": 1.0363157848565305,
+      "iqr_ratio": 0.6203131323845562,
+      "artists": {
+        "Eazy Baked": 2,
+        "Pretty Girl": 2,
+        "Boogie T": 2,
+        "LSDREAM": 2,
+        "\u00c2me": 1,
+        "Zingara": 1,
+        "O'Flynn": 1,
+        "Steller": 1,
+        "Level Up": 1
+      },
+      "tracks": [
+        {
+          "track": "Fresh Baked Bread",
+          "artist": "Eazy Baked",
+          "ml": 101000.0,
+          "log_resid": 0.9337715018735757,
+          "ratio": 2.5440861321287134
+        },
+        {
+          "track": "Certified - sumthin sumthin Remix",
+          "artist": "Eazy Baked",
+          "ml": 104000.0,
+          "log_resid": -0.2270119124487806,
+          "ratio": 0.971843035449613
+        },
+        {
+          "track": "Shifting The Lens",
+          "artist": "Steller",
+          "ml": 126000.0,
+          "log_resid": -0.16446048914771083,
+          "ratio": 0.8483512753640943
+        },
+        {
+          "track": "Satisfy",
+          "artist": "Pretty Girl",
+          "ml": 204000.0,
+          "log_resid": -1.8242451174765044,
+          "ratio": 0.1854475752392135
+        },
+        {
+          "track": "Body Step",
+          "artist": "Pretty Girl",
+          "ml": 204000.0,
+          "log_resid": -0.8224790817262342,
+          "ratio": 0.41447277427787815
+        },
+        {
+          "track": "Fara",
+          "artist": "O'Flynn",
+          "ml": 254000.0,
+          "log_resid": 0.40891363690281324,
+          "ratio": 1.419982757279937
+        },
+        {
+          "track": "Marathon",
+          "artist": "Boogie T",
+          "ml": 298000.0,
+          "log_resid": -0.36800043874843524,
+          "ratio": 0.692116878023466
+        },
+        {
+          "track": "Steppin",
+          "artist": "Boogie T",
+          "ml": 300000.0,
+          "log_resid": 0.20296501232980368,
+          "ratio": 1.2250296065658322
+        },
+        {
+          "track": "Telekinesis",
+          "artist": "Zingara",
+          "ml": 303000.0,
+          "log_resid": 0.3541342605803717,
+          "ratio": 1.4249464877799372
+        },
+        {
+          "track": "KOOLAID MAN",
+          "artist": "LSDREAM",
+          "ml": 400000.0,
+          "log_resid": -0.22355660549011525,
+          "ratio": 0.7996696248953808
+        },
+        {
+          "track": "Pull Me Closer",
+          "artist": "LSDREAM",
+          "ml": 403000.0,
+          "log_resid": 0.5618175642744383,
+          "ratio": 1.7538573535498545
+        },
+        {
+          "track": "The Other Side",
+          "artist": "Level Up",
+          "ml": 430000.0,
+          "log_resid": 0.16452158331282618,
+          "ratio": 1.1788290123123784
+        },
+        {
+          "track": "Love Is The Dance",
+          "artist": "\u00c2me",
+          "ml": 473000.0,
+          "log_resid": 0.09394081715321612,
+          "ratio": 1.0363157848565305
+        }
+      ]
+    },
+    {
+      "bin": "500k-2M",
+      "n": 18,
+      "characterize": true,
+      "median_log_resid": 0.19713978116893216,
+      "mean_log_resid": 0.07169380972177525,
+      "median_ratio": 1.2181601336853067,
+      "iqr_ratio": 1.1074666936184778,
+      "artists": {
+        "Zomboy": 3,
+        "Griz": 3,
+        "Crankdat": 2,
+        "Big Gigantic": 1,
+        "AC Slater": 1,
+        "CloZee": 1,
+        "big gigantic": 1,
+        "Gramatik": 1,
+        "BORGORE": 1,
+        "O'Flynn": 1,
+        "Boogie T": 1,
+        "gramatik": 1,
+        "Kasbo": 1
+      },
+      "tracks": [
+        {
+          "track": "Ankaa",
+          "artist": "CloZee",
+          "ml": 500000.0,
+          "log_resid": 0.4292798867517309,
+          "ratio": 1.5361509225264223
+        },
+        {
+          "track": "Freak No More",
+          "artist": "AC Slater",
+          "ml": 537000.0,
+          "log_resid": 0.1770467123724888,
+          "ratio": 1.193686851769674
+        },
+        {
+          "track": "Valley Of Violence - Borgore Remix",
+          "artist": "Zomboy",
+          "ml": 540000.0,
+          "log_resid": -0.4693687394346959,
+          "ratio": 0.7626791855154234
+        },
+        {
+          "track": "Time Machine",
+          "artist": "Zomboy",
+          "ml": 540000.0,
+          "log_resid": 0.2172328499653755,
+          "ratio": 1.2426334156009395
+        },
+        {
+          "track": "Bromance is Dead",
+          "artist": "Zomboy",
+          "ml": 543000.0,
+          "log_resid": -0.18795059035764616,
+          "ratio": 0.8286556498004843
+        },
+        {
+          "track": "OBSESSED",
+          "artist": "BORGORE",
+          "ml": 630000.0,
+          "log_resid": -0.8114065533687622,
+          "ratio": 0.41908753722352093
+        },
+        {
+          "track": "Ashiko",
+          "artist": "O'Flynn",
+          "ml": 786000.0,
+          "log_resid": -0.8731682153768752,
+          "ratio": 0.41762632092003765
+        },
+        {
+          "track": "Crossroads City",
+          "artist": "Gramatik",
+          "ml": 814000.0,
+          "log_resid": -0.9440674694980995,
+          "ratio": 0.38904219551006003
+        },
+        {
+          "track": "The Montauk",
+          "artist": "gramatik",
+          "ml": 825000.0,
+          "log_resid": -0.8569587071899871,
+          "ratio": 0.42445100111241957
+        },
+        {
+          "track": "Psychedelic Symphony",
+          "artist": "Big Gigantic",
+          "ml": 876000.0,
+          "log_resid": 0.24049904368655284,
+          "ratio": 1.2718837175091122
+        },
+        {
+          "track": "beautiful colors",
+          "artist": "big gigantic",
+          "ml": 877000.0,
+          "log_resid": -0.5279367960741403,
+          "ratio": 0.5898206354144976
+        },
+        {
+          "track": "Lotis Eater",
+          "artist": "Boogie T",
+          "ml": 980000.0,
+          "log_resid": 0.09290279229455756,
+          "ratio": 1.0973550587159613
+        },
+        {
+          "track": "World is Mine",
+          "artist": "Kasbo",
+          "ml": 995000.0,
+          "log_resid": 0.8157496138949742,
+          "ratio": 2.2608698167226313
+        },
+        {
+          "track": "Movement",
+          "artist": "Crankdat",
+          "ml": 1070000.0,
+          "log_resid": 0.6911890639571361,
+          "ratio": 1.9960875985136184
+        },
+        {
+          "track": "Its Called Freefall (Griz Remix)",
+          "artist": "Griz",
+          "ml": 1127000.0,
+          "log_resid": 1.8710819653854376,
+          "ratio": 7.921122329915123
+        },
+        {
+          "track": "Bass Cannon (Flux's Version) - Crankdat Remix",
+          "artist": "Crankdat",
+          "ml": 1202000.0,
+          "log_resid": 0.5968133729109013,
+          "ratio": 2.2150263766819225
+        },
+        {
+          "track": "Rump Shaker",
+          "artist": "Griz",
+          "ml": 1900000.0,
+          "log_resid": 0.3762488521492475,
+          "ratio": 1.374348697048413
+        },
+        {
+          "track": "When I'm Hot",
+          "artist": "Griz",
+          "ml": 1950000.0,
+          "log_resid": 0.45330149292375843,
+          "ratio": 1.8086189812354683
+        }
+      ]
+    },
+    {
+      "bin": "2M-5M",
+      "n": 20,
+      "characterize": true,
+      "median_log_resid": -0.32185936262659975,
+      "mean_log_resid": -0.3115590532515644,
+      "median_ratio": 0.7710055986724016,
+      "iqr_ratio": 0.6488642141989374,
+      "artists": {
+        "Subtronics": 3,
+        "Rhye": 3,
+        "Bob Moses": 3,
+        "KSHMR": 3,
+        "Joshwa": 3,
+        "Hayden James": 2,
+        "RHYE": 1,
+        "Duke Dumot": 1,
+        "bob moses": 1
+      },
+      "tracks": [
+        {
+          "track": "Last Forever (Club Mix)",
+          "artist": "Bob Moses",
+          "ml": 2000000.0,
+          "log_resid": -0.46713350339302906,
+          "ratio": 0.6267964053795273
+        },
+        {
+          "track": "Higher Ground",
+          "artist": "Bob Moses",
+          "ml": 2000000.0,
+          "log_resid": -1.4755170582081423,
+          "ratio": 0.26282812149791857
+        },
+        {
+          "track": "Freaks",
+          "artist": "Joshwa",
+          "ml": 2000000.0,
+          "log_resid": -0.7199887961120659,
+          "ratio": 0.5594916201244244
+        },
+        {
+          "track": "leave like this",
+          "artist": "bob moses",
+          "ml": 2000000.0,
+          "log_resid": -0.7302663347225753,
+          "ratio": 0.4817806580834134
+        },
+        {
+          "track": "Lets Get Ill",
+          "artist": "Joshwa",
+          "ml": 2000000.0,
+          "log_resid": -0.4012143291672423,
+          "ratio": 0.6695065508777643
+        },
+        {
+          "track": "On My Mind",
+          "artist": "Bob Moses",
+          "ml": 2000000.0,
+          "log_resid": 0.518175580603172,
+          "ratio": 1.6789617234468506
+        },
+        {
+          "track": "Work Your Body",
+          "artist": "Joshwa",
+          "ml": 2000000.0,
+          "log_resid": -0.2425043960859572,
+          "ratio": 0.7846602981370233
+        },
+        {
+          "track": "For The Girls",
+          "artist": "Hayden James",
+          "ml": 2658000.0,
+          "log_resid": -0.5652809133622227,
+          "ratio": 0.5682005092209697
+        },
+        {
+          "track": "One I Want",
+          "artist": "Hayden James",
+          "ml": 2674000.0,
+          "log_resid": -0.5710548009276124,
+          "ratio": 0.5649292364348373
+        },
+        {
+          "track": "Merida",
+          "artist": "Rhye",
+          "ml": 2679000.0,
+          "log_resid": -1.1374183395120259,
+          "ratio": 0.36855833638876545
+        },
+        {
+          "track": "Hold On",
+          "artist": "Rhye",
+          "ml": 2690000.0,
+          "log_resid": -0.21200980677819103,
+          "ratio": 0.8089567642680469
+        },
+        {
+          "track": "Fatal",
+          "artist": "RHYE",
+          "ml": 2700000.0,
+          "log_resid": 0.21838037258362242,
+          "ratio": 1.173641683037247
+        },
+        {
+          "track": "Close Your Mouth",
+          "artist": "Rhye",
+          "ml": 2730000.0,
+          "log_resid": 0.19001165504271889,
+          "ratio": 1.2092636915951014
+        },
+        {
+          "track": "Eyes Cut Deeper - Mport Remix",
+          "artist": "Subtronics",
+          "ml": 2900000.0,
+          "log_resid": -2.2987498104449084,
+          "ratio": 0.12241983495813674
+        },
+        {
+          "track": "Fall Back To Nothing",
+          "artist": "Subtronics",
+          "ml": 2920000.0,
+          "log_resid": 0.35858470530450326,
+          "ratio": 1.4313022658877697
+        },
+        {
+          "track": "Eyes Cut Deeper",
+          "artist": "Subtronics",
+          "ml": 3630000.0,
+          "log_resid": 0.8326085873869538,
+          "ratio": 2.299308872098709
+        },
+        {
+          "track": "Your loving",
+          "artist": "Duke Dumot",
+          "ml": 4100000.0,
+          "log_resid": 1.1454455572450115,
+          "ratio": 3.6136112716319175
+        },
+        {
+          "track": "Ultra Love RYOS Remix",
+          "artist": "KSHMR",
+          "ml": 4300000.0,
+          "log_resid": -0.19886290608545742,
+          "ratio": 0.999588117485283
+        },
+        {
+          "track": "Bass Down Low",
+          "artist": "KSHMR",
+          "ml": 4337000.0,
+          "log_resid": -0.47637953242555753,
+          "ratio": 0.75735089920778
+        },
+        {
+          "track": "Khoye Yahaan Reimagined",
+          "artist": "KSHMR",
+          "ml": 4500000.0,
+          "log_resid": 0.0019930040277174044,
+          "ratio": 1.2219451114393818
+        }
+      ]
+    },
+    {
+      "bin": "5M+",
+      "n": 4,
+      "characterize": false,
+      "median_log_resid": -1.6593382461643804,
+      "mean_log_resid": -1.7966081159876013,
+      "median_ratio": 0.19162549253151046,
+      "iqr_ratio": 0.3328906211793723,
+      "artists": {
+        "Cedric Gervais": 2,
+        "Kasango": 1,
+        "Elderbrook": 1
+      },
+      "tracks": [
+        {
+          "track": "Need your love",
+          "artist": "Cedric Gervais",
+          "ml": 5500000.0,
+          "log_resid": -1.5398157230762433,
+          "ratio": 0.214420610557059
+        },
+        {
+          "track": "STOMP",
+          "artist": "Cedric Gervais",
+          "ml": 5590000.0,
+          "log_resid": -1.7788607692525176,
+          "ratio": 0.16883037450596192
+        },
+        {
+          "track": "Light Down - Kasango Remix",
+          "artist": "Kasango",
+          "ml": 6200000.0,
+          "log_resid": -4.063126600388509,
+          "ratio": 0.020969722619138823
+        },
+        {
+          "track": "Is it over Now?",
+          "artist": "Elderbrook",
+          "ml": 8640000.0,
+          "log_resid": 0.19537062876686484,
+          "ratio": 1.2157614991833365
+        }
+      ]
+    },
+    {
+      "bin": "2M+ pooled",
+      "n": 24,
+      "characterize": true,
+      "median_log_resid": -0.4341739162801357,
+      "mean_log_resid": -0.5590672303742372,
+      "median_ratio": 0.7134287250427722,
+      "iqr_ratio": 0.7574130658324087,
+      "artists": {
+        "Subtronics": 3,
+        "Rhye": 3,
+        "Bob Moses": 3,
+        "KSHMR": 3,
+        "Joshwa": 3,
+        "Hayden James": 2,
+        "Cedric Gervais": 2,
+        "Kasango": 1,
+        "RHYE": 1,
+        "Duke Dumot": 1,
+        "Elderbrook": 1,
+        "bob moses": 1
+      },
+      "tracks": [
+        {
+          "track": "Last Forever (Club Mix)",
+          "artist": "Bob Moses",
+          "ml": 2000000.0,
+          "log_resid": -0.46713350339302906,
+          "ratio": 0.6267964053795273
+        },
+        {
+          "track": "Higher Ground",
+          "artist": "Bob Moses",
+          "ml": 2000000.0,
+          "log_resid": -1.4755170582081423,
+          "ratio": 0.26282812149791857
+        },
+        {
+          "track": "Freaks",
+          "artist": "Joshwa",
+          "ml": 2000000.0,
+          "log_resid": -0.7199887961120659,
+          "ratio": 0.5594916201244244
+        },
+        {
+          "track": "leave like this",
+          "artist": "bob moses",
+          "ml": 2000000.0,
+          "log_resid": -0.7302663347225753,
+          "ratio": 0.4817806580834134
+        },
+        {
+          "track": "Lets Get Ill",
+          "artist": "Joshwa",
+          "ml": 2000000.0,
+          "log_resid": -0.4012143291672423,
+          "ratio": 0.6695065508777643
+        },
+        {
+          "track": "On My Mind",
+          "artist": "Bob Moses",
+          "ml": 2000000.0,
+          "log_resid": 0.518175580603172,
+          "ratio": 1.6789617234468506
+        },
+        {
+          "track": "Work Your Body",
+          "artist": "Joshwa",
+          "ml": 2000000.0,
+          "log_resid": -0.2425043960859572,
+          "ratio": 0.7846602981370233
+        },
+        {
+          "track": "For The Girls",
+          "artist": "Hayden James",
+          "ml": 2658000.0,
+          "log_resid": -0.5652809133622227,
+          "ratio": 0.5682005092209697
+        },
+        {
+          "track": "One I Want",
+          "artist": "Hayden James",
+          "ml": 2674000.0,
+          "log_resid": -0.5710548009276124,
+          "ratio": 0.5649292364348373
+        },
+        {
+          "track": "Merida",
+          "artist": "Rhye",
+          "ml": 2679000.0,
+          "log_resid": -1.1374183395120259,
+          "ratio": 0.36855833638876545
+        },
+        {
+          "track": "Hold On",
+          "artist": "Rhye",
+          "ml": 2690000.0,
+          "log_resid": -0.21200980677819103,
+          "ratio": 0.8089567642680469
+        },
+        {
+          "track": "Fatal",
+          "artist": "RHYE",
+          "ml": 2700000.0,
+          "log_resid": 0.21838037258362242,
+          "ratio": 1.173641683037247
+        },
+        {
+          "track": "Close Your Mouth",
+          "artist": "Rhye",
+          "ml": 2730000.0,
+          "log_resid": 0.19001165504271889,
+          "ratio": 1.2092636915951014
+        },
+        {
+          "track": "Eyes Cut Deeper - Mport Remix",
+          "artist": "Subtronics",
+          "ml": 2900000.0,
+          "log_resid": -2.2987498104449084,
+          "ratio": 0.12241983495813674
+        },
+        {
+          "track": "Fall Back To Nothing",
+          "artist": "Subtronics",
+          "ml": 2920000.0,
+          "log_resid": 0.35858470530450326,
+          "ratio": 1.4313022658877697
+        },
+        {
+          "track": "Eyes Cut Deeper",
+          "artist": "Subtronics",
+          "ml": 3630000.0,
+          "log_resid": 0.8326085873869538,
+          "ratio": 2.299308872098709
+        },
+        {
+          "track": "Your loving",
+          "artist": "Duke Dumot",
+          "ml": 4100000.0,
+          "log_resid": 1.1454455572450115,
+          "ratio": 3.6136112716319175
+        },
+        {
+          "track": "Ultra Love RYOS Remix",
+          "artist": "KSHMR",
+          "ml": 4300000.0,
+          "log_resid": -0.19886290608545742,
+          "ratio": 0.999588117485283
+        },
+        {
+          "track": "Bass Down Low",
+          "artist": "KSHMR",
+          "ml": 4337000.0,
+          "log_resid": -0.47637953242555753,
+          "ratio": 0.75735089920778
+        },
+        {
+          "track": "Khoye Yahaan Reimagined",
+          "artist": "KSHMR",
+          "ml": 4500000.0,
+          "log_resid": 0.0019930040277174044,
+          "ratio": 1.2219451114393818
+        },
+        {
+          "track": "Need your love",
+          "artist": "Cedric Gervais",
+          "ml": 5500000.0,
+          "log_resid": -1.5398157230762433,
+          "ratio": 0.214420610557059
+        },
+        {
+          "track": "STOMP",
+          "artist": "Cedric Gervais",
+          "ml": 5590000.0,
+          "log_resid": -1.7788607692525176,
+          "ratio": 0.16883037450596192
+        },
+        {
+          "track": "Light Down - Kasango Remix",
+          "artist": "Kasango",
+          "ml": 6200000.0,
+          "log_resid": -4.063126600388509,
+          "ratio": 0.020969722619138823
+        },
+        {
+          "track": "Is it over Now?",
+          "artist": "Elderbrook",
+          "ml": 8640000.0,
+          "log_resid": 0.19537062876686484,
+          "ratio": 1.2157614991833365
+        }
+      ]
+    }
+  ],
+  "leave_one_artist_out": [
+    {
+      "bin": "<100k",
+      "excluded_artist": "Caleb Jackson",
+      "excluded_n": 2,
+      "remaining_n": 1,
+      "median_log_resid": -0.4475159456922899,
+      "median_ratio": 0.6392140234589385
+    },
+    {
+      "bin": "<100k",
+      "excluded_artist": "Zen Selekta",
+      "excluded_n": 1,
+      "remaining_n": 2,
+      "median_log_resid": -1.8966854827658182,
+      "median_ratio": 0.16872333889172905
+    },
+    {
+      "bin": "100k-500k",
+      "excluded_artist": "Eazy Baked",
+      "excluded_n": 2,
+      "remaining_n": 11,
+      "median_log_resid": 0.09394081715321612,
+      "median_ratio": 1.0363157848565305
+    },
+    {
+      "bin": "100k-500k",
+      "excluded_artist": "Pretty Girl",
+      "excluded_n": 2,
+      "remaining_n": 11,
+      "median_log_resid": 0.16452158331282618,
+      "median_ratio": 1.1788290123123784
+    },
+    {
+      "bin": "100k-500k",
+      "excluded_artist": "Boogie T",
+      "excluded_n": 2,
+      "remaining_n": 11,
+      "median_log_resid": 0.09394081715321612,
+      "median_ratio": 1.0363157848565305
+    },
+    {
+      "bin": "100k-500k",
+      "excluded_artist": "LSDREAM",
+      "excluded_n": 2,
+      "remaining_n": 11,
+      "median_log_resid": 0.09394081715321612,
+      "median_ratio": 1.0363157848565305
+    },
+    {
+      "bin": "100k-500k",
+      "excluded_artist": "\u00c2me",
+      "excluded_n": 1,
+      "remaining_n": 12,
+      "median_log_resid": 3.05470825576748e-05,
+      "median_ratio": 1.0753360238809957
+    },
+    {
+      "bin": "100k-500k",
+      "excluded_artist": "Zingara",
+      "excluded_n": 1,
+      "remaining_n": 12,
+      "median_log_resid": -0.03525983599724736,
+      "median_ratio": 1.004079410153072
+    },
+    {
+      "bin": "100k-500k",
+      "excluded_artist": "O'Flynn",
+      "excluded_n": 1,
+      "remaining_n": 12,
+      "median_log_resid": -0.03525983599724736,
+      "median_ratio": 1.004079410153072
+    },
+    {
+      "bin": "100k-500k",
+      "excluded_artist": "Steller",
+      "excluded_n": 1,
+      "remaining_n": 12,
+      "median_log_resid": 0.12923120023302115,
+      "median_ratio": 1.1075723985844546
+    },
+    {
+      "bin": "100k-500k",
+      "excluded_artist": "Level Up",
+      "excluded_n": 1,
+      "remaining_n": 12,
+      "median_log_resid": -0.03525983599724736,
+      "median_ratio": 1.004079410153072
+    },
+    {
+      "bin": "500k-2M",
+      "excluded_artist": "Zomboy",
+      "excluded_n": 3,
+      "remaining_n": 15,
+      "median_log_resid": 0.24049904368655284,
+      "median_ratio": 1.2718837175091122
+    },
+    {
+      "bin": "500k-2M",
+      "excluded_artist": "Griz",
+      "excluded_n": 3,
+      "remaining_n": 15,
+      "median_log_resid": 0.09290279229455756,
+      "median_ratio": 1.0973550587159613
+    },
+    {
+      "bin": "500k-2M",
+      "excluded_artist": "Crankdat",
+      "excluded_n": 2,
+      "remaining_n": 16,
+      "median_log_resid": 0.13497475233352318,
+      "median_ratio": 1.1455209552428176
+    },
+    {
+      "bin": "500k-2M",
+      "excluded_artist": "Big Gigantic",
+      "excluded_n": 2,
+      "remaining_n": 16,
+      "median_log_resid": 0.19713978116893216,
+      "median_ratio": 1.2181601336853067
+    },
+    {
+      "bin": "500k-2M",
+      "excluded_artist": "Gramatik",
+      "excluded_n": 2,
+      "remaining_n": 16,
+      "median_log_resid": 0.22886594682596417,
+      "median_ratio": 1.2572585665550258
+    },
+    {
+      "bin": "500k-2M",
+      "excluded_artist": "AC Slater",
+      "excluded_n": 1,
+      "remaining_n": 17,
+      "median_log_resid": 0.2172328499653755,
+      "median_ratio": 1.2426334156009395
+    },
+    {
+      "bin": "500k-2M",
+      "excluded_artist": "CloZee",
+      "excluded_n": 1,
+      "remaining_n": 17,
+      "median_log_resid": 0.1770467123724888,
+      "median_ratio": 1.193686851769674
+    },
+    {
+      "bin": "500k-2M",
+      "excluded_artist": "BORGORE",
+      "excluded_n": 1,
+      "remaining_n": 17,
+      "median_log_resid": 0.2172328499653755,
+      "median_ratio": 1.2426334156009395
+    },
+    {
+      "bin": "500k-2M",
+      "excluded_artist": "O'Flynn",
+      "excluded_n": 1,
+      "remaining_n": 17,
+      "median_log_resid": 0.2172328499653755,
+      "median_ratio": 1.2426334156009395
+    },
+    {
+      "bin": "500k-2M",
+      "excluded_artist": "Boogie T",
+      "excluded_n": 1,
+      "remaining_n": 17,
+      "median_log_resid": 0.2172328499653755,
+      "median_ratio": 1.2426334156009395
+    },
+    {
+      "bin": "500k-2M",
+      "excluded_artist": "Kasbo",
+      "excluded_n": 1,
+      "remaining_n": 17,
+      "median_log_resid": 0.1770467123724888,
+      "median_ratio": 1.193686851769674
+    },
+    {
+      "bin": "2M-5M",
+      "excluded_artist": "Rhye",
+      "excluded_n": 4,
+      "remaining_n": 16,
+      "median_log_resid": -0.4341739162801357,
+      "median_ratio": 0.7134287250427722
+    },
+    {
+      "bin": "2M-5M",
+      "excluded_artist": "Bob Moses",
+      "excluded_n": 4,
+      "remaining_n": 16,
+      "median_log_resid": -0.22725710143207412,
+      "median_ratio": 0.796808531202535
+    },
+    {
+      "bin": "2M-5M",
+      "excluded_artist": "Subtronics",
+      "excluded_n": 3,
+      "remaining_n": 17,
+      "median_log_resid": -0.4012143291672423,
+      "median_ratio": 0.75735089920778
+    },
+    {
+      "bin": "2M-5M",
+      "excluded_artist": "KSHMR",
+      "excluded_n": 3,
+      "remaining_n": 17,
+      "median_log_resid": -0.4012143291672423,
+      "median_ratio": 0.6695065508777643
+    },
+    {
+      "bin": "2M-5M",
+      "excluded_artist": "Joshwa",
+      "excluded_n": 3,
+      "remaining_n": 17,
+      "median_log_resid": -0.21200980677819103,
+      "median_ratio": 0.8089567642680469
+    },
+    {
+      "bin": "2M-5M",
+      "excluded_artist": "Hayden James",
+      "excluded_n": 2,
+      "remaining_n": 18,
+      "median_log_resid": -0.22725710143207412,
+      "median_ratio": 0.796808531202535
+    },
+    {
+      "bin": "2M-5M",
+      "excluded_artist": "Duke Dumot",
+      "excluded_n": 1,
+      "remaining_n": 19,
+      "median_log_resid": -0.4012143291672423,
+      "median_ratio": 0.75735089920778
+    },
+    {
+      "bin": "5M+",
+      "excluded_artist": "Cedric Gervais",
+      "excluded_n": 2,
+      "remaining_n": 2,
+      "median_log_resid": -1.9338779858108222,
+      "median_ratio": 0.6183656109012377
+    },
+    {
+      "bin": "5M+",
+      "excluded_artist": "Kasango",
+      "excluded_n": 1,
+      "remaining_n": 3,
+      "median_log_resid": -1.5398157230762433,
+      "median_ratio": 0.214420610557059
+    },
+    {
+      "bin": "5M+",
+      "excluded_artist": "Elderbrook",
+      "excluded_n": 1,
+      "remaining_n": 3,
+      "median_log_resid": -1.7788607692525176,
+      "median_ratio": 0.16883037450596192
+    },
+    {
+      "bin": "2M+ pooled",
+      "excluded_artist": "Rhye",
+      "excluded_n": 4,
+      "remaining_n": 20,
+      "median_log_resid": -0.4717565179092933,
+      "median_ratio": 0.6481514781286458
+    },
+    {
+      "bin": "2M+ pooled",
+      "excluded_artist": "Bob Moses",
+      "excluded_n": 4,
+      "remaining_n": 20,
+      "median_log_resid": -0.32185936262659975,
+      "median_ratio": 0.7710055986724016
+    },
+    {
+      "bin": "2M+ pooled",
+      "excluded_artist": "Subtronics",
+      "excluded_n": 3,
+      "remaining_n": 21,
+      "median_log_resid": -0.46713350339302906,
+      "median_ratio": 0.6695065508777643
+    },
+    {
+      "bin": "2M+ pooled",
+      "excluded_artist": "KSHMR",
+      "excluded_n": 3,
+      "remaining_n": 21,
+      "median_log_resid": -0.46713350339302906,
+      "median_ratio": 0.6267964053795273
+    },
+    {
+      "bin": "2M+ pooled",
+      "excluded_artist": "Joshwa",
+      "excluded_n": 3,
+      "remaining_n": 21,
+      "median_log_resid": -0.46713350339302906,
+      "median_ratio": 0.75735089920778
+    },
+    {
+      "bin": "2M+ pooled",
+      "excluded_artist": "Hayden James",
+      "excluded_n": 2,
+      "remaining_n": 22,
+      "median_log_resid": -0.32185936262659975,
+      "median_ratio": 0.7710055986724016
+    },
+    {
+      "bin": "2M+ pooled",
+      "excluded_artist": "Cedric Gervais",
+      "excluded_n": 2,
+      "remaining_n": 22,
+      "median_log_resid": -0.32185936262659975,
+      "median_ratio": 0.7710055986724016
+    },
+    {
+      "bin": "2M+ pooled",
+      "excluded_artist": "Kasango",
+      "excluded_n": 1,
+      "remaining_n": 23,
+      "median_log_resid": -0.4012143291672423,
+      "median_ratio": 0.75735089920778
+    },
+    {
+      "bin": "2M+ pooled",
+      "excluded_artist": "Duke Dumot",
+      "excluded_n": 1,
+      "remaining_n": 23,
+      "median_log_resid": -0.46713350339302906,
+      "median_ratio": 0.6695065508777643
+    },
+    {
+      "bin": "2M+ pooled",
+      "excluded_artist": "Elderbrook",
+      "excluded_n": 1,
+      "remaining_n": 23,
+      "median_log_resid": -0.46713350339302906,
+      "median_ratio": 0.6695065508777643
+    }
+  ],
+  "confound_cuts": [
+    {
+      "cut": "2M+ exclude house",
+      "n": 14,
+      "median_log_resid": -0.09843495102887001,
+      "median_ratio": 1.086614900261265,
+      "iqr_ratio": 0.6697259900108654
+    },
+    {
+      "cut": "2M+ exclude features",
+      "n": 13,
+      "median_log_resid": -0.2425043960859572,
+      "median_ratio": 0.7846602981370233,
+      "iqr_ratio": 0.649772071470677
+    },
+    {
+      "cut": "2M+ exclude remixes",
+      "n": 19,
+      "median_log_resid": -0.4012143291672423,
+      "median_ratio": 0.6695065508777643,
+      "iqr_ratio": 0.6918764562853001
+    },
+    {
+      "cut": "2M+ exclude Cedric+KSHMR+Kasango",
+      "n": 18,
+      "median_log_resid": -0.32185936262659975,
+      "median_ratio": 0.7270834245073938,
+      "iqr_ratio": 0.6532860230842501
+    }
+  ],
+  "test2": [
+    {
+      "spec": "A",
+      "label": "log(ML) + feat + ed_tier",
+      "n_params": 4,
+      "columns": [
+        "intercept",
+        "log_ml",
+        "feat",
+        "ed_tier"
+      ],
+      "coefficients": {
+        "intercept": 8.440023180477802,
+        "log_ml": 0.17209119038436693,
+        "feat": 0.020969395210564512,
+        "ed_tier": 0.7756369501234939
+      },
+      "cooks_d_drops": 17,
+      "streams_d0_only_drops": 4,
+      "clean_n": 41,
+      "r2_clean": 0.4956503676520938,
+      "adj_r2_clean": 0.45475715421847973,
+      "aic": 83.27362199023369,
+      "bic": 90.12791025705093,
+      "rmse": 0.6059441048888972,
+      "forward_bias_all": 0.14129100399617894,
+      "forward_bias_clean": -0.06967783165580954,
+      "ratio_median_all": 0.8762712000793843,
+      "ratio_iqr_all": 1.0563395030749327,
+      "dropped_names": [
+        "Its Called Freefall (Griz Remix) (Griz)",
+        "Light Down - Kasango Remix (Kasango)",
+        "The Other Side (Level Up)",
+        "Satisfy (Pretty Girl)",
+        "Hustle (Zen Selekta)",
+        "Higher Ground (Bob Moses)",
+        "Close Your Mouth (Rhye)",
+        "Last Forever (Club Mix) (Bob Moses)",
+        "Foreva (Caleb Jackson)",
+        "Need your love (Cedric Gervais)",
+        "World is Mine (Kasbo)",
+        "Hold On (Rhye)",
+        "Eyes Cut Deeper - Mport Remix (Subtronics)",
+        "On My Mind (Bob Moses)",
+        "Everybody High - Chesster Remix (Caleb Jackson)",
+        "Khoye Yahaan Reimagined (KSHMR)",
+        "leave like this (bob moses)"
+      ],
+      "tier_counts_clean": {
+        "developing": 11,
+        "mid": 16,
+        "established": 14
+      }
+    },
+    {
+      "spec": "B",
+      "label": "log(ML) + log(ML)^2 + feat + ed_tier",
+      "n_params": 5,
+      "columns": [
+        "intercept",
+        "log_ml",
+        "log_ml_sq",
+        "feat",
+        "ed_tier"
+      ],
+      "coefficients": {
+        "intercept": 10.463466700698135,
+        "log_ml": -0.11051117921524511,
+        "log_ml_sq": 0.009757013592772479,
+        "feat": 0.051145151676389666,
+        "ed_tier": 0.7547196039701543
+      },
+      "cooks_d_drops": 18,
+      "streams_d0_only_drops": 5,
+      "clean_n": 40,
+      "r2_clean": 0.4538559918792642,
+      "adj_r2_clean": 0.39143953380832297,
+      "aic": 83.8483282112982,
+      "bic": 92.29272548186788,
+      "rmse": 0.6090624748559588,
+      "forward_bias_all": 0.09055802097759143,
+      "forward_bias_clean": -0.0299815647720209,
+      "ratio_median_all": 0.917624232924809,
+      "ratio_iqr_all": 1.0593589715887701,
+      "dropped_names": [
+        "Its Called Freefall (Griz Remix) (Griz)",
+        "Light Down - Kasango Remix (Kasango)",
+        "The Other Side (Level Up)",
+        "Satisfy (Pretty Girl)",
+        "Hustle (Zen Selekta)",
+        "Is it over Now? (Elderbrook)",
+        "Higher Ground (Bob Moses)",
+        "Close Your Mouth (Rhye)",
+        "Last Forever (Club Mix) (Bob Moses)",
+        "Foreva (Caleb Jackson)",
+        "Need your love (Cedric Gervais)",
+        "World is Mine (Kasbo)",
+        "Hold On (Rhye)",
+        "Eyes Cut Deeper - Mport Remix (Subtronics)",
+        "On My Mind (Bob Moses)",
+        "Everybody High - Chesster Remix (Caleb Jackson)",
+        "Khoye Yahaan Reimagined (KSHMR)",
+        "leave like this (bob moses)"
+      ],
+      "tier_counts_clean": {
+        "developing": 11,
+        "mid": 16,
+        "established": 13
+      }
+    },
+    {
+      "spec": "C",
+      "label": "piecewise-linear log(ML), knots 500k & 2M",
+      "n_params": 6,
+      "columns": [
+        "intercept",
+        "log_ml",
+        "hinge_500k",
+        "hinge_2M",
+        "feat",
+        "ed_tier"
+      ],
+      "coefficients": {
+        "intercept": 9.92289031708562,
+        "log_ml": 0.05368486361795366,
+        "hinge_500k": 0.23394179986110597,
+        "hinge_2M": -0.34807628810784585,
+        "feat": 0.06513226177886322,
+        "ed_tier": 0.7440177859833979
+      },
+      "cooks_d_drops": 18,
+      "streams_d0_only_drops": 5,
+      "clean_n": 40,
+      "r2_clean": 0.45903822605861,
+      "adj_r2_clean": 0.37948502400840567,
+      "aic": 85.46696525511848,
+      "bic": 95.60024197980209,
+      "rmse": 0.6061659609117808,
+      "forward_bias_all": 0.09905996435599165,
+      "forward_bias_clean": -0.03983944775849344,
+      "ratio_median_all": 0.9100494698957657,
+      "ratio_iqr_all": 1.1103847499707027,
+      "dropped_names": [
+        "Its Called Freefall (Griz Remix) (Griz)",
+        "Light Down - Kasango Remix (Kasango)",
+        "The Other Side (Level Up)",
+        "Satisfy (Pretty Girl)",
+        "Hustle (Zen Selekta)",
+        "Is it over Now? (Elderbrook)",
+        "Higher Ground (Bob Moses)",
+        "Close Your Mouth (Rhye)",
+        "Last Forever (Club Mix) (Bob Moses)",
+        "Foreva (Caleb Jackson)",
+        "Need your love (Cedric Gervais)",
+        "World is Mine (Kasbo)",
+        "Hold On (Rhye)",
+        "Eyes Cut Deeper - Mport Remix (Subtronics)",
+        "On My Mind (Bob Moses)",
+        "Everybody High - Chesster Remix (Caleb Jackson)",
+        "Khoye Yahaan Reimagined (KSHMR)",
+        "leave like this (bob moses)"
+      ],
+      "tier_counts_clean": {
+        "developing": 11,
+        "mid": 16,
+        "established": 13
+      }
+    },
+    {
+      "spec": "D",
+      "label": "tier intercepts (dev/mid/est) + shared log(ML) slope",
+      "n_params": 6,
+      "columns": [
+        "intercept",
+        "log_ml",
+        "feat",
+        "ed_tier",
+        "i_mid",
+        "i_est"
+      ],
+      "coefficients": {
+        "intercept": 3.383004531730041,
+        "log_ml": 0.5809442470846042,
+        "feat": -0.10646040460579032,
+        "ed_tier": 0.7722610440127798,
+        "i_mid": -0.46472145203059245,
+        "i_est": -1.052910279149593
+      },
+      "cooks_d_drops": 18,
+      "streams_d0_only_drops": 4,
+      "clean_n": 40,
+      "r2_clean": 0.5612603481389787,
+      "adj_r2_clean": 0.4967398111005933,
+      "aic": 80.79020852586125,
+      "bic": 90.92348525054487,
+      "rmse": 0.5717457230102994,
+      "forward_bias_all": -0.028224240310302642,
+      "forward_bias_clean": -0.08071756413663042,
+      "ratio_median_all": 1.0298907544263118,
+      "ratio_iqr_all": 0.9969625270437936,
+      "dropped_names": [
+        "Its Called Freefall (Griz Remix) (Griz)",
+        "Light Down - Kasango Remix (Kasango)",
+        "The Other Side (Level Up)",
+        "Satisfy (Pretty Girl)",
+        "Hustle (Zen Selekta)",
+        "Fresh Baked Bread (Eazy Baked)",
+        "Higher Ground (Bob Moses)",
+        "Close Your Mouth (Rhye)",
+        "Last Forever (Club Mix) (Bob Moses)",
+        "Foreva (Caleb Jackson)",
+        "Need your love (Cedric Gervais)",
+        "World is Mine (Kasbo)",
+        "Hold On (Rhye)",
+        "Eyes Cut Deeper - Mport Remix (Subtronics)",
+        "On My Mind (Bob Moses)",
+        "Everybody High - Chesster Remix (Caleb Jackson)",
+        "Khoye Yahaan Reimagined (KSHMR)",
+        "leave like this (bob moses)"
+      ],
+      "tier_counts_clean": {
+        "developing": 10,
+        "mid": 16,
+        "established": 14
+      }
+    },
+    {
+      "spec": "E",
+      "label": "tier-specific log(ML) slopes, shared intercept",
+      "n_params": 6,
+      "columns": [
+        "intercept",
+        "feat",
+        "ed_tier",
+        "log_ml_dev",
+        "log_ml_mid",
+        "log_ml_est"
+      ],
+      "coefficients": {
+        "intercept": 2.877042296476997,
+        "feat": -0.10427855360588867,
+        "ed_tier": 0.7697722267370415,
+        "log_ml_dev": 0.621481527270787,
+        "log_ml_mid": 0.5841995534243494,
+        "log_ml_est": 0.5445344726720769
+      },
+      "cooks_d_drops": 18,
+      "streams_d0_only_drops": 4,
+      "clean_n": 40,
+      "r2_clean": 0.561772711223383,
+      "adj_r2_clean": 0.49732752169741,
+      "aic": 80.7434689630377,
+      "bic": 90.87674568772132,
+      "rmse": 0.5714117812573739,
+      "forward_bias_all": -0.04628540695464442,
+      "forward_bias_clean": -0.08653957569025361,
+      "ratio_median_all": 1.0485906335596575,
+      "ratio_iqr_all": 1.0067774200600543,
+      "dropped_names": [
+        "Its Called Freefall (Griz Remix) (Griz)",
+        "Light Down - Kasango Remix (Kasango)",
+        "The Other Side (Level Up)",
+        "Satisfy (Pretty Girl)",
+        "Hustle (Zen Selekta)",
+        "Fresh Baked Bread (Eazy Baked)",
+        "Higher Ground (Bob Moses)",
+        "Close Your Mouth (Rhye)",
+        "Last Forever (Club Mix) (Bob Moses)",
+        "Foreva (Caleb Jackson)",
+        "Need your love (Cedric Gervais)",
+        "World is Mine (Kasbo)",
+        "Hold On (Rhye)",
+        "Eyes Cut Deeper - Mport Remix (Subtronics)",
+        "On My Mind (Bob Moses)",
+        "Everybody High - Chesster Remix (Caleb Jackson)",
+        "Khoye Yahaan Reimagined (KSHMR)",
+        "leave like this (bob moses)"
+      ],
+      "tier_counts_clean": {
+        "developing": 10,
+        "mid": 16,
+        "established": 14
+      }
+    }
+  ]
+}

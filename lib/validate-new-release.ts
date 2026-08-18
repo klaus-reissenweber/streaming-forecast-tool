@@ -398,7 +398,7 @@ export function validateNewReleaseForm(
     const primaryRows = artists.filter((row) => row.role === "primary");
     if (primaryRows.length !== 1) {
       fieldErrors.artists =
-        "Exactly one artist must have the primary role (the forecast uses that artist's ML).";
+        "Exactly one artist must have the primary role (the forecast uses that artist's monthly listeners).";
     }
     for (let index = 0; index < artists.length; index += 1) {
       const row = artists[index]!;

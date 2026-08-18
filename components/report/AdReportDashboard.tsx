@@ -5,7 +5,7 @@ import {
 import {
   MetaLogo,
   SpotifyLogo,
-} from "@/components/report/brand/PlatformLogos";
+} from "@/components/brand/PlatformLogos";
 import { SaveAsPdfButton } from "@/components/report/SaveAsPdfButton";
 import { StatusPill } from "@/components/ui/StatusPill";
 import Link from "next/link";

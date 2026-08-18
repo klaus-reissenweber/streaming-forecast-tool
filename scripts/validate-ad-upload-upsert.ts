@@ -63,6 +63,25 @@ function unitChecks(): void {
     mRow.row!.format === "marquee" && sRow.row!.format === "showcase",
     "formats",
   );
+
+  const renamed = emptyCanonicalRow(2);
+  Object.assign(renamed, {
+    ...base,
+    campaign_name: "Renamed after first save",
+    artist: "Upsert Probe Artist",
+    format: "marquee" as const,
+    spend: 250,
+    converted_listeners: 500,
+    attributed_streams: 1250,
+    usable_for_modeling: true,
+    campaign_uid: "stored-campaign-uid-from-db",
+  });
+  const renamedRow = toSpotifyRow(renamed, "Validate Partner");
+  assert(!renamedRow.error, "override maps");
+  assert(
+    renamedRow.row!.campaign_uid === "stored-campaign-uid-from-db",
+    "stored campaign_uid must win over a re-hash of name/dates",
+  );
   console.log("PASS: unit campaign_uid shared across Marquee/Showcase");
 }
 

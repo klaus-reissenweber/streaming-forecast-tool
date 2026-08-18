@@ -11,7 +11,7 @@ function toPersistError(error: {
   code?: string | null;
 }): PersistReleaseArtistsError {
   return {
-    message: error.message ?? "Could not save artist roster.",
+    message: error.message ?? "Could not save release artists.",
     code: error.code ?? null,
   };
 }
@@ -79,7 +79,7 @@ export async function replaceReleaseArtists(
         return {
           error: {
             message:
-              "Could not save artist roster, and restoring the previous roster failed. Reload and try again.",
+              "Could not save release artists, and restoring the previous list failed. Reload and try again.",
             code: restoreError.code ?? insertError.code ?? null,
           },
         };

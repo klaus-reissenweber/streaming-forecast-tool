@@ -87,12 +87,14 @@ export function toSpotifyRow(
   }
 
   const releaseKey = row.release_key!.trim();
-  const uid = spotifyCampaignUid({
-    release_key: releaseKey,
-    campaign_name: row.campaign_name,
-    start_date: row.start_date,
-    end_date: row.end_date,
-  });
+  const uid =
+    row.campaign_uid?.trim() ||
+    spotifyCampaignUid({
+      release_key: releaseKey,
+      campaign_name: row.campaign_name,
+      start_date: row.start_date,
+      end_date: row.end_date,
+    });
 
   // Canonical → DB column names (attributed_streams → est_attributed_streams).
   const dbRow = canonicalToSpotifyDbRow(row, {
@@ -123,13 +125,15 @@ export function toMetaRow(
   if (row.spend == null || !(row.spend > 0)) return null;
 
   const objective = row.objective ?? "traffic";
-  const uid = metaCampaignUid({
-    release_key: releaseKey,
-    objective,
-    campaign_name: row.campaign_name,
-    start_date: row.start_date,
-    end_date: row.end_date,
-  });
+  const uid =
+    row.campaign_uid?.trim() ||
+    metaCampaignUid({
+      release_key: releaseKey,
+      objective,
+      campaign_name: row.campaign_name,
+      start_date: row.start_date,
+      end_date: row.end_date,
+    });
 
   return canonicalToMetaDbRow(row, {
     campaign_uid: uid,

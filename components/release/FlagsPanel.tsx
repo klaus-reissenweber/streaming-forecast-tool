@@ -43,48 +43,44 @@ const FLAG_TYPE_CONFIG: Record<
 };
 
 export function FlagsPanel({ phase, flags = [] }: FlagsPanelProps) {
-  const isEmpty = phase === "pre-release" || flags.length === 0;
+  if (phase === "pre-release" || flags.length === 0) {
+    return null;
+  }
 
   return (
     <section className="motion-fade-up" aria-label="Flags">
       <SectionHeader>Flags</SectionHeader>
 
-      {isEmpty ? (
-        <p className="mt-4 border border-dashed border-border bg-canvas px-4 py-8 text-center text-caption text-muted">
-          Flags appear once daily data is entered
-        </p>
-      ) : (
-        <ul className="mt-4 overflow-hidden rounded-instrument border border-border bg-surface">
-          {flags.map((flag, index) => {
-            const config = FLAG_TYPE_CONFIG[flag.type];
-            const isLast = index === flags.length - 1;
+      <ul className="mt-4 overflow-hidden rounded-instrument border border-border bg-surface">
+        {flags.map((flag, index) => {
+          const config = FLAG_TYPE_CONFIG[flag.type];
+          const isLast = index === flags.length - 1;
 
-            return (
-              <li
-                key={flag.id}
-                className={`motion-flag-in border-l-[3px] py-2.5 pl-3.5 pr-3.5 ${config.ruleClass} ${
-                  isLast ? "" : "border-b border-border-subtle"
-                }`}
-                style={{
-                  animationDelay: `${
-                    FLAG_ROW_INITIAL_DELAY_MS + index * FLAG_ROW_STAGGER_MS
-                  }ms`,
-                }}
-              >
-                <p className="flex flex-wrap items-baseline gap-1.5 text-body-sm font-semibold">
-                  <StatusPill tone={config.tone}>{config.label}</StatusPill>
-                  <span className={`align-middle ${config.titleClass}`}>
-                    {flag.title}
-                  </span>
-                </p>
-                <p className="mt-0.5 text-body-sm text-secondary">
-                  {flag.detail}
-                </p>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+          return (
+            <li
+              key={flag.id}
+              className={`motion-flag-in border-l-[3px] py-2.5 pl-3.5 pr-3.5 ${config.ruleClass} ${
+                isLast ? "" : "border-b border-border-subtle"
+              }`}
+              style={{
+                animationDelay: `${
+                  FLAG_ROW_INITIAL_DELAY_MS + index * FLAG_ROW_STAGGER_MS
+                }ms`,
+              }}
+            >
+              <p className="flex flex-wrap items-baseline gap-1.5 text-body-sm font-semibold">
+                <StatusPill tone={config.tone}>{config.label}</StatusPill>
+                <span className={`align-middle ${config.titleClass}`}>
+                  {flag.title}
+                </span>
+              </p>
+              <p className="mt-0.5 text-body-sm text-secondary">
+                {flag.detail}
+              </p>
+            </li>
+          );
+        })}
+      </ul>
     </section>
   );
 }

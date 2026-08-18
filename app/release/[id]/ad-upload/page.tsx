@@ -8,6 +8,7 @@ import { summarizeAdCampaigns } from "@/lib/ad-results-summary";
 import { releaseKeyFromTrackName } from "@/lib/ad-upload/canonical";
 import { requireAllowedUser } from "@/lib/auth/require-allowed-user";
 import { loadCampaignFlightsForReleaseKey } from "@/lib/load-campaign-flights";
+import { loadManualCampaignsForReleaseKey } from "@/lib/ad-upload/load-manual-campaigns";
 import { loadRelease } from "@/lib/load-release";
 
 interface PageProps {
@@ -48,10 +49,14 @@ export default async function AdUploadPage({ params }: PageProps) {
   const release = await loadRelease(id);
   if (!release) notFound();
 
+  const releaseKey = releaseKeyFromTrackName(release.track_name);
   const campaignFlights = await loadCampaignFlightsForReleaseKey(
-    releaseKeyFromTrackName(release.track_name),
+    releaseKey,
   ).catch(() => []);
   const adSummary = summarizeAdCampaigns(campaignFlights);
+  const existingCampaigns = await loadManualCampaignsForReleaseKey(
+    releaseKey,
+  ).catch(() => null);
 
   return (
     <main className="mx-auto max-w-4xl px-5 py-8">
@@ -81,6 +86,9 @@ export default async function AdUploadPage({ params }: PageProps) {
         releaseId={id}
         artistName={release.artist_name}
         trackName={release.track_name}
+        initialSpotifyDrafts={existingCampaigns?.spotify}
+        initialMetaDrafts={existingCampaigns?.meta}
+        initialMetaObjective={existingCampaigns?.metaObjective}
       />
     </main>
   );

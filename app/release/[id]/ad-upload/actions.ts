@@ -33,6 +33,10 @@ import {
   type AdCreativeRecord,
 } from "@/lib/ad-upload/creatives";
 import {
+  loadManualCampaignsForReleaseKey,
+  type ManualCampaignsForWizard,
+} from "@/lib/ad-upload/load-manual-campaigns";
+import {
   manualDraftsToCanonicalRows,
   type ManualCampaignDraft,
 } from "@/lib/ad-upload/manual-rows";
@@ -43,6 +47,7 @@ import { requireAllowedUser } from "@/lib/auth/require-allowed-user";
 import type { Genre } from "@/lib/forecast";
 import { loadActiveModel } from "@/lib/load-active-model";
 import { isValidReleaseId, loadRelease } from "@/lib/load-release";
+import { createServiceClient } from "@/lib/supabase/service";
 
 export type ParseUploadResult =
   | {
@@ -350,6 +355,93 @@ export async function confirmManualAdResults(input: {
       campaigns: result.campaigns,
       releaseKey,
     };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+export async function loadManualCampaignsAction(
+  releaseId: string,
+): Promise<
+  | { success: true; campaigns: ManualCampaignsForWizard }
+  | { success: false; error: string }
+> {
+  const auth = await requireAllowedUser();
+  if (!auth.ok) return { success: false, error: auth.error };
+  if (!isValidReleaseId(releaseId)) {
+    return { success: false, error: "Invalid release id." };
+  }
+  const release = await loadRelease(releaseId);
+  if (!release) return { success: false, error: "Release not found." };
+  try {
+    const campaigns = await loadManualCampaignsForReleaseKey(
+      releaseKeyFromTrackName(release.track_name),
+    );
+    return { success: true, campaigns };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+export async function deleteManualAdCampaign(input: {
+  releaseId: string;
+  platform: "spotify" | "meta";
+  campaignUid: string;
+  format?: "marquee" | "showcase" | "";
+}): Promise<{ success: true } | { success: false; error: string }> {
+  const auth = await requireAllowedUser();
+  if (!auth.ok) return { success: false, error: auth.error };
+  if (!isValidReleaseId(input.releaseId)) {
+    return { success: false, error: "Invalid release id." };
+  }
+  const uid = input.campaignUid.trim();
+  if (!uid) {
+    return { success: false, error: "Missing campaign identity." };
+  }
+  const release = await loadRelease(input.releaseId);
+  if (!release) return { success: false, error: "Release not found." };
+
+  const sb = createServiceClient();
+  try {
+    await sb.from("ad_campaign_creatives").delete().eq("campaign_uid", uid);
+
+    if (input.platform === "spotify") {
+      const format =
+        input.format === "marquee" || input.format === "showcase"
+          ? input.format
+          : null;
+      let query = sb.from("ad_spotify_campaigns").delete().eq("campaign_uid", uid);
+      if (format) {
+        query = query.eq("format", format);
+      }
+      const { error } = await query;
+      if (error) {
+        return { success: false, error: error.message };
+      }
+    } else {
+      const { error } = await sb
+        .from("ad_meta_campaigns")
+        .delete()
+        .eq("campaign_uid", uid);
+      if (error) {
+        return { success: false, error: error.message };
+      }
+    }
+
+    try {
+      await generateOrRefreshAdReport(input.releaseId);
+    } catch {
+      // Row is gone; report refresh is best-effort.
+    }
+    revalidatePath(`/release/${input.releaseId}`);
+    revalidatePath(`/release/${input.releaseId}/ad-upload`);
+    return { success: true };
   } catch (err) {
     return {
       success: false,

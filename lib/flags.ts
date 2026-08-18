@@ -127,8 +127,8 @@ export function computeFlags(ctx: FlagDetectionContext): ReleaseFlag[] {
       flags.push({
         id: "save-velocity-low",
         type: "warning",
-        title: "Save velocity below typical floor",
-        detail: `Projected wk1 saves (${formatCompactNumber(projectedSaves)}) are below 80% of the ${ctx.tier} tier p25 floor (${formatCompactNumber(Math.round(velocityFloor))}).`,
+        title: "Save velocity below typical",
+        detail: `Projected week-1 saves (${formatCompactNumber(projectedSaves)}) are below typical for this artist size (under ${formatCompactNumber(Math.round(velocityFloor))}).`,
       });
     }
 
@@ -136,8 +136,8 @@ export function computeFlags(ctx: FlagDetectionContext): ReleaseFlag[] {
       flags.push({
         id: "save-velocity-high",
         type: "positive",
-        title: "Save velocity above p90",
-        detail: `Projected wk1 saves (${formatCompactNumber(projectedSaves)}) exceed the ${ctx.tier} tier p90 benchmark (${formatCompactNumber(tierBands.p90)}).`,
+        title: "Save velocity in the top 10%",
+        detail: `Projected week-1 saves (${formatCompactNumber(projectedSaves)}) are in the top 10% for this artist size (above ${formatCompactNumber(tierBands.p90)}).`,
       });
     }
   }
@@ -170,15 +170,15 @@ export function computeFlags(ctx: FlagDetectionContext): ReleaseFlag[] {
       flags.push({
         id: "save-rate-low",
         type: "warning",
-        title: "Save rate below genre band",
-        detail: `Actual save rate (${formatPercent(actualSaveRate, 1)}) is below the ${ctx.release.genre} floor (${genreBand.lo}–${genreBand.hi}%).`,
+        title: "Save rate below typical for this genre",
+        detail: `Actual save rate (${formatPercent(actualSaveRate, 1)}) is below the typical range for ${ctx.release.genre} (${genreBand.lo}–${genreBand.hi}%).`,
       });
     } else if (actualSaveRate > genreBand.hi) {
       flags.push({
         id: "save-rate-high",
         type: "info",
-        title: "Save rate above genre band",
-        detail: `Actual save rate (${formatPercent(actualSaveRate, 1)}) exceeds the ${ctx.release.genre} ceiling (${genreBand.lo}–${genreBand.hi}%). Strong engagement signal.`,
+        title: "Save rate above typical for this genre",
+        detail: `Actual save rate (${formatPercent(actualSaveRate, 1)}) is above the typical range for ${ctx.release.genre} (${genreBand.lo}–${genreBand.hi}%). Strong engagement signal.`,
       });
     }
   }

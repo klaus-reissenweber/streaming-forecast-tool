@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useMemo } from "react";
+import { MetaLogo, SpotifyLogo } from "@/components/brand/PlatformLogos";
 import {
   computeAdAwarenessDisplay,
   computeAdAttributedTotals,
@@ -55,17 +56,22 @@ function ForecastCard({
   title,
   note,
   spendLabel,
+  logo,
   children,
 }: {
   title: string;
   note?: string;
   spendLabel?: string;
+  logo?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <section className="min-w-0" aria-label={title}>
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <h3 className="text-body-sm font-medium text-secondary">{title}</h3>
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <div className="flex items-center gap-2">
+          {logo}
+          <h3 className="text-body-sm font-medium text-secondary">{title}</h3>
+        </div>
         {spendLabel ? (
           <p className="font-mono text-caption tabular-nums text-muted">
             {spendLabel}
@@ -180,6 +186,7 @@ export function AdSpendLiveForecast({
       {hasSpotify ? (
         <ForecastCard
           title="Spotify ads"
+          logo={<SpotifyLogo className="h-5 w-5" />}
           spendLabel={spotifySpendParts.join(" · ") || undefined}
         >
           {marqueeSpend > 0 ? (
@@ -206,6 +213,7 @@ export function AdSpendLiveForecast({
       {hasMetaTraffic ? (
         <ForecastCard
           title="Meta traffic"
+          logo={<MetaLogo className="h-5 w-auto" />}
           spendLabel={formatUsd(metaTrafficSpend, 0)}
           note="Streams are an estimate. Also builds reach and a retargetable audience — CPS understates its value."
         >
@@ -243,6 +251,7 @@ export function AdSpendLiveForecast({
       {hasAwareness ? (
         <ForecastCard
           title="Meta awareness"
+          logo={<MetaLogo className="h-5 w-auto" />}
           spendLabel={formatUsd(metaAwarenessSpend, 0)}
         >
           <MetricCell

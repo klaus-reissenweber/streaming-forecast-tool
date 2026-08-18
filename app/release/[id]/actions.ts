@@ -161,7 +161,7 @@ export async function saveReleaseArtists(
   if (!validation.valid) {
     return {
       success: false,
-      error: validation.errors[0] ?? "Invalid artist roster.",
+      error: validation.errors[0] ?? "Invalid release artists.",
       errors: validation.errors,
     };
   }

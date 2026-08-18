@@ -117,6 +117,8 @@ function healthCopy(
       ? "D1"
       : `D1–D${streamDaysEntered}`;
 
+  const week1Complete = streamDaysEntered >= 7;
+
   switch (status) {
     case "awaiting":
       return {
@@ -127,17 +129,23 @@ function healthCopy(
     case "outperforming":
       return {
         title: "Outperforming forecast",
-        detail: `Projected ${projectedLabel} wk1 vs ${lockedLabel} forecast (+${Math.abs(deltaPct).toFixed(0)}% from ${dayRange} pace).`,
+        detail: week1Complete
+          ? "Week-1 streams finished above the locked forecast."
+          : `Projected ${projectedLabel} wk1 vs ${lockedLabel} forecast (+${Math.abs(deltaPct).toFixed(0)}% from ${dayRange} pace).`,
       };
     case "lagging":
       return {
         title: "Lagging forecast",
-        detail: `Projected ${projectedLabel} wk1 vs ${lockedLabel} forecast (${deltaPct.toFixed(0)}% from ${dayRange} pace).`,
+        detail: week1Complete
+          ? "Week-1 streams finished below the locked forecast."
+          : `Projected ${projectedLabel} wk1 vs ${lockedLabel} forecast (${deltaPct.toFixed(0)}% from ${dayRange} pace).`,
       };
     case "on-track":
       return {
         title: "On track",
-        detail: `Projected ${projectedLabel} wk1 vs ${lockedLabel} forecast (within ±${HEALTH_OUTPERFORM_THRESHOLD_PCT}% from ${dayRange} pace).`,
+        detail: week1Complete
+          ? "Week-1 streams landed within 10% of the locked forecast."
+          : `Projected ${projectedLabel} wk1 vs ${lockedLabel} forecast (within ±${HEALTH_OUTPERFORM_THRESHOLD_PCT}% from ${dayRange} pace).`,
       };
   }
 }

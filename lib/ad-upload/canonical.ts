@@ -90,6 +90,11 @@ export type CanonicalRow = {
   end_date: string | null;
   artist: string | null;
   release_key: string | null;
+  /**
+   * When set, upsert uses this identity instead of re-hashing name/dates.
+   * Manual edit of an existing campaign must pass the stored uid.
+   */
+  campaign_uid?: string | null;
   /** Fields filled by benchmark (not observed). */
   derived_fields: CanonicalField[];
   /** Ready for model fit after gap-fill. */
@@ -126,6 +131,7 @@ export function emptyCanonicalRow(sourceRowIndex: number): CanonicalRow {
     end_date: null,
     artist: null,
     release_key: null,
+    campaign_uid: null,
     derived_fields: [],
     usable_for_modeling: false,
     skipped: false,

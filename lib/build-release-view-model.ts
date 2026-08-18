@@ -91,6 +91,7 @@ export interface ReleaseViewModel {
   actualSaveRateVsBand: SaveRateVsBand | null;
   actualStreams: number | null;
   actualStreamsVsBand: SaveRateVsBand | null;
+  actualSaves: number | null;
   wk1Complete: boolean;
 }
 
@@ -248,6 +249,7 @@ export function buildReleaseViewModel(
     actualSaveRateVsBand,
     actualStreams: wk1Actuals.streams,
     actualStreamsVsBand,
+    actualSaves: wk1Actuals.saves,
     wk1Complete: wk1Actuals.isComplete,
   };
 }

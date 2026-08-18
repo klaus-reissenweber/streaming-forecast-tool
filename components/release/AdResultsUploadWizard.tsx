@@ -5,6 +5,8 @@ import Link from "next/link";
 import {
   confirmAdResultsUpload,
   confirmManualAdResults,
+  deleteManualAdCampaign,
+  loadManualCampaignsAction,
   parseAdResultsUpload,
   previewAdUploadGaps,
   uploadAdCreative,
@@ -88,11 +90,24 @@ export function AdResultsUploadWizard({
   releaseId,
   artistName,
   trackName,
+  initialSpotifyDrafts,
+  initialMetaDrafts,
+  initialMetaObjective = "traffic",
 }: {
   releaseId: string;
   artistName: string;
   trackName: string;
+  initialSpotifyDrafts?: ManualCampaignDraft[];
+  initialMetaDrafts?: ManualCampaignDraft[];
+  initialMetaObjective?: AdUploadObjective;
 }) {
+  const spotifyStart = initialSpotifyDrafts?.length
+    ? initialSpotifyDrafts
+    : [emptyManualDraft()];
+  const metaStart = initialMetaDrafts?.length
+    ? initialMetaDrafts
+    : [emptyManualDraft()];
+  const hasSavedSpotify = spotifyStart.some((d) => d.campaign_uid);
   const [entryMode, setEntryMode] = useState<EntryMode>("manual");
   const [step, setStep] = useState<Step>("entry");
   const [busy, setBusy] = useState(false);
@@ -100,13 +115,27 @@ export function AdResultsUploadWizard({
 
   // Manual entry state
   const [manualPlatform, setManualPlatform] = useState<"meta" | "spotify">(
-    "meta",
+    hasSavedSpotify ? "spotify" : "meta",
   );
   const [manualObjective, setManualObjective] =
-    useState<AdUploadObjective>("traffic");
-  const [manualDrafts, setManualDrafts] = useState<ManualCampaignDraft[]>([
-    emptyManualDraft(),
-  ]);
+    useState<AdUploadObjective>(initialMetaObjective);
+  const [spotifyDrafts, setSpotifyDrafts] =
+    useState<ManualCampaignDraft[]>(spotifyStart);
+  const [metaDrafts, setMetaDrafts] = useState<ManualCampaignDraft[]>(metaStart);
+  const manualDrafts =
+    manualPlatform === "spotify" ? spotifyDrafts : metaDrafts;
+
+  function setManualDrafts(
+    update:
+      | ManualCampaignDraft[]
+      | ((prev: ManualCampaignDraft[]) => ManualCampaignDraft[]),
+  ) {
+    if (manualPlatform === "spotify") {
+      setSpotifyDrafts(update);
+    } else {
+      setMetaDrafts(update);
+    }
+  }
 
   // Upload state
   const [partnerLabel, setPartnerLabel] = useState("");
@@ -190,6 +219,46 @@ export function AdResultsUploadWizard({
     );
   }
 
+  async function onRemoveDraft(index: number) {
+    const draft = manualDrafts[index];
+    if (!draft) return;
+    if (draft.campaign_uid) {
+      setBusy(true);
+      setError(null);
+      const result = await deleteManualAdCampaign({
+        releaseId,
+        platform: manualPlatform,
+        campaignUid: draft.campaign_uid,
+        format: draft.format,
+      });
+      setBusy(false);
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
+    }
+    setManualDrafts((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      return next.length > 0 ? next : [emptyManualDraft()];
+    });
+  }
+
+  async function reloadManualDrafts() {
+    const loaded = await loadManualCampaignsAction(releaseId);
+    if (!loaded.success) return;
+    setSpotifyDrafts(
+      loaded.campaigns.spotify.length > 0
+        ? loaded.campaigns.spotify
+        : [emptyManualDraft()],
+    );
+    setMetaDrafts(
+      loaded.campaigns.meta.length > 0
+        ? loaded.campaigns.meta
+        : [emptyManualDraft()],
+    );
+    setManualObjective(loaded.campaigns.metaObjective);
+  }
+
   async function onSaveManual() {
     if (!manualDraftsHaveSpend(manualDrafts)) {
       setError("Enter spend on at least one campaign row.");
@@ -236,6 +305,7 @@ export function AdResultsUploadWizard({
       setSavedCampaigns(result.campaigns);
       setSavedReleaseKey(result.releaseKey);
       setLinkCopied(false);
+      await reloadManualDrafts();
       if (result.warnings.length > 0) {
         setError(result.warnings.join(" "));
       }
@@ -466,7 +536,9 @@ export function AdResultsUploadWizard({
         <section className="space-y-4 rounded-instrument border border-border bg-surface p-4">
           <p className="text-body-sm text-secondary">
             Type campaign numbers from the dashboard. Only spend is required.
-            Incomplete model fields still save as report-only.
+            Incomplete model fields still save as report-only. Saved campaigns
+            load into this form so a second save updates them instead of
+            adding duplicates.
           </p>
 
           <div className="grid gap-3 sm:grid-cols-2">
@@ -498,24 +570,32 @@ export function AdResultsUploadWizard({
           <div className="space-y-4">
             {manualDrafts.map((draft, index) => (
               <div
-                key={index}
+                key={draft.campaign_uid ?? `new-${index}`}
                 className="rounded border border-border-subtle bg-canvas p-3"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-label text-muted">
-                    Campaign {index + 1}
-                  </p>
-                  {manualDrafts.length > 1 ? (
+                  <div>
+                    <p className="text-label text-muted">
+                      Campaign {index + 1}
+                    </p>
+                    {draft.campaign_uid ? (
+                      <p className="mt-0.5 text-caption text-accent-readable">
+                        Saved — saving will update this campaign
+                      </p>
+                    ) : (
+                      <p className="mt-0.5 text-caption text-muted">
+                        New — will be added
+                      </p>
+                    )}
+                  </div>
+                  {draft.campaign_uid || manualDrafts.length > 1 ? (
                     <button
                       type="button"
-                      className="text-xs text-accent-readable hover:underline"
-                      onClick={() =>
-                        setManualDrafts((prev) =>
-                          prev.filter((_, i) => i !== index),
-                        )
-                      }
+                      disabled={busy}
+                      className="text-xs text-accent-readable hover:underline disabled:opacity-40"
+                      onClick={() => void onRemoveDraft(index)}
                     >
-                      Remove
+                      {draft.campaign_uid ? "Delete" : "Remove"}
                     </button>
                   ) : null}
                 </div>
@@ -1162,7 +1242,6 @@ export function AdResultsUploadWizard({
                 setCreativeStatus(null);
                 setError(null);
                 setFile(null);
-                setManualDrafts([emptyManualDraft()]);
               }}
               className="text-accent-readable hover:underline"
             >

@@ -27,6 +27,10 @@ export function ChannelMixForecast({
     plan.metaTrafficSpend > 0 ||
     plan.metaAwarenessSpend > 0;
 
+  if (!hasSpend) {
+    return null;
+  }
+
   return (
     <section
       className="motion-fade-up"
@@ -36,24 +40,18 @@ export function ChannelMixForecast({
         Channel mix
       </SectionHeader>
 
-      {hasSpend ? (
-        <div className="mt-4">
-          <AdSpendLiveForecast
-            bare
-            artistName={plan.artistName}
-            genre={genre}
-            marqueeSpend={plan.marqueeSpend}
-            showcaseSpend={plan.showcaseSpend}
-            metaTrafficSpend={plan.metaTrafficSpend}
-            metaAwarenessSpend={plan.metaAwarenessSpend}
-            adModel={adModel}
-          />
-        </div>
-      ) : (
-        <p className="mt-4 text-body-sm text-secondary">
-          No paid budget in plan. Forecast assumes organic only.
-        </p>
-      )}
+      <div className="mt-4">
+        <AdSpendLiveForecast
+          bare
+          artistName={plan.artistName}
+          genre={genre}
+          marqueeSpend={plan.marqueeSpend}
+          showcaseSpend={plan.showcaseSpend}
+          metaTrafficSpend={plan.metaTrafficSpend}
+          metaAwarenessSpend={plan.metaAwarenessSpend}
+          adModel={adModel}
+        />
+      </div>
     </section>
   );
 }

@@ -148,6 +148,10 @@ export function DailyEntrySection({
     scheduleDaySave(day);
   }
 
+  if (initialDailyData.length === 0) {
+    return null;
+  }
+
   return (
     <section className="motion-fade-up" aria-label="Daily data">
       <SectionHeader>Daily data</SectionHeader>

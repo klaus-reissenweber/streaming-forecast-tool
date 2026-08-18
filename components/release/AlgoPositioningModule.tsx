@@ -2,7 +2,7 @@ import { SectionHeader } from "@/components/layout/SectionHeader";
 import {
   ALGO_BAND_DISPLAY,
   ALGO_BAND_ORDER,
-  algoBandCutoffCaption,
+  algoBandThresholdPlain,
 } from "@/lib/algo-positioning-display";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { formatCompactNumber } from "@/lib/format";
@@ -19,7 +19,7 @@ function formatThreshold(value: number): string {
 export function AlgoPositioningModule({
   positioning,
 }: AlgoPositioningModuleProps) {
-  const { band, tier, saves, thresholds } = positioning;
+  const { band, saves, thresholds } = positioning;
   const active = ALGO_BAND_DISPLAY[band];
 
   return (
@@ -29,7 +29,7 @@ export function AlgoPositioningModule({
     >
       <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <SectionHeader description={`Week-1 save count vs ${tier} tier benchmarks (forecast)`}>
+          <SectionHeader description="Week-1 save count vs similar artists (forecast)">
             Algo positioning
           </SectionHeader>
         </div>
@@ -51,13 +51,13 @@ export function AlgoPositioningModule({
 
           let rangeLabel = "";
           if (bandKey === "weak") {
-            rangeLabel = `< ${formatThreshold(thresholds.p25)}`;
+            rangeLabel = `Below ${formatThreshold(thresholds.p25)}`;
           } else if (bandKey === "typical") {
             rangeLabel = `${formatThreshold(thresholds.p25)} – ${formatThreshold(thresholds.p75)}`;
           } else if (bandKey === "strong") {
             rangeLabel = `${formatThreshold(thresholds.p75)} – ${formatThreshold(thresholds.p90)}`;
           } else {
-            rangeLabel = `≥ ${formatThreshold(thresholds.p90)}`;
+            rangeLabel = `Above ${formatThreshold(thresholds.p90)}`;
           }
 
           return (
@@ -103,7 +103,7 @@ export function AlgoPositioningModule({
       <p className="mt-4 text-body-sm text-secondary">
         Forecast places this release in the{" "}
         <span className="font-semibold text-foreground">{active.label}</span>{" "}
-        band — {algoBandCutoffCaption(positioning)}.
+        band — {algoBandThresholdPlain(positioning)}.
       </p>
     </section>
   );
