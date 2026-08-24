@@ -45,7 +45,7 @@ const TONE_STYLES: Record<
   },
   neutral: {
     ruleClass: "bg-muted",
-    titleClass: "text-muted",
+    titleClass: "text-secondary",
   },
 };
 
@@ -69,7 +69,7 @@ export function HealthBanner({ health }: HealthBannerProps) {
           <span className={toneStyles.titleClass}>{health.title}</span>
         </span>
         <span
-          className="hidden text-body-sm text-muted sm:inline"
+          className="hidden text-body-sm text-secondary sm:inline"
           aria-hidden="true"
         >
           ·

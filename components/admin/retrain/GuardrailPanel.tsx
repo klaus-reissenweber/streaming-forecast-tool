@@ -16,7 +16,7 @@ function GuardrailList({
         <h3 className="text-sm font-semibold text-foreground">
           {title}
         </h3>
-        <span className="text-caption text-muted">{tag}</span>
+        <span className="text-caption text-secondary">{tag}</span>
       </div>
       <ul className="mt-3 space-y-3">
         {checks.map((check) => (
@@ -27,7 +27,7 @@ function GuardrailList({
               </StatusPill>
               <span className="font-medium text-foreground">{check.label}</span>
             </div>
-            <p className="mt-1 font-mono text-xs text-secondary">{check.value}</p>
+            <p className="mt-1 text-xs text-secondary">{check.value}</p>
             {check.detail ? (
               <p className="mt-0.5 text-caption text-semantic-warning">
                 {check.detail}

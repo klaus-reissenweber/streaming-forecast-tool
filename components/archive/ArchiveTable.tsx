@@ -31,7 +31,7 @@ function deltaToneClass(tone: DeltaTone | null): string {
     case "on_track":
       return "text-secondary";
     default:
-      return "text-muted";
+      return "text-secondary";
   }
 }
 
@@ -51,13 +51,13 @@ function forecastActualTitle(
 
 function streamsDeltaCell(row: ArchiveRow): ReactNode {
   if (row.streamsDeltaPct == null) {
-    return <span className="text-muted">n/a</span>;
+    return <span className="text-secondary">n/a</span>;
   }
 
   const vsBand = row.streamsVsBand;
   return (
     <span
-      className={`font-mono tabular-nums ${saveRateToneClass(vsBand)}`}
+      className={`tabular-nums ${saveRateToneClass(vsBand)}`}
     >
       {formatSignedPercent(row.streamsDeltaPct)}
       {vsBand != null ? (
@@ -85,11 +85,11 @@ function formatDeltaPctCell(
   tone: DeltaTone | null,
 ): ReactNode {
   if (deltaPct == null) {
-    return <span className="text-muted">n/a</span>;
+    return <span className="text-secondary">n/a</span>;
   }
 
   return (
-    <span className={`font-mono tabular-nums ${deltaToneClass(tone)}`}>
+    <span className={`tabular-nums ${deltaToneClass(tone)}`}>
       {formatSignedPercent(deltaPct)}
     </span>
   );
@@ -100,12 +100,12 @@ function saveRateCell(
   vsBand: SaveRateVsBand | null,
 ): ReactNode {
   if (actualSaveRate == null || vsBand == null) {
-    return <span className="text-muted">n/a</span>;
+    return <span className="text-secondary">n/a</span>;
   }
 
   return (
     <span
-      className={`font-mono tabular-nums ${saveRateToneClass(vsBand)}`}
+      className={`tabular-nums ${saveRateToneClass(vsBand)}`}
     >
       {formatPercent(actualSaveRate, 1)}
     </span>
@@ -123,7 +123,7 @@ function saveRateTitle(
 }
 
 const NUM =
-  "py-2 text-right font-mono text-[13px] tabular-nums whitespace-nowrap";
+  "py-2 text-right text-[13px] tabular-nums whitespace-nowrap";
 
 function ArchiveReleaseCard({ row }: { row: ArchiveRow }) {
   return (
@@ -151,12 +151,12 @@ function ArchiveReleaseCard({ row }: { row: ArchiveRow }) {
       <p className="mt-1.5 text-caption">
         <span className="text-secondary">Save rate </span>
         {saveRateCell(row.actualSaveRate, row.saveRateVsBand)}
-        <span className="text-muted">
+        <span className="text-secondary">
           {" · expected "}
           {row.saveRateBand.lo}–{row.saveRateBand.hi}%
         </span>
       </p>
-      <p className="mt-0.5 text-caption text-muted">
+      <p className="mt-0.5 text-caption text-secondary">
         Released {row.releaseDateDisplay}
         {" · Closed "}
         {row.closedAtDisplay ?? "n/a"}
@@ -183,7 +183,7 @@ export function ArchiveTable({ viewModel }: ArchiveTableProps) {
       </div>
 
       {rows.length === 0 ? (
-        <p className="mx-5 mb-5 border border-dashed border-border bg-canvas px-4 py-12 text-center text-sm text-muted">
+        <p className="mx-5 mb-5 border border-dashed border-border bg-canvas px-4 py-12 text-center text-sm text-secondary">
           No closed releases yet. Releases appear here once marked closed in the
           database (auto-close on D28 arrives in step 8).
         </p>
@@ -198,7 +198,7 @@ export function ArchiveTable({ viewModel }: ArchiveTableProps) {
           </ul>
           <div className="hidden min-w-0 overflow-hidden border-t border-border-subtle md:block">
           <table className="w-full table-fixed text-left text-body-sm">
-            <thead className="border-b border-border-subtle bg-canvas text-muted">
+            <thead className="border-b border-border-subtle bg-canvas text-foreground">
               <tr>
                 <th className="w-[28%] px-3 py-2 text-[10px] font-medium uppercase tracking-[0.04em]">
                   Release
@@ -257,7 +257,7 @@ export function ArchiveTable({ viewModel }: ArchiveTableProps) {
                     {row.actualStreams != null ? (
                       formatCompactNumber(row.actualStreams)
                     ) : (
-                      <span className="text-muted">n/a</span>
+                      <span className="text-secondary">n/a</span>
                     )}
                   </td>
                   <td
@@ -285,7 +285,7 @@ export function ArchiveTable({ viewModel }: ArchiveTableProps) {
                     {saveRateCell(row.actualSaveRate, row.saveRateVsBand)}
                   </td>
                   <td
-                    className={`${NUM} px-3 text-muted`}
+                    className={`${NUM} px-3 text-secondary`}
                     title={
                       row.closedAt
                         ? formatLockTimestamp(row.closedAt)

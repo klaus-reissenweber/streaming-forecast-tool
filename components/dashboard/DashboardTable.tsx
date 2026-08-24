@@ -51,7 +51,7 @@ function deltaToneClass(tone: DeltaTone | null): string {
     case "on_track":
       return "text-secondary";
     default:
-      return "text-muted";
+      return "text-secondary";
   }
 }
 
@@ -72,14 +72,14 @@ function formatProjectedWk1Cell(row: DashboardRow): ReactNode {
 
   return (
     <span className="inline-flex flex-col items-start gap-0.5">
-      <span className="font-mono tabular-nums text-foreground">
+      <span className="tabular-nums text-foreground">
         {formatCompactNumber(row.projectedWk1)}
       </span>
-      <span className={`font-mono text-[11px] tabular-nums ${deltaClass}`}>
+      <span className={`text-[11px] tabular-nums ${deltaClass}`}>
         vs {formatCompactNumber(row.lockedWk1)} forecast
         {row.healthStatus !== "awaiting" ? (
           <>
-            <span className="text-muted"> · </span>
+            <span className="text-secondary"> · </span>
             {formatSignedPercent(row.projectedDeltaPct)}
           </>
         ) : null}
@@ -93,7 +93,7 @@ function formatFlagCountCell(
   mostSevereType: FlagType | null,
 ): ReactNode {
   if (count === 0) {
-    return <span className="text-muted">—</span>;
+    return <span className="text-secondary">—</span>;
   }
 
   const badgeClass =
@@ -103,7 +103,7 @@ function formatFlagCountCell(
 
   return (
     <span
-      className={`inline-flex min-w-[1.5rem] items-center justify-center rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold tabular-nums ${badgeClass}`}
+      className={`inline-flex min-w-[1.5rem] items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-semibold tabular-nums ${badgeClass}`}
     >
       {count}
     </span>
@@ -125,11 +125,11 @@ function DashboardReleaseCard({ row }: { row: DashboardRow }) {
       <p className="truncate text-secondary">{row.artistName}</p>
 
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-        <span className="font-mono text-sm tabular-nums text-secondary">
+        <span className="text-sm tabular-nums text-secondary">
           {formatDayIntoCampaign(row.dayIntoCampaign)}
         </span>
         <StatusPill tone={healthConfig.tone}>{healthConfig.label}</StatusPill>
-        <span className="inline-flex items-center gap-1.5 text-caption text-muted">
+        <span className="inline-flex items-center gap-1.5 text-caption text-secondary">
           Flags {formatFlagCountCell(row.flagCount, row.mostSevereFlagType)}
         </span>
       </div>
@@ -160,14 +160,14 @@ function DashboardTableRow({ row }: { row: DashboardRow }) {
       <td className="px-4 py-3">
         <Link
           href={row.detailHref}
-          className="block font-serif text-sm font-semibold text-foreground hover:text-accent-readable hover:underline"
+          className="block text-sm font-semibold text-foreground hover:text-accent-readable hover:underline"
           onClick={(event) => event.stopPropagation()}
         >
           {row.trackName}
         </Link>
         <p className="text-secondary">{row.artistName}</p>
       </td>
-      <td className="px-4 py-3 font-mono tabular-nums text-secondary">
+      <td className="px-4 py-3 tabular-nums text-secondary">
         {formatDayIntoCampaign(row.dayIntoCampaign)}
       </td>
       <td className="px-4 py-3">
@@ -179,7 +179,7 @@ function DashboardTableRow({ row }: { row: DashboardRow }) {
       </td>
       <td className="px-4 py-3">
         <p className="text-[11px] text-secondary">{row.genreDisplay}</p>
-        <p className="text-[11px] text-muted">{row.editorialTierDisplay}</p>
+        <p className="text-[11px] text-secondary">{row.editorialTierDisplay}</p>
       </td>
     </tr>
   );
@@ -202,7 +202,7 @@ export function DashboardTable({ viewModel }: DashboardTableProps) {
       </div>
 
       {rows.length === 0 ? (
-        <div className="mx-5 mb-5 border border-dashed border-border bg-canvas px-4 py-12 text-center text-body-sm text-muted">
+        <div className="mx-5 mb-5 border border-dashed border-border bg-canvas px-4 py-12 text-center text-body-sm text-secondary">
           <p>No active releases. Create one to begin monitoring.</p>
           <Link
             href="/new"
@@ -222,7 +222,7 @@ export function DashboardTable({ viewModel }: DashboardTableProps) {
           </ul>
           <div className="hidden overflow-x-auto border-t border-border-subtle md:block">
           <table className="min-w-[880px] w-full text-left text-body-sm">
-            <thead className="border-b border-border-subtle bg-canvas text-label text-muted">
+            <thead className="border-b border-border-subtle bg-canvas text-label text-foreground">
               <tr>
                 <th className="px-4 py-3 font-medium uppercase tracking-[0.06em]">
                   Release

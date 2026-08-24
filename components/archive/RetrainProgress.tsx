@@ -194,7 +194,7 @@ export function RetrainProgress({
             style={{ width: `${barProgress * 100}%` }}
           />
         </div>
-        <p className="shrink-0 font-mono text-sm tabular-nums text-foreground">
+        <p className="shrink-0 text-sm tabular-nums text-foreground">
           {Math.round(animatedCount)} / {threshold}
         </p>
       </div>
@@ -247,7 +247,7 @@ export function RetrainProgress({
             <StatusPill tone={statusTone(job.status)}>
               {job.status}
             </StatusPill>
-            <span className="align-middle font-mono text-xs">
+            <span className="align-middle text-xs">
               {job.id.slice(0, 8)}
             </span>
             {job.status === "completed" && job.draftModelId ? (

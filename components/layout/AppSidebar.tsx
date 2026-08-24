@@ -170,7 +170,7 @@ function SidebarNav({
     <nav className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-3 py-4" aria-label="Internal">
       {NAV_SECTIONS.map((section) => (
         <div key={section.id}>
-          <p className="px-2 text-[10px] font-medium uppercase tracking-[0.08em] text-muted">
+          <p className="px-2 text-[10px] font-medium uppercase tracking-[0.08em] text-foreground">
             {section.label}
           </p>
           <ul className="mt-1.5 space-y-0.5">

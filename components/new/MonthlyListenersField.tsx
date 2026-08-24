@@ -94,14 +94,14 @@ export function MonthlyListenersField({
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder={String(DEFAULT_MONTHLY_LISTENERS)}
-          className="w-32 rounded-instrument border border-border bg-surface px-3 py-2 font-mono text-body-sm tabular-nums text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-32 rounded-instrument border border-border bg-surface px-3 py-2 text-body-sm tabular-nums text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-50"
           aria-label="Monthly listeners exact value"
         />
       </div>
 
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-caption text-muted">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-caption text-secondary">
         <span>
-          <span className="font-mono text-body-sm tabular-nums text-foreground">
+          <span className="text-body-sm tabular-nums text-foreground">
             {formatListeners(displayValue)}
           </span>{" "}
           monthly listeners
@@ -115,7 +115,7 @@ export function MonthlyListenersField({
         </span>
       </div>
 
-      <p className="text-caption text-muted">
+      <p className="text-caption text-secondary">
         Developing &lt; {formatListeners(TIER_ML_THRESHOLDS.mid)} · Mid{" "}
         {formatListeners(TIER_ML_THRESHOLDS.mid)}–
         {formatListeners(TIER_ML_THRESHOLDS.established - 1)} · Established ≥{" "}

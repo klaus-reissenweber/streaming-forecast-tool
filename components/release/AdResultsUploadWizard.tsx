@@ -581,7 +581,7 @@ export function AdResultsUploadWizard({
               >
                 <div className="flex items-center justify-between gap-2">
                   <div>
-                    <p className="text-label text-muted">
+                    <p className="text-label text-foreground">
                       Campaign {index + 1}
                     </p>
                     {draft.campaign_uid ? (
@@ -589,7 +589,7 @@ export function AdResultsUploadWizard({
                         Saved — saving will update this campaign
                       </p>
                     ) : (
-                      <p className="mt-0.5 text-caption text-muted">
+                      <p className="mt-0.5 text-caption text-secondary">
                         New — will be added
                       </p>
                     )}
@@ -757,7 +757,7 @@ export function AdResultsUploadWizard({
             fields still save as report-only.
           </p>
           <label className="block">
-            <span className="text-label text-muted">Partner / label</span>
+            <span className="text-label text-foreground">Partner / label</span>
             <input
               type="text"
               value={partnerLabel}
@@ -767,7 +767,7 @@ export function AdResultsUploadWizard({
             />
           </label>
           <label className="block">
-            <span className="text-label text-muted">File</span>
+            <span className="text-label text-foreground">File</span>
             <input
               type="file"
               accept=".csv,.xlsx,.xls,.pdf,image/*,.png,.jpg,.jpeg,.webp"
@@ -789,7 +789,7 @@ export function AdResultsUploadWizard({
       {step === "mapping" && table ? (
         <section className="space-y-5">
           {mappingNotes.length > 0 ? (
-            <ul className="text-caption text-muted">
+            <ul className="text-caption text-secondary">
               {mappingNotes.map((n) => (
                 <li key={n}>· {n}</li>
               ))}
@@ -797,10 +797,10 @@ export function AdResultsUploadWizard({
           ) : null}
 
           <div className="rounded-instrument border border-border bg-surface p-4">
-            <h3 className="font-serif text-sm font-semibold text-foreground">
+            <h3 className="text-sm font-semibold text-foreground">
               File-level constants
             </h3>
-            <p className="mt-1 text-caption text-muted">
+            <p className="mt-1 text-caption text-secondary">
               Apply when the file doesn&apos;t state platform / format /
               objective on each row.
             </p>
@@ -852,9 +852,9 @@ export function AdResultsUploadWizard({
                 }
               />
               <label className="block text-body-sm">
-                <span className="text-label text-muted">Artist</span>
+                <span className="text-label text-foreground">Artist</span>
                 <input
-                  className="mt-1 w-full rounded border border-border bg-canvas px-2 py-1.5 font-mono text-xs"
+                  className="mt-1 w-full rounded border border-border bg-canvas px-2 py-1.5 text-xs"
                   value={fileConstants.artist ?? ""}
                   onChange={(e) =>
                     setFileConstants((c) => ({
@@ -865,9 +865,9 @@ export function AdResultsUploadWizard({
                 />
               </label>
               <label className="block text-body-sm sm:col-span-2">
-                <span className="text-label text-muted">Release key</span>
+                <span className="text-label text-foreground">Release key</span>
                 <input
-                  className="mt-1 w-full rounded border border-border bg-canvas px-2 py-1.5 font-mono text-xs"
+                  className="mt-1 w-full rounded border border-border bg-canvas px-2 py-1.5 text-xs"
                   value={fileConstants.releaseKey ?? ""}
                   onChange={(e) =>
                     setFileConstants((c) => ({
@@ -881,12 +881,12 @@ export function AdResultsUploadWizard({
           </div>
 
           <div className="rounded-instrument border border-border bg-surface p-4">
-            <h3 className="font-serif text-sm font-semibold text-foreground">
+            <h3 className="text-sm font-semibold text-foreground">
               Column mapping
             </h3>
             <table className="mt-3 w-full text-left text-xs">
               <thead>
-                <tr className="text-secondary">
+                <tr className="text-foreground">
                   <th className="pb-1 font-normal">Source column</th>
                   <th className="pb-1 font-normal">Canonical field</th>
                 </tr>
@@ -894,7 +894,7 @@ export function AdResultsUploadWizard({
               <tbody>
                 {table.headers.map((header) => (
                   <tr key={header} className="border-t border-border/60">
-                    <td className="py-1.5 font-mono text-foreground">
+                    <td className="py-1.5 text-foreground">
                       {header}
                     </td>
                     <td className="py-1.5">
@@ -926,13 +926,13 @@ export function AdResultsUploadWizard({
           </div>
 
           <div className="rounded-instrument border border-border bg-surface p-4">
-            <h3 className="font-serif text-sm font-semibold text-foreground">
+            <h3 className="text-sm font-semibold text-foreground">
               Preview (first {previewRows.length} rows)
             </h3>
             <div className="mt-3 overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="text-secondary">
+                  <tr className="text-foreground">
                     {CANONICAL_FIELDS.map((f) => (
                       <th key={f} className="pb-1 pr-2 font-normal">
                         {FIELD_LABELS[f]}
@@ -946,7 +946,7 @@ export function AdResultsUploadWizard({
                       {CANONICAL_FIELDS.map((f) => (
                         <td
                           key={f}
-                          className="py-1 pr-2 font-mono text-foreground"
+                          className="py-1 pr-2 text-foreground"
                         >
                           {out[f] || "—"}
                         </td>
@@ -956,7 +956,7 @@ export function AdResultsUploadWizard({
                 </tbody>
               </table>
             </div>
-            <p className="mt-2 text-caption text-muted">
+            <p className="mt-2 text-caption text-secondary">
               {table.rows.length} data rows · source {table.sourceKind}
             </p>
           </div>
@@ -1011,7 +1011,7 @@ export function AdResultsUploadWizard({
                 key={gap.rowIndex}
                 className="rounded-instrument border border-border bg-surface p-4"
               >
-                <p className="font-mono text-xs text-secondary">
+                <p className="text-xs text-secondary">
                   Row {gap.displayRow}
                   {row?.campaign_name &&
                   !looksLikeCampaignUid(row.campaign_name)
@@ -1062,7 +1062,7 @@ export function AdResultsUploadWizard({
                               }`}
                             >
                               Benchmark: {formatCount(bench.value)}
-                              <span className="ml-1 text-muted">
+                              <span className="ml-1 text-secondary">
                                 ({bench.label})
                               </span>
                             </button>
@@ -1072,7 +1072,7 @@ export function AdResultsUploadWizard({
                             <input
                               type="number"
                               disabled={skipped}
-                              className="w-28 rounded border border-border bg-canvas px-1 py-0.5 font-mono"
+                              className="w-28 rounded border border-border bg-canvas px-1 py-0.5"
                               value={
                                 chosen?.type === "manual" ? chosen.value : ""
                               }
@@ -1140,7 +1140,7 @@ export function AdResultsUploadWizard({
           {reportPath && reportUrl ? (
             <div className="rounded border border-accent-border bg-accent-tint px-3 py-3">
               <p className="text-label text-accent-readable">Shareable report</p>
-              <p className="mt-1 font-mono text-xs text-secondary break-all">
+              <p className="mt-1 text-xs text-secondary break-all">
                 {reportUrl}
               </p>
               <div className="mt-2 flex flex-wrap gap-3 text-sm font-medium">
@@ -1171,7 +1171,7 @@ export function AdResultsUploadWizard({
           {savedCampaigns.length > 0 ? (
             <div className="space-y-3 rounded border border-border-subtle bg-canvas p-3">
               <div>
-                <p className="text-label text-muted">Creatives (optional)</p>
+                <p className="text-label text-foreground">Creatives (optional)</p>
                 <p className="mt-1 text-caption text-secondary">
                   Upload one or more images per campaign. They appear on the
                   report next to spend, impressions, clicks, and CTR.
@@ -1189,14 +1189,14 @@ export function AdResultsUploadWizard({
                 >
                   <p className="text-body-sm font-medium text-foreground">
                     {readableCampaignName(camp)}
-                    <span className="ml-2 text-caption font-normal text-muted">
+                    <span className="ml-2 text-caption font-normal text-secondary">
                       {camp.platform}
                       {camp.format ? ` · ${camp.format}` : ""}
                       {camp.objective ? ` · ${camp.objective}` : ""}
                     </span>
                   </p>
                   <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                    <label className="block text-caption text-muted">
+                    <label className="block text-caption text-foreground">
                       Caption
                       <input
                         type="text"
@@ -1211,7 +1211,7 @@ export function AdResultsUploadWizard({
                         className="mt-1 w-full rounded border border-border bg-canvas px-2 py-1.5 text-body-sm text-foreground"
                       />
                     </label>
-                    <label className="block text-caption text-muted">
+                    <label className="block text-caption text-foreground">
                       Image
                       <input
                         type="file"
@@ -1304,13 +1304,13 @@ function FieldInput({
 }) {
   return (
     <label className="block text-body-sm">
-      <span className="text-label text-muted">{label}</span>
+      <span className="text-label text-foreground">{label}</span>
       <input
         type={type}
         inputMode={type === "date" ? undefined : inputMode}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1 w-full rounded border border-border bg-surface px-2 py-1.5 font-mono text-xs text-foreground"
+        className="mt-1 w-full rounded border border-border bg-surface px-2 py-1.5 text-xs text-foreground"
       />
     </label>
   );
@@ -1329,7 +1329,7 @@ function ConstantSelect({
 }) {
   return (
     <label className="block text-body-sm">
-      <span className="text-label text-muted">{label}</span>
+      <span className="text-label text-foreground">{label}</span>
       <select
         className="mt-1 w-full rounded border border-border bg-canvas px-2 py-1.5"
         value={value}

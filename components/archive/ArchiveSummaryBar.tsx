@@ -13,13 +13,13 @@ export function ArchiveSummaryBar({ summary }: ArchiveSummaryBarProps) {
     >
       <SectionHeader>Summary</SectionHeader>
 
-      <p className="mt-3 text-body-sm text-muted">
-        <span className="font-mono font-semibold tabular-nums text-foreground">
+      <p className="mt-3 text-body-sm text-secondary">
+        <span className="font-semibold tabular-nums text-foreground">
           {summary.totalClosed}
         </span>{" "}
         closed release{summary.totalClosed === 1 ? "" : "s"}
-        <span className="text-muted"> · </span>
-        <span className="font-mono font-semibold tabular-nums text-foreground">
+        <span className="text-secondary"> · </span>
+        <span className="font-semibold tabular-nums text-foreground">
           {summary.retrainEligible}
         </span>{" "}
         with complete wk1 data (retrain-eligible)

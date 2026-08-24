@@ -36,7 +36,7 @@ export function SpendByChannelChart({
   const chart = (
     <div className={compact ? "h-40 w-full" : "mt-3 h-56 w-full"}>
       {data.length === 0 ? (
-        <p className="text-body-sm text-muted">No paid spend recorded.</p>
+        <p className="text-body-sm text-secondary">No paid spend recorded.</p>
       ) : (
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
@@ -94,7 +94,7 @@ export function SpendByChannelChart({
               />
               {entry.channel}
             </span>
-            <span className="font-mono tabular-nums text-foreground">
+            <span className="tabular-nums text-foreground">
               {formatUsd(entry.spend, 0)}
               {entry.budget != null && entry.budget > 0
                 ? ` / ${formatUsd(entry.budget, 0)}`

@@ -33,10 +33,10 @@ const VARIANCE_NEUTRAL_ABS_PCT = 5;
 const CAPTION_SLOT_CLASS = "mt-1 min-h-[2.1rem] w-full";
 
 const FIGURE_CLASS =
-  "font-mono text-[2.5rem] font-semibold tabular-nums leading-none tracking-[-0.02em]";
-const COL_HEADER_CLASS = "pb-2 text-center text-label uppercase text-muted";
+  "text-[2.5rem] font-semibold tabular-nums leading-none tracking-[-0.02em]";
+const COL_HEADER_CLASS = "pb-2 text-center text-label uppercase text-foreground";
 const ROW_LABEL_CLASS =
-  "whitespace-nowrap pr-3 pt-2 text-left text-caption text-muted";
+  "whitespace-nowrap pr-3 pt-2 text-left text-caption text-foreground";
 const METRIC_PAD = "px-3";
 const ACTUAL_ROW_TONE = "bg-surface/50";
 
@@ -141,7 +141,7 @@ function MetricFigure({
       <div className={`${FIGURE_CLASS} text-foreground`}>{children}</div>
       <div className={CAPTION_SLOT_CLASS}>
         {note ? (
-          <p className="font-mono text-[0.95rem] font-medium leading-none tracking-normal text-muted">
+          <p className="text-[0.95rem] font-medium leading-none tracking-normal text-secondary">
             {note}
           </p>
         ) : null}
@@ -170,7 +170,7 @@ function VarianceCell({
           `${FIGURE_CLASS} ` +
           (variance != null
             ? varianceToneClass(variance, vsBand)
-            : "text-muted")
+            : "text-secondary")
         }
       >
         {variance != null ? formatSignedPct(variance) : null}
@@ -181,7 +181,7 @@ function VarianceCell({
             <span className={`block ${saveRateToneClass(vsBand)}`}>
               {SAVE_RATE_BAND_LABEL[vsBand]}
             </span>
-            <span className="block text-muted">{expected}</span>
+            <span className="block text-secondary">{expected}</span>
           </>
         ) : null}
       </div>
@@ -190,7 +190,7 @@ function VarianceCell({
 }
 
 const COMPACT_FIGURE_CLASS =
-  "font-mono text-xl font-semibold tabular-nums leading-none tracking-[-0.02em]";
+  "text-xl font-semibold tabular-nums leading-none tracking-[-0.02em]";
 
 function MobileMetricBlock({
   header,
@@ -216,12 +216,12 @@ function MobileMetricBlock({
   if (!showActuals) {
     return (
       <div className="border-t border-border/40 py-3 first:border-t-0 first:pt-0">
-        <p className="text-center text-label uppercase text-muted">{header}</p>
+        <p className="text-center text-label uppercase text-foreground">{header}</p>
         <div className={`${FIGURE_CLASS} mt-2 text-center text-foreground`}>
           {forecast}
         </div>
         {forecastNote ? (
-          <p className="mt-1 text-center font-mono text-[0.95rem] font-medium leading-none tracking-normal text-muted">
+          <p className="mt-1 text-center text-[0.95rem] font-medium leading-none tracking-normal text-secondary">
             {forecastNote}
           </p>
         ) : null}
@@ -231,33 +231,33 @@ function MobileMetricBlock({
 
   return (
     <div className="border-t border-border/40 py-3 first:border-t-0 first:pt-0">
-      <p className="text-center text-label uppercase text-muted">{header}</p>
+      <p className="text-center text-label uppercase text-foreground">{header}</p>
       <div className="mt-2 grid grid-cols-3 text-center">
         <div className="min-w-0 px-1">
-          <p className="text-caption text-muted">Forecast</p>
+          <p className="text-caption text-foreground">Forecast</p>
           <div className={`${COMPACT_FIGURE_CLASS} mt-1 text-foreground`}>
             {forecast}
           </div>
           {forecastNote ? (
-            <p className="mt-1 font-mono text-caption font-medium text-muted">
+            <p className="mt-1 text-caption font-medium text-secondary">
               {forecastNote}
             </p>
           ) : null}
         </div>
         <div className={`min-w-0 px-1 ${ACTUAL_ROW_TONE}`}>
-          <p className="text-caption text-muted">Actual</p>
+          <p className="text-caption text-foreground">Actual</p>
           <div className={`${COMPACT_FIGURE_CLASS} mt-1 text-foreground`}>
             {actual}
           </div>
         </div>
         <div className="min-w-0 px-1">
-          <p className="text-caption text-muted">Difference</p>
+          <p className="text-caption text-foreground">Difference</p>
           <div
             className={
               `${COMPACT_FIGURE_CLASS} mt-1 ` +
               (variance != null
                 ? varianceToneClass(variance, vsBand)
-                : "text-muted")
+                : "text-secondary")
             }
           >
             {variance != null ? formatSignedPct(variance) : null}
@@ -267,7 +267,7 @@ function MobileMetricBlock({
               <span className={`block ${saveRateToneClass(vsBand)}`}>
                 {SAVE_RATE_BAND_LABEL[vsBand]}
               </span>
-              <span className="block text-muted">{expected}</span>
+              <span className="block text-secondary">{expected}</span>
             </p>
           ) : null}
         </div>

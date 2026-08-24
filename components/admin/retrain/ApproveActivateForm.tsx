@@ -56,7 +56,7 @@ export function ApproveActivateForm({
         <p className="mt-2 text-body-sm text-secondary">
           One or more HARD guardrails failed. Type an override reason to enable
           Use this model — stored on the model row as{" "}
-          <span className="font-mono text-xs">metadata.override_notes</span>.
+          <span className="text-xs">metadata.override_notes</span>.
         </p>
       ) : (
         <p className="mt-2 text-body-sm text-secondary">
@@ -70,7 +70,7 @@ export function ApproveActivateForm({
           Override reason{overrideRequired ? " (required)" : " (optional)"}
         </span>
         <textarea
-          className="mt-1 w-full rounded-instrument border border-border bg-canvas px-3 py-2 font-mono text-sm text-foreground"
+          className="mt-1 w-full rounded-instrument border border-border bg-canvas px-3 py-2 text-sm text-foreground"
           rows={3}
           value={overrideNotes}
           onChange={(event) => setOverrideNotes(event.target.value)}

@@ -109,7 +109,7 @@ export function DailyDataImport({
           </label>
 
           <div>
-            <label className="text-label text-muted">Upload file</label>
+            <label className="text-label text-foreground">Upload file</label>
             <input
               type="file"
               accept=".csv,.txt,text/csv,text/plain"
@@ -121,7 +121,7 @@ export function DailyDataImport({
           <div>
             <label
               htmlFor="daily-import-paste"
-              className="text-label text-muted"
+              className="text-label text-foreground"
             >
               Or paste rows
             </label>
@@ -135,7 +135,7 @@ export function DailyDataImport({
               }}
               rows={6}
               placeholder={"1,28871,4379\n2,129399,6300\n3,61424,2504"}
-              className="mt-1 w-full rounded-instrument border border-border bg-surface px-3 py-2 font-mono text-xs text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+              className="mt-1 w-full rounded-instrument border border-border bg-surface px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
             />
           </div>
 
@@ -173,7 +173,7 @@ export function DailyDataImport({
               "rounded-instrument px-4 py-2 text-body-sm font-medium " +
               (canApply
                 ? "bg-foreground text-canvas hover:bg-foreground/90"
-                : "cursor-not-allowed bg-bracket-bg text-muted")
+                : "cursor-not-allowed bg-bracket-bg text-secondary")
             }
           >
             {saving ? "Importing..." : "Apply to this release"}

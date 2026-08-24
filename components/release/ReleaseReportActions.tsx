@@ -60,7 +60,7 @@ export function ReleaseReportActions({
             {error}
           </p>
         ) : (
-          <p className="max-w-xs text-right text-xs text-muted">
+          <p className="max-w-xs text-right text-xs text-secondary">
             Snapshot paid + forecast metrics for a shareable link
           </p>
         )}
@@ -90,7 +90,7 @@ export function ReleaseReportActions({
           type="button"
           disabled={pending}
           onClick={onRefresh}
-          className="text-muted hover:text-foreground hover:underline disabled:opacity-40"
+          className="text-secondary hover:text-foreground hover:underline disabled:opacity-40"
         >
           {pending ? "Refreshing…" : "Refresh snapshot"}
         </button>

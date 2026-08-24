@@ -52,7 +52,7 @@ export function CampaignFlightBands({
               }}
               title={`${band.name} · D${band.startDay}–D${band.endDay}`}
             >
-              <span className="block truncate px-1.5 font-mono text-[10px] font-medium leading-4 text-secondary">
+              <span className="block truncate px-1.5 text-[10px] font-medium leading-4 text-secondary">
                 {band.name}
               </span>
             </div>

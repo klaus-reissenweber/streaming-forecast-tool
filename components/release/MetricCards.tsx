@@ -48,14 +48,14 @@ function MetricCell({
 }) {
   return (
     <div className="min-w-0 flex-1 border-t border-accent/40 px-4 py-3 sm:px-5 sm:py-4">
-      <dt className="text-[10px] font-medium uppercase tracking-[0.06em] text-muted">
+      <dt className="text-[10px] font-medium uppercase tracking-[0.06em] text-foreground">
         {label}
       </dt>
-      <dd className="mt-2 font-mono text-[2.25rem] font-semibold tabular-nums leading-none tracking-[-0.02em] text-foreground">
+      <dd className="mt-2 text-[2.25rem] font-semibold tabular-nums leading-none tracking-[-0.02em] text-foreground">
         {value}
       </dd>
       {sublabel ? (
-        <p className="mt-1 text-caption text-muted">{sublabel}</p>
+        <p className="mt-1 text-caption text-secondary">{sublabel}</p>
       ) : null}
     </div>
   );

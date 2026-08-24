@@ -42,10 +42,10 @@ function MetricCell({
 }) {
   return (
     <div className="min-w-0 flex-1 basis-0 border-t border-border px-4 py-3 sm:px-5 sm:py-4">
-      <p className="text-[10px] font-medium uppercase tracking-[0.06em] text-muted">
+      <p className="text-[10px] font-medium uppercase tracking-[0.06em] text-foreground">
         {label}
       </p>
-      <p className="mt-1 font-mono text-[1.5rem] font-semibold tabular-nums leading-none tracking-[-0.02em] text-foreground">
+      <p className="mt-1 text-[1.5rem] font-semibold tabular-nums leading-none tracking-[-0.02em] text-foreground">
         {value}
       </p>
     </div>
@@ -73,13 +73,13 @@ function ForecastCard({
           <h3 className="text-body-sm font-medium text-secondary">{title}</h3>
         </div>
         {spendLabel ? (
-          <p className="font-mono text-caption tabular-nums text-muted">
+          <p className="text-caption tabular-nums text-secondary">
             {spendLabel}
           </p>
         ) : null}
       </div>
       {note ? (
-        <p className="mt-1 text-caption leading-snug text-muted">{note}</p>
+        <p className="mt-1 text-caption leading-snug text-secondary">{note}</p>
       ) : null}
       <div className="mt-2 min-w-0 overflow-hidden rounded-instrument border border-border bg-surface">
         <div className="flex min-w-0 w-full flex-col sm:flex-row sm:items-stretch sm:divide-x sm:divide-border-subtle">

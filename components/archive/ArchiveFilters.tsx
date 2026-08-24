@@ -60,7 +60,7 @@ export function ArchiveFilters({
       aria-label="Archive filters"
     >
       <label className="flex w-full flex-col gap-1.5 md:w-auto md:flex-row md:items-center md:gap-2">
-        <span className="text-label text-muted">Genre</span>
+        <span className="text-label text-foreground">Genre</span>
         <select
           className={selectClass}
           value={currentGenre ?? ""}
@@ -79,7 +79,7 @@ export function ArchiveFilters({
       </label>
 
       <label className="flex w-full flex-col gap-1.5 md:w-auto md:flex-row md:items-center md:gap-2">
-        <span className="text-label text-muted">Sort</span>
+        <span className="text-label text-foreground">Sort</span>
         <select
           className={selectClass}
           value={currentSort}

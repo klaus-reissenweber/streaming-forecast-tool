@@ -66,7 +66,7 @@ export function ReleasePageHeader({
     <header className="border-b border-border pb-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h1 className="font-serif text-release-title text-foreground">
+          <h1 className="text-release-title text-foreground">
             {trackName}
             <span className="font-normal text-secondary"> · {artistName}</span>
           </h1>
@@ -78,7 +78,6 @@ export function ReleasePageHeader({
             releaseId={releaseId}
             artists={artists}
             forecastUsedMonthlyListeners={forecastUsedMonthlyListeners}
-            status={status}
           />
         </div>
 

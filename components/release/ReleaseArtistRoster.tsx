@@ -6,7 +6,6 @@ import { saveReleaseArtists } from "@/app/release/[id]/actions";
 import { MonthlyListenersField } from "@/components/new/MonthlyListenersField";
 import { ToggleGroup } from "@/components/new/ToggleGroup";
 import { formatCount, formatCompactNumber } from "@/lib/format";
-import type { ReleaseStatus } from "@/lib/map-release-row";
 import {
   ARTIST_ROLE_LABELS,
   ARTIST_ROLES,
@@ -26,7 +25,7 @@ const ROLE_OPTIONS = ARTIST_ROLES.map((role) => ({
 const TEXT_INPUT_CLASS =
   "rounded-instrument border border-border bg-surface px-3 py-2 text-body-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent";
 
-const NUMERIC_INPUT_CLASS = `${TEXT_INPUT_CLASS} font-mono tabular-nums`;
+const NUMERIC_INPUT_CLASS = `${TEXT_INPUT_CLASS} tabular-nums`;
 
 type RosterFormRow = ReleaseArtistDraft & { key: string };
 
@@ -80,7 +79,7 @@ function ForecastUsedNote({
     return null;
   }
   return (
-    <p className="mt-2 text-caption text-muted">
+    <p className="mt-2 text-caption text-secondary">
       Forecast used {formatCount(forecastUsedMonthlyListeners)} monthly
       listeners.
     </p>
@@ -91,12 +90,10 @@ export function ReleaseArtistRoster({
   releaseId,
   artists,
   forecastUsedMonthlyListeners,
-  status,
 }: {
   releaseId: string;
   artists: readonly ReleaseArtist[];
   forecastUsedMonthlyListeners: number;
-  status: ReleaseStatus;
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
@@ -210,7 +207,7 @@ export function ReleaseArtistRoster({
     return (
       <div className="mt-3">
         {artists.length === 0 ? (
-          <p className="text-body-sm text-muted">No release artists yet.</p>
+          <p className="text-body-sm text-secondary">No release artists yet.</p>
         ) : (
           <ul className="divide-y divide-border-subtle rounded-instrument border border-border bg-canvas-subtle">
             {sortReleaseArtists(artists).map((artist) => (
@@ -220,12 +217,12 @@ export function ReleaseArtistRoster({
               >
                 <span className="text-foreground">
                   {artist.artist_name}
-                  <span className="text-muted">
+                  <span className="text-secondary">
                     {" "}
                     · {ARTIST_ROLE_LABELS[artist.role]}
                   </span>
                 </span>
-                <span className="font-mono tabular-nums text-secondary">
+                <span className="tabular-nums text-secondary">
                   {artist.monthly_listeners == null
                     ? "Monthly listeners unknown"
                     : `${formatCompactNumber(artist.monthly_listeners)} monthly listeners`}
@@ -246,11 +243,6 @@ export function ReleaseArtistRoster({
           >
             Edit release artists
           </button>
-          {status === "closed" ? (
-            <span className="text-caption text-muted">
-              Closed releases stay read-only except release artists.
-            </span>
-          ) : null}
         </div>
       </div>
     );
@@ -258,7 +250,7 @@ export function ReleaseArtistRoster({
 
   return (
     <div className="mt-3 space-y-3">
-      <p className="text-caption text-muted">
+      <p className="text-caption text-secondary">
         Up to {MAX_RELEASE_ARTISTS}. Exactly one primary. Saving does not
         change the locked forecast or the display credit line.
       </p>
@@ -271,7 +263,7 @@ export function ReleaseArtistRoster({
             className="rounded-instrument border border-border bg-canvas-subtle p-3 sm:p-4"
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="font-mono text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
+              <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-foreground">
                 Position {index + 1}
                 {isPrimary ? " · primary" : ""}
               </span>
@@ -408,7 +400,7 @@ export function ReleaseArtistRoster({
           className={
             "rounded-instrument border px-3 py-1.5 text-body-sm font-medium " +
             (pending || !preview.valid
-              ? "cursor-not-allowed border-border bg-bracket-bg text-muted"
+              ? "cursor-not-allowed border-border bg-bracket-bg text-secondary"
               : "border-accent-border bg-accent-tint text-accent-readable hover:border-accent")
           }
         >

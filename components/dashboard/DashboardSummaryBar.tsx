@@ -49,15 +49,15 @@ function MetricCell({
 }) {
   return (
     <div className="min-w-0 flex-1 border-t border-border-subtle px-4 py-3 sm:border-t-0 sm:border-r sm:border-border-subtle sm:px-5 sm:py-4 sm:last:border-r-0">
-      <dt className="text-[10px] font-medium uppercase tracking-[0.06em] text-muted">
+      <dt className="text-[10px] font-medium uppercase tracking-[0.06em] text-foreground">
         {label}
       </dt>
       <dd
-        className={`mt-2 font-mono text-[2.25rem] font-semibold tabular-nums leading-none tracking-[-0.02em] ${valueClass ?? "text-foreground"}`}
+        className={`mt-2 text-[2.25rem] font-semibold tabular-nums leading-none tracking-[-0.02em] ${valueClass ?? "text-foreground"}`}
       >
         {value}
       </dd>
-      <p className="mt-1.5 text-caption text-muted">{context}</p>
+      <p className="mt-1.5 text-caption text-secondary">{context}</p>
     </div>
   );
 }
@@ -90,7 +90,7 @@ function RecentFlagItem({ item }: { item: RecentFlag }) {
     <li className="flex flex-wrap items-baseline gap-x-1.5 text-body-sm leading-snug">
       <StatusPill tone={config.tone}>{config.label}</StatusPill>
       <span className="font-medium text-foreground">{item.flag.title}</span>
-      <span className="text-muted" aria-hidden="true">
+      <span className="text-secondary" aria-hidden="true">
         ·
       </span>
       <Link
@@ -98,10 +98,10 @@ function RecentFlagItem({ item }: { item: RecentFlag }) {
         className="text-secondary hover:text-accent-readable hover:underline"
       >
         {item.trackName}
-        <span className="text-muted"> · </span>
+        <span className="text-secondary"> · </span>
         {item.artistName}
       </Link>
-      <span className="font-mono text-[10px] tabular-nums text-muted">
+      <span className="text-[10px] tabular-nums text-secondary">
         {item.firedAtDisplay}
       </span>
     </li>
@@ -176,9 +176,9 @@ export function DashboardSummaryBar({ summary }: DashboardSummaryBarProps) {
       </dl>
 
       <div className="border-t border-border-subtle px-5 py-4">
-        <h3 className="text-label text-muted">Recent flags</h3>
+        <h3 className="text-label text-foreground">Recent flags</h3>
         {summary.recentFlags.length === 0 ? (
-          <p className="mt-2 text-body-sm text-muted">
+          <p className="mt-2 text-body-sm text-secondary">
             No flags surfaced in the last 24 hours.
           </p>
         ) : (

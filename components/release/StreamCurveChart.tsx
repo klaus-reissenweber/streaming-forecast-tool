@@ -11,7 +11,6 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-  type XAxisTickContentProps,
 } from "recharts";
 import { SectionHeader } from "@/components/layout/SectionHeader";
 import {
@@ -41,6 +40,7 @@ export interface StreamCurveChartProps {
   /** Daily Meta ad attributed streams (additive, 28). */
   metaAdDaily?: number[];
   actualStreamsByDay: (number | null)[];
+  streamBand: { lo: number; hi: number };
   phase: ReleasePhase;
   status: ReleaseStatus;
   releaseDate: string;
@@ -49,6 +49,9 @@ export interface StreamCurveChartProps {
 interface ChartRow {
   day: number;
   locked: number;
+  rangeLo: number;
+  rangeSpan: number;
+  rangeHi: number;
   marqueeAds: number;
   showcaseAds: number;
   metaAds: number;
@@ -79,6 +82,8 @@ const CAMPAIGN_WINDOW_DAYS = 28;
 const AXIS_POINT_PAD = 12;
 const DRAW_PATH_LENGTH = 2000;
 const DRAW_STAGGER_MS = { projected: 200, actual: 400 } as const;
+const SERIES_STROKE = 2.5;
+const RANGE_FILL_OPACITY = 0.16;
 
 const DEFAULT_PALETTE: ChartPalette = {
   locked: "#8fa800",
@@ -113,16 +118,24 @@ function buildChartRows(
   showcaseAdDaily: number[] | undefined,
   metaAdDaily: number[] | undefined,
   actualStreamsByDay: (number | null)[],
+  streamBand: { lo: number; hi: number },
 ): ChartRow[] {
-  return lockedStreamCurve.dailyStreams.map((locked, index) => ({
-    day: index + 1,
-    locked,
-    marqueeAds: marqueeAdDaily?.[index] ?? 0,
-    showcaseAds: showcaseAdDaily?.[index] ?? 0,
-    metaAds: metaAdDaily?.[index] ?? 0,
-    projected: projectedStreamCurve?.dailyStreams[index] ?? null,
-    actual: actualStreamsByDay[index] ?? null,
-  }));
+  return lockedStreamCurve.dailyStreams.map((locked, index) => {
+    const rangeLo = locked * streamBand.lo;
+    const rangeHi = locked * streamBand.hi;
+    return {
+      day: index + 1,
+      locked,
+      rangeLo,
+      rangeHi,
+      rangeSpan: Math.max(0, rangeHi - rangeLo),
+      marqueeAds: marqueeAdDaily?.[index] ?? 0,
+      showcaseAds: showcaseAdDaily?.[index] ?? 0,
+      metaAds: metaAdDaily?.[index] ?? 0,
+      projected: projectedStreamCurve?.dailyStreams[index] ?? null,
+      actual: actualStreamsByDay[index] ?? null,
+    };
+  });
 }
 
 function formatAxisTick(value: number): string {
@@ -163,7 +176,7 @@ function readChartPalette(): ChartPalette {
     ),
     metaAds: read("--color-chart-meta-ads", DEFAULT_PALETTE.metaAds),
     projected: read("--color-chart-projected", DEFAULT_PALETTE.projected),
-    actual: read("--color-chart-actual", DEFAULT_PALETTE.actual),
+    actual: read("--color-foreground", DEFAULT_PALETTE.actual),
     grid: read("--color-chart-grid", DEFAULT_PALETTE.grid),
     axis: read("--color-chart-axis", DEFAULT_PALETTE.axis),
     accent: read("--color-accent", DEFAULT_PALETTE.accent),
@@ -225,44 +238,6 @@ function useMdUp(): boolean {
   return mdUp;
 }
 
-function DayAxisTick({ x, y, payload }: XAxisTickContentProps) {
-  const px = typeof x === "number" ? x : Number(x);
-  const py = typeof y === "number" ? y : Number(y);
-  if (!Number.isFinite(px) || !Number.isFinite(py)) {
-    return null;
-  }
-  const day = Number(payload.value);
-  if (!Number.isFinite(day)) {
-    return null;
-  }
-
-  return (
-    <g transform={`translate(${px},${py})`}>
-      <rect
-        x={-14}
-        y={6}
-        width={28}
-        height={14}
-        rx={2}
-        fill="var(--color-bracket-bg)"
-      />
-      <text
-        x={0}
-        y={13}
-        textAnchor="middle"
-        dominantBaseline="middle"
-        fill="var(--color-chart-axis)"
-        fontFamily="var(--font-plex-mono)"
-        fontSize={9}
-        fontWeight={600}
-        letterSpacing="0.03em"
-      >
-        {`D${day}`}
-      </text>
-    </g>
-  );
-}
-
 function useChartPalette(): ChartPalette {
   if (typeof window === "undefined") {
     return DEFAULT_PALETTE;
@@ -315,12 +290,18 @@ function useLineDrawIn(
 function yMaxForVisible(rows: ChartRow[], enabled: Set<ChartSeriesId>): number {
   let max = 0;
   for (const row of rows) {
-    let stacked = 0;
-    if (enabled.has("locked")) stacked += row.locked;
-    if (enabled.has("marqueeAds")) stacked += row.marqueeAds;
-    if (enabled.has("showcaseAds")) stacked += row.showcaseAds;
-    if (enabled.has("metaAds")) stacked += row.metaAds;
-    max = Math.max(max, stacked);
+    if (enabled.has("locked")) {
+      max = Math.max(max, row.locked, row.rangeHi);
+    }
+    if (enabled.has("marqueeAds")) {
+      max = Math.max(max, row.marqueeAds);
+    }
+    if (enabled.has("showcaseAds")) {
+      max = Math.max(max, row.showcaseAds);
+    }
+    if (enabled.has("metaAds")) {
+      max = Math.max(max, row.metaAds);
+    }
     if (enabled.has("projected") && row.projected != null) {
       max = Math.max(max, row.projected);
     }
@@ -338,6 +319,7 @@ export function StreamCurveChart({
   showcaseAdDaily,
   metaAdDaily,
   actualStreamsByDay,
+  streamBand,
   phase,
   status,
   releaseDate,
@@ -361,6 +343,7 @@ export function StreamCurveChart({
     showcaseAdDaily,
     metaAdDaily,
     actualStreamsByDay,
+    streamBand,
   ).slice(0, xMax);
   const axisTicks = xAxisTicks(xMax, mdUp ? WEEK_MARKS : COMPACT_X_MARKS);
   const hasActuals = actualStreamsByDay.some((value) => value != null);
@@ -409,7 +392,7 @@ export function StreamCurveChart({
   const showRightAxis = showActual || showProjected;
   const rightMargin = showRightAxis ? CHART_Y_AXIS_WIDTH : 12;
   const leftAxisColor = showLocked
-    ? palette.locked
+    ? palette.projected
     : showMarquee
       ? palette.marqueeAds
       : showShowcase
@@ -429,7 +412,7 @@ export function StreamCurveChart({
       label: "Organic forecast",
       value: sumNumbers(lockedStreamCurve.dailyStreams),
       sublabel: "D1–D28",
-      color: palette.locked,
+      color: palette.projected,
       enabled: showLocked,
     },
   ];
@@ -502,14 +485,12 @@ export function StreamCurveChart({
       aria-label="Stream curve"
     >
       <span
-        className="pointer-events-none absolute inset-y-0 left-0 w-1 origin-top bg-accent animate-instrument-rule-grow"
+        className="pointer-events-none absolute inset-y-0 left-0 w-1 origin-top bg-projected animate-instrument-rule-grow"
         aria-hidden="true"
       />
 
       <div>
-        <SectionHeader description="Organic forecast vs daily actuals. Toggle ad lift or live pace from the cards.">
-          Stream curve
-        </SectionHeader>
+        <SectionHeader>Stream curve</SectionHeader>
       </div>
 
       <ChartSeriesCards series={seriesCards} onToggle={onToggleSeries} />
@@ -539,7 +520,12 @@ export function StreamCurveChart({
               padding={{ left: AXIS_POINT_PAD, right: AXIS_POINT_PAD }}
               allowDecimals={false}
               niceTicks="none"
-              tick={DayAxisTick}
+              tickFormatter={(day) => `D${day}`}
+              tick={{
+                fill: palette.axis,
+                fontFamily: "var(--font-plex-mono)",
+                fontSize: 10,
+              }}
               axisLine={{ stroke: palette.grid }}
               tickLine={false}
               height={CHART_X_AXIS_HEIGHT}
@@ -587,6 +573,13 @@ export function StreamCurveChart({
                 color: "var(--color-secondary)",
               }}
               formatter={(value, name) => {
+                if (
+                  name === "Expected range" ||
+                  name === "rangeLo" ||
+                  name === "rangeSpan"
+                ) {
+                  return [null, null];
+                }
                 if (value == null || typeof value !== "number") {
                   return ["n/a", String(name)];
                 }
@@ -612,58 +605,79 @@ export function StreamCurveChart({
               />
             ) : null}
             {showLocked ? (
-              <Area
-                yAxisId="left"
-                type="monotone"
-                dataKey="locked"
-                name="Forecast"
-                stackId="forecast"
-                fill={palette.locked}
-                stroke={palette.locked}
-                fillOpacity={0.55}
-                strokeWidth={1.25}
-                isAnimationActive={false}
-              />
+              <>
+                <Area
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="rangeLo"
+                  stackId="expected"
+                  stroke="none"
+                  fill="transparent"
+                  fillOpacity={0}
+                  legendType="none"
+                  tooltipType="none"
+                  isAnimationActive={false}
+                />
+                <Area
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="rangeSpan"
+                  stackId="expected"
+                  name="Expected range"
+                  stroke="none"
+                  fill={palette.projected}
+                  fillOpacity={RANGE_FILL_OPACITY}
+                  legendType="none"
+                  tooltipType="none"
+                  isAnimationActive={false}
+                />
+                <Line
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="locked"
+                  name="Forecast"
+                  stroke={palette.projected}
+                  strokeWidth={SERIES_STROKE}
+                  strokeDasharray="6 4"
+                  dot={false}
+                  activeDot={{ r: 4, fill: palette.projected }}
+                  isAnimationActive={false}
+                />
+              </>
             ) : null}
             {showMarquee ? (
-              <Area
+              <Line
                 yAxisId="left"
                 type="monotone"
                 dataKey="marqueeAds"
                 name="Marquee"
-                stackId="forecast"
-                fill={palette.marqueeAds}
                 stroke={palette.marqueeAds}
-                fillOpacity={0.55}
-                strokeWidth={1}
+                strokeWidth={SERIES_STROKE}
+                dot={false}
                 isAnimationActive={false}
               />
             ) : null}
             {showShowcase ? (
-              <Area
+              <Line
                 yAxisId="left"
                 type="monotone"
                 dataKey="showcaseAds"
                 name="Showcase"
-                stackId="forecast"
-                fill={palette.showcaseAds}
                 stroke={palette.showcaseAds}
-                fillOpacity={0.55}
-                strokeWidth={1}
+                strokeWidth={SERIES_STROKE}
+                dot={false}
                 isAnimationActive={false}
               />
             ) : null}
             {showMeta ? (
-              <Area
+              <Line
                 yAxisId="left"
                 type="monotone"
                 dataKey="metaAds"
                 name="Meta ads"
-                stackId="forecast"
-                fill={palette.metaAds}
                 stroke={palette.metaAds}
-                fillOpacity={0.5}
-                strokeWidth={1}
+                strokeWidth={SERIES_STROKE}
+                dot={false}
                 isAnimationActive={false}
               />
             ) : null}
@@ -685,11 +699,12 @@ export function StreamCurveChart({
                 dataKey="projected"
                 name="Projected"
                 stroke={palette.projected}
-                strokeWidth={2}
+                strokeWidth={SERIES_STROKE}
                 dot={false}
                 activeDot={{ r: 4, fill: palette.projected }}
                 isAnimationActive={false}
                 {...projectedDraw}
+                strokeDasharray="6 4"
               />
             ) : null}
             {showActual ? (
@@ -699,8 +714,8 @@ export function StreamCurveChart({
                 dataKey="actual"
                 name="Actual"
                 stroke={palette.actual}
-                strokeWidth={2.5}
-                dot={{ r: 2, fill: palette.actual }}
+                strokeWidth={SERIES_STROKE}
+                dot={{ r: 3, fill: palette.actual }}
                 connectNulls={false}
                 isAnimationActive={false}
                 {...actualDraw}

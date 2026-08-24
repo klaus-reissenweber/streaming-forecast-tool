@@ -36,9 +36,7 @@ export function ChannelMixForecast({
       className="motion-fade-up"
       aria-label="Channel mix forecast"
     >
-      <SectionHeader description="Forecasted ad metrics from the active ad model — same figures as create release.">
-        Channel mix
-      </SectionHeader>
+      <SectionHeader>Channel mix</SectionHeader>
 
       <div className="mt-4">
         <AdSpendLiveForecast

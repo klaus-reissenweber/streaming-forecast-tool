@@ -34,7 +34,7 @@ const PLAYBOOK_SECTIONS: readonly {
   {
     key: "creative",
     ruleClass: "border-l-muted",
-    titleClass: "text-muted",
+    titleClass: "text-foreground",
     title: "Creative direction",
   },
   {

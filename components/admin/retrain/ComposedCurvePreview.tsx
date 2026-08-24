@@ -25,7 +25,7 @@ function CurveCard({ curve }: { curve: CurvePreview }) {
         <h3 className="text-sm font-semibold text-foreground">
           {curve.label} release
         </h3>
-        <span className="font-mono text-caption text-secondary">
+        <span className="text-caption text-secondary">
           {curve.releaseDate} · wk1 Σ new {curve.draftWk1Sum.toFixed(1)} / active{" "}
           {curve.activeWk1Sum.toFixed(1)}
         </span>
@@ -83,7 +83,7 @@ export function ComposedCurvePreview({ curves }: { curves: CurvePreview[] }) {
         <h2 className="text-section font-semibold text-foreground">
           Composed curve preview
         </h2>
-        <span className="text-caption text-muted">New vs active</span>
+        <span className="text-caption text-secondary">New vs active</span>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
         {curves.map((curve) => (

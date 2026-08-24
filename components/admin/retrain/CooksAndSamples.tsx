@@ -31,12 +31,12 @@ export function CooksAndSamples({
             ).map(([label, value]) => (
               <div key={label}>
                 <dt className="text-caption text-secondary">{label}</dt>
-                <dd className="font-mono text-foreground">{value}</dd>
+                <dd className="text-foreground">{value}</dd>
               </div>
             ))}
             <div>
               <dt className="text-caption text-secondary">Cook&apos;s D drops</dt>
-              <dd className="font-mono text-foreground">
+              <dd className="text-foreground">
                 {metadata?.cooksDDrops ?? drops.length}
               </dd>
             </div>
@@ -63,7 +63,7 @@ export function CooksAndSamples({
                   {drop.trackName}{" "}
                   <span className="text-secondary">— {drop.artistName}</span>
                 </span>
-                <span className="shrink-0 font-mono text-caption text-secondary">
+                <span className="shrink-0 text-caption text-secondary">
                   {drop.id.slice(0, 8)}
                 </span>
               </li>

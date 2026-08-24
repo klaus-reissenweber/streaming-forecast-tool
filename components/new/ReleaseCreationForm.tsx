@@ -43,7 +43,7 @@ const FEATURE_OPTIONS = [
 const TEXT_INPUT_CLASS =
   "rounded-instrument border border-border bg-surface px-3 py-2 text-body-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent";
 
-const NUMERIC_INPUT_CLASS = `${TEXT_INPUT_CLASS} font-mono tabular-nums`;
+const NUMERIC_INPUT_CLASS = `${TEXT_INPUT_CLASS} tabular-nums`;
 
 function FormSection({
   label,
@@ -59,7 +59,7 @@ function FormSection({
     return (
       <section className="mt-6 rounded-instrument border border-border bg-canvas-subtle p-4 sm:p-5">
         <h2 className="mb-1 text-body-sm font-medium text-secondary">{label}</h2>
-        <p className="mb-4 text-caption text-muted">
+        <p className="mb-4 text-caption text-secondary">
           Optional paid lift — separate from the organic streaming forecast
         </p>
         {children}
@@ -69,7 +69,7 @@ function FormSection({
 
   return (
     <section className="border-t border-border pt-6 first:border-t-0 first:pt-0">
-      <h2 className="mb-4 font-mono text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
+      <h2 className="mb-4 text-[11px] font-medium uppercase tracking-[0.06em] text-foreground">
         {label}
       </h2>
       {children}
@@ -274,7 +274,7 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
               onChange={(event) => setField("artistName", event.target.value)}
               disabled={pending}
             />
-            <span className="text-caption text-muted">
+            <span className="text-caption text-secondary">
               Spotify credit line (display only). Forecast monthly listeners
               come from the primary artist below.
             </span>
@@ -286,7 +286,7 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
             <h3 className="text-body-sm font-medium text-foreground">
               Release artists
             </h3>
-            <p className="mt-1 text-caption text-muted">
+            <p className="mt-1 text-caption text-secondary">
               Up to {MAX_RELEASE_ARTISTS}. Roles must be explicit. The forecast
               uses the primary artist&apos;s monthly listeners only — no blend.
             </p>
@@ -303,7 +303,7 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
                 className="rounded-instrument border border-border bg-canvas-subtle p-3 sm:p-4"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
+                  <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-foreground">
                     Artist {index + 1}
                     {isPrimary ? " · used by forecast" : ""}
                   </span>
@@ -424,7 +424,7 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
             onChange={(tier) => setField("editorialTier", tier)}
             disabled={pending}
           />
-          <p className="mt-2 text-caption leading-relaxed text-muted">
+          <p className="mt-2 text-caption leading-relaxed text-secondary">
             {EDITORIAL_TIER_DEFINITIONS[editorialTier].description}
           </p>
         </div>
@@ -558,7 +558,7 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
               "w-full rounded-instrument px-4 py-3 text-body-sm font-semibold transition " +
               (canSubmit
                 ? "bg-foreground text-canvas hover:bg-foreground/90"
-                : "cursor-not-allowed bg-bracket-bg text-muted")
+                : "cursor-not-allowed bg-bracket-bg text-secondary")
             }
           >
             {pending

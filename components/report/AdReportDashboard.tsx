@@ -125,17 +125,17 @@ function CampaignCompareCard({
         ) : status === "under_achieved" ? (
           <StatusPill tone="warning">Under achieved</StatusPill>
         ) : (
-          <span className="text-sm text-muted">—</span>
+          <span className="text-sm text-secondary">—</span>
         )}
       </div>
 
       <dl className="mt-3 space-y-2 text-sm">
         <div>
-          <dt className="text-caption text-muted">Spent</dt>
-          <dd className="font-mono tabular-nums text-foreground">
+          <dt className="text-caption text-foreground">Spent</dt>
+          <dd className="tabular-nums text-foreground">
             {formatUsd(campaign.spend, 0)}
             {campaign.budget != null && campaign.budget > 0 ? (
-              <span className="text-muted">
+              <span className="text-secondary">
                 {" / "}
                 {formatUsd(campaign.budget, 0)}
               </span>
@@ -143,8 +143,8 @@ function CampaignCompareCard({
           </dd>
         </div>
         <div>
-          <dt className="text-caption text-muted">{resultLabel}</dt>
-          <dd className="font-mono tabular-nums text-foreground">
+          <dt className="text-caption text-foreground">{resultLabel}</dt>
+          <dd className="tabular-nums text-foreground">
             {resultActual == null ? "—" : formatCount(resultActual)}
           </dd>
           {resultForecast != null ? (
@@ -154,8 +154,8 @@ function CampaignCompareCard({
           ) : null}
         </div>
         <div>
-          <dt className="text-caption text-muted">Cost per result</dt>
-          <dd className="font-mono tabular-nums text-foreground">
+          <dt className="text-caption text-foreground">Cost per result</dt>
+          <dd className="tabular-nums text-foreground">
             {fmtUsdOrDash(cpr, 2)}
           </dd>
         </div>
@@ -172,7 +172,7 @@ function MetricValue({
   estimate?: boolean;
 }) {
   if (!captured(value)) {
-    return <span className="text-muted">—</span>;
+    return <span className="text-secondary">—</span>;
   }
   return (
     <span className="inline-flex flex-col items-start">
@@ -180,7 +180,7 @@ function MetricValue({
         {formatCount(value)}
         {estimate ? (
           <sup
-            className="ml-0.5 text-[0.65em] font-normal text-muted"
+            className="ml-0.5 text-[0.65em] font-normal text-secondary"
             title="Modeled estimate"
           >
             *
@@ -188,7 +188,7 @@ function MetricValue({
         ) : null}
       </span>
       {estimate ? (
-        <span className="text-[10px] leading-tight text-muted">estimate</span>
+        <span className="text-[10px] leading-tight text-secondary">estimate</span>
       ) : null}
     </span>
   );
@@ -212,8 +212,8 @@ function ChannelMetric({
   }
   return (
     <div>
-      <dt className="text-muted">{label}</dt>
-      <dd className="font-mono text-foreground">
+      <dt className="text-foreground">{label}</dt>
+      <dd className="text-foreground">
         {money ? (
           formatUsd(value!, label === "Spend" ? 0 : 2)
         ) : (
@@ -238,7 +238,7 @@ function ProgressBar({
   const width = Math.max(0, Math.min(100, pct));
   return (
     <div>
-      <p className="text-[10px] font-medium uppercase tracking-[0.06em] text-muted">
+      <p className="text-[10px] font-medium uppercase tracking-[0.06em] text-foreground">
         {label}
       </p>
       <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-canvas">
@@ -265,7 +265,7 @@ function ReleaseMonogram({
   const letter = (artist.trim()[0] || title.trim()[0] || "?").toUpperCase();
   return (
     <div
-      className="flex size-16 shrink-0 items-center justify-center rounded-instrument bg-canvas font-serif text-2xl font-semibold text-foreground"
+      className="flex size-16 shrink-0 items-center justify-center rounded-instrument bg-canvas text-2xl font-semibold text-foreground"
       aria-hidden="true"
     >
       {letter}
@@ -435,8 +435,8 @@ export function AdReportDashboard({
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
-                    <p className="text-caption text-muted">{release.artistName}</p>
-                    <h1 className="font-serif text-xl font-semibold text-foreground">
+                    <p className="text-caption text-secondary">{release.artistName}</p>
+                    <h1 className="text-xl font-semibold text-foreground">
                       {release.trackName}
                     </h1>
                   </div>
@@ -444,7 +444,7 @@ export function AdReportDashboard({
                     <StatusPill tone="info">{release.objectiveLabel}</StatusPill>
                   ) : null}
                 </div>
-                <p className="mt-1 text-caption text-muted">
+                <p className="mt-1 text-caption text-secondary">
                   Release {formatReleaseDate(release.releaseDate)} · Snapshot{" "}
                   {formatLockTimestamp(generatedAt)}
                 </p>
@@ -489,21 +489,21 @@ export function AdReportDashboard({
         <h2 className="text-section font-semibold text-foreground">
           Week 1 forecast vs week 1 actual
         </h2>
-        <p className="mt-1 text-sm text-muted">
+        <p className="mt-1 text-sm text-secondary">
           Both sides cover D1–D7
           {week1Days > 0 ? ` · ${week1Days} day${week1Days === 1 ? "" : "s"} entered` : ""}.
         </p>
         <dl className="mt-3 grid gap-3 sm:grid-cols-3">
           <div className="rounded-instrument border border-border bg-surface px-4 py-3">
-            <dt className="text-label text-muted">Week 1 forecast</dt>
-            <dd className="mt-1 font-mono text-2xl font-semibold tabular-nums text-foreground">
+            <dt className="text-label text-foreground">Week 1 forecast</dt>
+            <dd className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
               {formatCompactNumber(week1Forecast)}
             </dd>
           </div>
           <div className="rounded-instrument border border-border bg-surface px-4 py-3">
-            <dt className="text-label text-muted">Week 1 actual</dt>
+            <dt className="text-label text-foreground">Week 1 actual</dt>
             <dd
-              className={`mt-1 font-mono text-2xl font-semibold tabular-nums ${
+              className={`mt-1 text-2xl font-semibold tabular-nums ${
                 streamsVsBand == null
                   ? "text-foreground"
                   : saveRateToneClass(streamsVsBand)
@@ -516,20 +516,20 @@ export function AdReportDashboard({
                 {streamBandCaption(streamsVsBand, expectedStreams)}
               </p>
             ) : week1Forecast > 0 ? (
-              <p className="mt-2 text-caption text-muted">
+              <p className="mt-2 text-caption text-secondary">
                 Expected {formatCompactNumber(expectedStreams.lo)}–
                 {formatCompactNumber(expectedStreams.hi)}
               </p>
             ) : null}
           </div>
           <div className="rounded-instrument border border-border bg-surface px-4 py-3">
-            <dt className="text-label text-muted">Variance</dt>
+            <dt className="text-label text-foreground">Variance</dt>
             <dd
-              className={`mt-1 font-mono text-2xl font-semibold tabular-nums ${
+              className={`mt-1 text-2xl font-semibold tabular-nums ${
                 streamsVsBand != null
                   ? saveRateToneClass(streamsVsBand)
                   : streamsVariance == null
-                    ? "text-muted"
+                    ? "text-secondary"
                     : streamsVariance >= 0
                       ? "text-semantic-positive"
                       : "text-semantic-negative"
@@ -545,9 +545,9 @@ export function AdReportDashboard({
           </div>
         </dl>
         {d28.actualStreams != null ? (
-          <p className="mt-3 text-sm text-muted">
+          <p className="mt-3 text-sm text-secondary">
             D1–D28 actual total{" "}
-            <span className="font-mono text-foreground">
+            <span className="text-foreground">
               {formatCompactNumber(d28.actualStreams)}
             </span>
             {d28.daysEntered > 0
@@ -565,23 +565,23 @@ export function AdReportDashboard({
           </h2>
           <dl className="mt-3 grid gap-3 sm:grid-cols-3">
             <div className="rounded-instrument border border-border bg-surface px-4 py-3">
-              <dt className="text-label text-muted">Week 1 forecast</dt>
-              <dd className="mt-1 font-mono text-2xl font-semibold tabular-nums">
+              <dt className="text-label text-foreground">Week 1 forecast</dt>
+              <dd className="mt-1 text-2xl font-semibold tabular-nums">
                 {formatCompactNumber(forecastSaves)}
               </dd>
             </div>
             <div className="rounded-instrument border border-border bg-surface px-4 py-3">
-              <dt className="text-label text-muted">Week 1 actual</dt>
-              <dd className="mt-1 font-mono text-2xl font-semibold tabular-nums">
+              <dt className="text-label text-foreground">Week 1 actual</dt>
+              <dd className="mt-1 text-2xl font-semibold tabular-nums">
                 {actualSaves == null ? "—" : formatCompactNumber(actualSaves)}
               </dd>
             </div>
             <div className="rounded-instrument border border-border bg-surface px-4 py-3">
-              <dt className="text-label text-muted">Variance</dt>
+              <dt className="text-label text-foreground">Variance</dt>
               <dd
-                className={`mt-1 font-mono text-2xl font-semibold tabular-nums ${
+                className={`mt-1 text-2xl font-semibold tabular-nums ${
                   savesVariance == null
-                    ? "text-muted"
+                    ? "text-secondary"
                     : savesVariance >= 0
                       ? "text-semantic-positive"
                       : "text-semantic-negative"
@@ -620,8 +620,8 @@ export function AdReportDashboard({
                 key={item.label}
                 className="rounded-instrument border border-border bg-surface px-4 py-3"
               >
-                <p className="text-label text-muted">{item.label}</p>
-                <p className="mt-2 font-mono text-2xl font-semibold tabular-nums text-foreground">
+                <p className="text-label text-foreground">{item.label}</p>
+                <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">
                   {item.value}
                 </p>
               </div>
@@ -650,30 +650,30 @@ export function AdReportDashboard({
               Meta funnel comparison
             </h2>
           </div>
-          <p className="text-sm text-muted">
+          <p className="text-sm text-secondary">
             Spotify clicks — model prediction vs measured Linkfire clicks.
           </p>
           <dl className="mt-3 grid gap-3 sm:grid-cols-3">
             <div className="rounded-instrument border border-border bg-surface px-4 py-3">
-              <dt className="text-label text-muted">Predicted</dt>
-              <dd className="mt-1 font-mono text-2xl tabular-nums text-secondary">
+              <dt className="text-label text-foreground">Predicted</dt>
+              <dd className="mt-1 text-2xl tabular-nums text-secondary">
                 {formatCount(metaFunnelComparison.predictedSpotifyClicks)}
               </dd>
             </div>
             <div className="rounded-instrument border border-border bg-surface px-4 py-3">
-              <dt className="text-label text-muted">Measured</dt>
-              <dd className="mt-1 font-mono text-2xl font-semibold tabular-nums">
+              <dt className="text-label text-foreground">Measured</dt>
+              <dd className="mt-1 text-2xl font-semibold tabular-nums">
                 {metaFunnelComparison.measuredSpotifyClicks == null
                   ? "—"
                   : formatCount(metaFunnelComparison.measuredSpotifyClicks)}
               </dd>
             </div>
             <div className="rounded-instrument border border-border bg-surface px-4 py-3">
-              <dt className="text-label text-muted">Variance</dt>
+              <dt className="text-label text-foreground">Variance</dt>
               <dd
-                className={`mt-1 font-mono text-2xl font-semibold tabular-nums ${
+                className={`mt-1 text-2xl font-semibold tabular-nums ${
                   metaFunnelComparison.clicksVariancePct == null
-                    ? "text-muted"
+                    ? "text-secondary"
                     : metaFunnelComparison.clicksVariancePct >= 0
                       ? "text-semantic-positive"
                       : "text-semantic-negative"
@@ -812,9 +812,6 @@ export function AdReportDashboard({
           <h2 className="text-section font-semibold text-foreground">
             Creatives
           </h2>
-          <p className="mt-1 text-sm text-muted">
-            Performance next to the creative that produced it.
-          </p>
           <div className="mt-3 space-y-4">
             {campaignsWithCreatives.map((c, i) => (
               <article
@@ -825,7 +822,7 @@ export function AdReportDashboard({
                   <h3 className="text-sm font-semibold text-foreground">
                     {displayCampaignName(c)}
                   </h3>
-                  <p className="text-caption text-muted">
+                  <p className="text-caption text-secondary">
                     {c.channel.replace(/_/g, " ")}
                   </p>
                 </div>
@@ -840,7 +837,7 @@ export function AdReportDashboard({
                         loading="lazy"
                       />
                       {asset.caption ? (
-                        <p className="mt-1 truncate text-caption text-muted">
+                        <p className="mt-1 truncate text-caption text-secondary">
                           {asset.caption}
                         </p>
                       ) : null}
@@ -857,12 +854,9 @@ export function AdReportDashboard({
         <h2 className="text-section font-semibold text-foreground">
           Marketing objective compare
         </h2>
-        <p className="mt-1 text-sm text-muted">
-          How campaign goals performed at a glance.
-        </p>
         <ul className="mt-3 divide-y divide-border-subtle overflow-hidden rounded-instrument border border-border bg-surface md:hidden print:hidden">
           {visibleCampaigns.length === 0 ? (
-            <li className="px-4 py-4 text-muted">No campaigns in snapshot.</li>
+            <li className="px-4 py-4 text-secondary">No campaigns in snapshot.</li>
           ) : (
             visibleCampaigns.map((c, i) => (
               <CampaignCompareCard
@@ -875,7 +869,7 @@ export function AdReportDashboard({
         <div className="mt-3 hidden overflow-x-auto rounded-instrument border border-border bg-surface md:block print:block">
           <table className="w-full text-left text-body-sm">
             <thead>
-              <tr className="border-b border-border text-muted">
+              <tr className="border-b border-border text-foreground">
                 <th className="px-3 py-2 font-normal">Platform</th>
                 <th className="px-3 py-2 font-normal">Campaign</th>
                 <th className="px-3 py-2 font-normal">Status</th>
@@ -889,7 +883,7 @@ export function AdReportDashboard({
             <tbody>
               {visibleCampaigns.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-3 py-4 text-muted">
+                  <td colSpan={6} className="px-3 py-4 text-secondary">
                     No campaigns in snapshot.
                   </td>
                 </tr>
@@ -936,26 +930,26 @@ export function AdReportDashboard({
                         ) : status === "under_achieved" ? (
                           <StatusPill tone="warning">Under achieved</StatusPill>
                         ) : (
-                          <span className="text-muted">—</span>
+                          <span className="text-secondary">—</span>
                         )}
                       </td>
-                      <td className="px-3 py-3 text-right font-mono tabular-nums">
+                      <td className="px-3 py-3 text-right tabular-nums">
                         {formatUsd(c.spend, 0)}
                         {c.budget != null && c.budget > 0 ? (
-                          <span className="text-muted">
+                          <span className="text-secondary">
                             {" / "}
                             {formatUsd(c.budget, 0)}
                           </span>
                         ) : null}
                       </td>
                       <td className="px-3 py-3">
-                        <p className="text-caption text-muted">{resultLabel}</p>
-                        <p className="font-mono tabular-nums text-foreground">
+                        <p className="text-caption text-foreground">{resultLabel}</p>
+                        <p className="tabular-nums text-foreground">
                           {resultActual == null
                             ? "—"
                             : formatCount(resultActual)}
                           {resultForecast != null ? (
-                            <span className="text-muted">
+                            <span className="text-secondary">
                               {" / "}
                               {formatCount(resultForecast)}
                             </span>
@@ -967,7 +961,7 @@ export function AdReportDashboard({
                           </p>
                         ) : null}
                       </td>
-                      <td className="px-3 py-3 text-right font-mono tabular-nums">
+                      <td className="px-3 py-3 text-right tabular-nums">
                         {fmtUsdOrDash(cpr, 2)}
                       </td>
                     </tr>
@@ -979,7 +973,7 @@ export function AdReportDashboard({
         </div>
       </section>
 
-      <footer className="mt-10 border-t border-border pt-4 text-xs text-muted print:mt-6">
+      <footer className="mt-10 border-t border-border pt-4 text-xs text-secondary print:mt-6">
         <p>
           Red Light Creative · Read-only performance snapshot.{" "}
           <sup>*</sup> Meta streams are modeled estimates; Spotify attributed

@@ -18,7 +18,7 @@ export function PageBreadcrumbs({ items }: { items: BreadcrumbItem[] }) {
           return (
             <li key={`${item.label}-${index}`} className="flex items-center gap-x-1.5">
               {index > 0 ? (
-                <span className="text-muted" aria-hidden="true">
+                <span className="text-secondary" aria-hidden="true">
                   &gt;
                 </span>
               ) : null}

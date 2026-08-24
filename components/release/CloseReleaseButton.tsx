@@ -41,7 +41,7 @@ export function CloseReleaseButton({ releaseId }: CloseReleaseButtonProps) {
         className={
           "rounded-instrument border border-border px-3 py-1.5 text-body-sm font-medium " +
           (pending
-            ? "cursor-not-allowed bg-bracket-bg text-muted"
+            ? "cursor-not-allowed bg-bracket-bg text-secondary"
             : "bg-surface text-secondary hover:border-semantic-negative/40 hover:text-semantic-negative")
         }
       >

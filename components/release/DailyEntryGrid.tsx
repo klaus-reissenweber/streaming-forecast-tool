@@ -28,8 +28,8 @@ function cellClassName(status: DaySaveStatus | undefined, readOnly: boolean): st
   const base =
     "w-14 rounded border px-1.5 py-1 text-center font-mono text-xs tabular-nums " +
     (readOnly
-      ? "cursor-default border-border bg-canvas-subtle text-muted placeholder:text-muted/50"
-      : "border-border bg-surface text-foreground placeholder:text-muted/50 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent");
+      ? "cursor-default border-border bg-canvas-subtle text-secondary placeholder:text-secondary/50"
+      : "border-border bg-surface text-foreground placeholder:text-secondary/50 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent");
 
   if (status === "error") {
     return `${base} border-semantic-negative ring-1 ring-semantic-negative/20`;
@@ -58,7 +58,7 @@ export function DailyEntryGrid({
           <tr>
             <th
               scope="col"
-              className="sticky left-0 z-10 border-b border-border bg-surface px-2 py-2 text-left text-xs font-semibold uppercase tracking-wide text-muted"
+              className="sticky left-0 z-10 border-b border-border bg-surface px-2 py-2 text-left text-xs font-semibold uppercase tracking-wide text-foreground"
             >
               Metric
             </th>
@@ -66,7 +66,7 @@ export function DailyEntryGrid({
               <th
                 key={day}
                 scope="col"
-                className="border-b border-border px-1 py-2 text-center font-mono text-[11px] font-medium uppercase tracking-[0.06em] text-muted"
+                className="border-b border-border px-1 py-2 text-center font-mono text-[11px] font-medium uppercase tracking-[0.06em] text-foreground"
               >
                 D{day}
               </th>

@@ -46,7 +46,7 @@ function DiffTable({
       ) : (
         <table className="mt-3 w-full text-left text-xs">
           <thead>
-            <tr className="text-secondary">
+            <tr className="text-foreground">
               <th className="pb-1 font-normal">Param</th>
               <th className="pb-1 font-normal">New</th>
               <th className="pb-1 font-normal">Active</th>
@@ -56,12 +56,12 @@ function DiffTable({
           <tbody>
             {visible.map((row) => (
               <tr key={row.label} className="border-t border-border/60">
-                <td className="py-1 font-mono text-foreground">{row.label}</td>
-                <td className="py-1 font-mono">{fmt(row.draft, digits)}</td>
-                <td className="py-1 font-mono text-secondary">
+                <td className="py-1 text-foreground">{row.label}</td>
+                <td className="py-1">{fmt(row.draft, digits)}</td>
+                <td className="py-1 text-secondary">
                   {fmt(row.active, digits)}
                 </td>
-                <td className="py-1 font-mono">{fmtDelta(row.delta, digits)}</td>
+                <td className="py-1">{fmtDelta(row.delta, digits)}</td>
               </tr>
             ))}
           </tbody>
@@ -83,7 +83,7 @@ export function DraftDiffTables({ diff }: { diff: ModelDiff }) {
         <h2 className="text-section font-semibold text-foreground">
           Diff vs active
         </h2>
-        <span className="text-caption text-muted">New / active / Δ</span>
+        <span className="text-caption text-secondary">New / active / Δ</span>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
         <DiffTable title="DOW" rows={diff.dow} digits={3} />

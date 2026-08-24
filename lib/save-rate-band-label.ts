@@ -64,6 +64,6 @@ export function saveRateToneClass(vsBand: SaveRateVsBand | null): string {
     case "within":
       return "text-secondary";
     default:
-      return "text-muted";
+      return "text-secondary";
   }
 }
