@@ -1,3 +1,4 @@
+import { formatCompactNumber } from "../format";
 import type { MetricOutcome, DayPoint, ClosedRelease, Finding } from "./types";
 import { verdictFor, marginOutside, independentChecks, falseFlagRate } from "./variance";
 import { curveStats } from "./curve";
@@ -12,7 +13,8 @@ const move = (x: number) =>
   `${x >= 0 ? "rose" : "fell"} ${Math.round(Math.abs(x) * 100)} percent`;
 const compact = (n: number) =>
   Math.abs(n) >= 1e6 ? `${(n / 1e6).toFixed(2)}M`
-  : Math.abs(n) >= 1e3 ? `${Math.round(n / 1e3)}K`
+  : Math.abs(n) >= 1e4 ? `${Math.round(n / 1e3)}K`
+  : Math.abs(n) >= 1e3 ? `${(n / 1e3).toFixed(1).replace(/\.0$/, "")}K`
   : `${Math.round(n)}`;
 const val = (m: MetricOutcome, v: number) => (m.isRate ? `${v.toFixed(1)} percent` : compact(v));
 
@@ -149,6 +151,119 @@ export function calibrationFindings(closes: ClosedRelease[]): Finding[] {
       text: `${c.excluded} release${c.excluded === 1 ? "" : "s"} had no usable actual and ${c.excluded === 1 ? "was" : "were"} left out of these figures.`,
     });
   }
+  return out;
+}
+
+export interface PositioningInput {
+  forecastSaves: number;
+  actualSaves: number | null;
+  thresholds: { p25: number; p75: number; p90: number };
+}
+
+type PositioningBand = "weak" | "typical" | "strong" | "elite";
+
+const BAND_NAME: Record<PositioningBand, string> = {
+  weak: "Quiet",
+  typical: "Normal",
+  strong: "Hot",
+  elite: "Breakout",
+};
+
+function bandForSaves(
+  saves: number,
+  thresholds: PositioningInput["thresholds"],
+): PositioningBand {
+  if (saves < thresholds.p25) return "weak";
+  if (saves < thresholds.p75) return "typical";
+  if (saves < thresholds.p90) return "strong";
+  return "elite";
+}
+
+function bandName(band: PositioningBand): string {
+  return BAND_NAME[band];
+}
+
+function operationalMeaning(band: PositioningBand): string {
+  if (band === "weak") {
+    return "Quiet means the algorithm is unlikely to expand much beyond existing fans.";
+  }
+  if (band === "typical") {
+    return "Normal means the release is on pace for usual algorithmic treatment.";
+  }
+  if (band === "strong") {
+    return "Hot means expanded algorithmic reach is in play if streams follow.";
+  }
+  return "Breakout means breakout treatment is in play if stream velocity confirms.";
+}
+
+function nearestEdge(
+  saves: number,
+  thresholds: PositioningInput["thresholds"],
+): { label: string; value: number } {
+  const edges = [
+    { label: "Normal", value: thresholds.p25 },
+    { label: "Hot", value: thresholds.p75 },
+    { label: "Breakout", value: thresholds.p90 },
+  ];
+  let best = edges[0];
+  let bestDist = Math.abs(saves - edges[0].value);
+  for (const edge of edges.slice(1)) {
+    const dist = Math.abs(saves - edge.value);
+    if (dist < bestDist) {
+      best = edge;
+      bestDist = dist;
+    }
+  }
+  return best;
+}
+
+function boundaryFinding(saves: number, thresholds: PositioningInput["thresholds"]): Finding {
+  const edge = nearestEdge(saves, thresholds);
+  const delta = Math.abs(saves - edge.value);
+  const cutoff = formatCompactNumber(edge.value);
+  if (!(delta >= 1)) {
+    return {
+      id: "boundary",
+      text: `It sits on the ${edge.label} boundary at ${cutoff}.`,
+    };
+  }
+  const side = saves < edge.value ? "below" : "above";
+  return {
+    id: "boundary",
+    text: `It sits ${compact(delta)} ${side} the ${edge.label} boundary at ${cutoff}.`,
+  };
+}
+
+export function positioningFindings(input: PositioningInput): Finding[] {
+  const { forecastSaves, actualSaves, thresholds } = input;
+  const forecastBand = bandForSaves(forecastSaves, thresholds);
+  const hasActual = actualSaves != null && Number.isFinite(actualSaves);
+  const actualBand = hasActual ? bandForSaves(actualSaves, thresholds) : null;
+  const out: Finding[] = [];
+
+  if (hasActual && actualBand != null) {
+    if (actualBand !== forecastBand) {
+      out.push({
+        id: "landing",
+        text: `The release closed in ${bandName(actualBand)} at ${compact(actualSaves)} saves. The forecast placed it in ${bandName(forecastBand)} at ${compact(forecastSaves)}. The forecast and the outcome disagree.`,
+      });
+    } else {
+      out.push({
+        id: "landing",
+        text: `The release closed in ${bandName(actualBand)} at ${compact(actualSaves)} saves, matching the forecast of ${compact(forecastSaves)}.`,
+      });
+    }
+    out.push(boundaryFinding(actualSaves, thresholds));
+    out.push({ id: "meaning", text: operationalMeaning(actualBand) });
+  } else {
+    out.push({
+      id: "landing",
+      text: `The forecast places this release in ${bandName(forecastBand)} at ${compact(forecastSaves)} saves.`,
+    });
+    out.push(boundaryFinding(forecastSaves, thresholds));
+    out.push({ id: "meaning", text: operationalMeaning(forecastBand) });
+  }
+
   return out;
 }
 

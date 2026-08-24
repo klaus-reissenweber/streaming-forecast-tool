@@ -3,7 +3,7 @@ import { wilson, signTestP, median } from "./stats";
 import { verdictFor, marginOutside, falseFlagRate, independentChecks } from "./variance";
 import { curveStats } from "./curve";
 import { calibrate } from "./calibration";
-import { week1Findings, curveFindings, calibrationFindings } from "./findings";
+import { week1Findings, curveFindings, calibrationFindings, positioningFindings } from "./findings";
 import type { MetricOutcome, DayPoint, ClosedRelease } from "./types";
 
 const streams: MetricOutcome = { key: "Streams", actual: 436000, forecast: 304000, lo: 137000, hi: 320000 };
@@ -135,5 +135,66 @@ describe("findings", () => {
   });
   it("reports releases it had to leave out", () => {
     expect(calibrationFindings(closes).some((x) => x.id === "excluded")).toBe(true);
+  });
+});
+
+const midThresholds = { p25: 5137, p75: 26400, p90: 34551 };
+
+describe("positioningFindings", () => {
+  const lightDown = positioningFindings({
+    forecastSaves: 8700,
+    actualSaves: 380,
+    thresholds: midThresholds,
+  });
+
+  it("states where actual landed and where forecast placed it, with both numbers", () => {
+    const landing = lightDown.find((f) => f.id === "landing")!;
+    expect(landing.text).toContain("Quiet");
+    expect(landing.text).toContain("380");
+    expect(landing.text).toContain("Normal");
+    expect(landing.text).toContain("8.7K");
+  });
+
+  it("says the forecast and the outcome disagree when they are in different bands", () => {
+    const landing = lightDown.find((f) => f.id === "landing")!;
+    expect(landing.text).toContain("disagree");
+    expect(landing.text).not.toMatch(/^The release closed in Quiet\.$/);
+  });
+
+  it("states the distance to the nearest band boundary", () => {
+    const boundary = lightDown.find((f) => f.id === "boundary")!;
+    expect(boundary.text).toContain("4.8K");
+    expect(boundary.text).toContain("below");
+    expect(boundary.text).toContain("Normal");
+    expect(boundary.text).toContain("5K");
+  });
+
+  it("states what the landed band means", () => {
+    const meaning = lightDown.find((f) => f.id === "meaning")!;
+    expect(meaning.text).toContain("Quiet means");
+    expect(meaning.text).toContain("existing fans");
+  });
+
+  it("says they match when both land in the same band", () => {
+    const f = positioningFindings({
+      forecastSaves: 8700,
+      actualSaves: 9200,
+      thresholds: midThresholds,
+    });
+    const landing = f.find((x) => x.id === "landing")!;
+    expect(landing.text).toContain("matching");
+    expect(landing.text).not.toContain("disagree");
+  });
+
+  it("still emits placement, boundary, and meaning before an actual exists", () => {
+    const f = positioningFindings({
+      forecastSaves: 8700,
+      actualSaves: null,
+      thresholds: midThresholds,
+    });
+    expect(f.map((x) => x.id)).toEqual(["landing", "boundary", "meaning"]);
+    expect(f[0].text).toContain("Normal");
+    expect(f[0].text).toContain("8.7K");
+    expect(f[0].text).not.toContain("disagree");
   });
 });
