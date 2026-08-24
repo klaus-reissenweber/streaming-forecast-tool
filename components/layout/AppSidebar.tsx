@@ -144,6 +144,9 @@ function IconClose(props: { className?: string }) {
   );
 }
 
+/** Matches Tailwind `md` (48rem). */
+const MD_MIN_WIDTH = "(min-width: 768px)";
+
 const NAV_ICONS: Record<
   NavItemId,
   (props: { className?: string }) => ReactNode
@@ -217,6 +220,24 @@ export function AppSidebar() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    const media = window.matchMedia(MD_MIN_WIDTH);
+    const closeIfDesktop = () => {
+      if (!media.matches) {
+        return;
+      }
+      setOpen(false);
+      document.body.style.removeProperty("overflow");
+    };
+    closeIfDesktop();
+    media.addEventListener("change", closeIfDesktop);
+    return () => media.removeEventListener("change", closeIfDesktop);
+  }, []);
+
+  useEffect(() => {
     if (!open) {
       return;
     }
@@ -269,7 +290,7 @@ export function AppSidebar() {
         id="internal-sidebar"
         className={
           "fixed top-12 bottom-0 left-0 z-40 flex w-56 shrink-0 flex-col overflow-hidden border-r border-border bg-canvas-subtle transition-transform duration-200 ease-out-quart print:hidden md:sticky md:inset-auto md:top-0 md:z-0 md:h-dvh md:self-start md:transition-none " +
-          (open ? "translate-x-0" : "-translate-x-full md:translate-x-0")
+          (open ? "max-md:translate-x-0" : "max-md:-translate-x-full")
         }
       >
         <div className="hidden shrink-0 border-b border-border px-4 py-4 md:block">
