@@ -55,7 +55,7 @@ Use Tailwind token names (`bg-canvas`, `text-accent-readable`). Raw hex only in 
 | Positive | `#1F6B52` / `#ECF5F1` | `semantic-positive` / `-bg` | On track, above band |
 | Warning | `#8A6400` / `#F8F3E4` | `semantic-warning` / `-bg` | Lagging save velocity |
 | Negative | `#9B2335` / `#F9ECEE` | `semantic-negative` / `-bg` | Health lagging |
-| Info | `#1565A8` / `#ECF2FA` | `semantic-info` / `-bg` | Flags, projected series |
+| Info | `#1565A8` / `#ECF2FA` | `semantic-info` / `-bg` | Flags, info series |
 | Projected | `#1565A8` | `projected` | Live model line |
 
 **Accent on white fails contrast.** Never put `#C8E600` on a white or canvas background as text. Use `accent-readable`. Never put white text on the lime fill.

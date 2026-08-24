@@ -36,12 +36,9 @@ export default async function AdsPage() {
   return (
     <main className="mx-auto max-w-6xl px-5 py-8">
       <header className="border-b border-border pb-4">
-        <h1 className="font-serif text-release-title font-semibold text-foreground">
+        <h1 className="text-release-title font-semibold text-foreground">
           Ad results
         </h1>
-        <p className="mt-1 text-body-sm text-secondary">
-          Choose a release to enter campaign numbers or upload a partner export.
-        </p>
       </header>
 
       <ReleaseGroup title="Active" rows={active} />
@@ -63,7 +60,7 @@ function ReleaseGroup({
     <section className="mt-8" aria-label={title}>
       <h2 className="text-section font-semibold text-foreground">{title}</h2>
       {rows.length === 0 ? (
-        <p className="mt-3 text-body-sm text-muted">No releases.</p>
+        <p className="mt-3 text-body-sm text-secondary">No releases.</p>
       ) : (
         <ul className="mt-3 divide-y divide-border-subtle overflow-hidden rounded-instrument border border-border bg-surface">
           {rows.map((row) => {
@@ -79,7 +76,7 @@ function ReleaseGroup({
                       {row.trackName}
                     </span>
                     <span className="text-secondary"> · {row.artistName}</span>
-                    <span className="mt-0.5 block font-mono text-caption text-muted">
+                    <span className="mt-0.5 block text-caption text-secondary">
                       {row.releaseDate
                         ? formatReleaseDate(row.releaseDate)
                         : "—"}
@@ -88,7 +85,7 @@ function ReleaseGroup({
                   <span
                     className={
                       "shrink-0 text-right text-caption " +
-                      (entered ? "text-secondary" : "text-muted")
+                      (entered ? "text-secondary" : "text-secondary")
                     }
                   >
                     {entered

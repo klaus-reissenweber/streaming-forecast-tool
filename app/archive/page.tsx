@@ -98,11 +98,11 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
   return (
     <main className="mx-auto max-w-6xl px-5 py-8">
       <header className="border-b border-border pb-4">
-        <h1 className="font-serif text-release-title font-semibold text-foreground">
+        <h1 className="text-release-title font-semibold text-foreground">
           Release archive
         </h1>
         {dateRange ? (
-          <p className="mt-1 text-sm text-muted">{dateRange}</p>
+          <p className="mt-1 text-sm text-secondary">{dateRange}</p>
         ) : null}
       </header>
 

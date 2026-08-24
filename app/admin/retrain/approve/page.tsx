@@ -35,7 +35,7 @@ export default async function ApproveDraftsPage() {
   if (!auth.ok) {
     return (
       <main className="mx-auto max-w-3xl px-5 py-8">
-        <h1 className="font-serif text-release-title font-semibold text-foreground">
+        <h1 className="text-release-title font-semibold text-foreground">
           Approve drafts
         </h1>
         <p className="mt-3 text-body-sm text-secondary">{auth.error}</p>
@@ -62,19 +62,15 @@ export default async function ApproveDraftsPage() {
         ]}
       />
       <header className="mt-4 border-b border-border pb-4">
-        <h1 className="font-serif text-release-title font-semibold text-foreground">
+        <h1 className="text-release-title font-semibold text-foreground">
           Approve drafts
         </h1>
-        <p className="mt-1 text-body-sm text-secondary">
-          Open a completed job or a standing draft to compare against the
-          active model.
-        </p>
       </header>
 
       <section className="mt-8" aria-label="Retrain jobs">
         <SectionHeader>Jobs</SectionHeader>
         {jobs.length === 0 ? (
-          <p className="mt-3 text-body-sm text-muted">No retrain jobs yet.</p>
+          <p className="mt-3 text-body-sm text-secondary">No retrain jobs yet.</p>
         ) : (
           <ul className="mt-3 divide-y divide-border-subtle overflow-hidden rounded-instrument border border-border bg-surface">
             {jobs.map((job) => (
@@ -86,10 +82,10 @@ export default async function ApproveDraftsPage() {
                   <StatusPill tone={statusTone(job.status)}>
                     {job.status}
                   </StatusPill>
-                  <span className="font-mono text-body-sm text-foreground">
+                  <span className="text-body-sm text-foreground">
                     {job.id.slice(0, 8)}
                   </span>
-                  <span className="text-caption text-muted">
+                  <span className="text-caption text-secondary">
                     {formatLockTimestamp(job.createdAt)}
                   </span>
                 </span>
@@ -101,7 +97,7 @@ export default async function ApproveDraftsPage() {
                     Review draft
                   </Link>
                 ) : (
-                  <span className="text-caption text-muted">No draft yet</span>
+                  <span className="text-caption text-secondary">No draft yet</span>
                 )}
               </li>
             ))}
@@ -112,7 +108,7 @@ export default async function ApproveDraftsPage() {
       <section className="mt-8" aria-label="Draft models">
         <SectionHeader>Drafts</SectionHeader>
         {drafts.length === 0 ? (
-          <p className="mt-3 text-body-sm text-muted">No standing drafts.</p>
+          <p className="mt-3 text-body-sm text-secondary">No standing drafts.</p>
         ) : (
           <ul className="mt-3 divide-y divide-border-subtle overflow-hidden rounded-instrument border border-border bg-surface">
             {drafts.map((draft) => (
@@ -125,11 +121,11 @@ export default async function ApproveDraftsPage() {
                     <StatusPill tone={statusTone(draft.status)}>
                       {draft.status}
                     </StatusPill>
-                    <span className="font-mono text-body-sm text-foreground">
+                    <span className="text-body-sm text-foreground">
                       {draft.id.slice(0, 8)}
                     </span>
                   </span>
-                  <span className="font-mono text-caption text-muted">
+                  <span className="text-caption text-secondary">
                     {draft.fittedAt ? formatLockTimestamp(draft.fittedAt) : "—"}
                   </span>
                 </Link>

@@ -183,7 +183,7 @@ body {
 }
 
 .bracket-tag--neutral {
-  color: var(--color-muted);
+  color: var(--color-secondary);
 }
 
 .bracket-tag--axis {

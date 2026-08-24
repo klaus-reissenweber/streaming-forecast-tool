@@ -47,7 +47,7 @@ export default async function ApproveDraftPage({ params }: ApprovePageProps) {
   if (!auth.ok) {
     return (
       <main className="mx-auto max-w-3xl px-5 py-8">
-        <h1 className="font-serif text-release-title font-semibold text-foreground">
+        <h1 className="text-release-title font-semibold text-foreground">
           Check retrain
         </h1>
         <p className="mt-3 text-body-sm text-secondary">{auth.error}</p>
@@ -63,7 +63,7 @@ export default async function ApproveDraftPage({ params }: ApprovePageProps) {
   if (!canRetrain(auth.user.email)) {
     return (
       <main className="mx-auto max-w-3xl px-5 py-8">
-        <h1 className="font-serif text-release-title font-semibold text-foreground">
+        <h1 className="text-release-title font-semibold text-foreground">
           Check retrain
         </h1>
         <p className="mt-3 text-body-sm text-secondary">
@@ -86,7 +86,7 @@ export default async function ApproveDraftPage({ params }: ApprovePageProps) {
   if (!draft) {
     return (
       <main className="mx-auto max-w-3xl px-5 py-8">
-        <h1 className="font-serif text-release-title font-semibold text-foreground">
+        <h1 className="text-release-title font-semibold text-foreground">
           Check retrain
         </h1>
         <div className="mt-4 rounded-instrument border border-accent-border bg-accent-tint px-4 py-4">
@@ -95,7 +95,7 @@ export default async function ApproveDraftPage({ params }: ApprovePageProps) {
           </p>
           <p className="mt-2 text-body-sm text-secondary">
             No draft model is ready for{" "}
-            <span className="font-mono">{draftId}</span> yet. A queued or
+            <span>{draftId}</span> yet. A queued or
             running job can take up to 30 minutes. Check back from the archive
             when the draft link appears.
           </p>
@@ -127,13 +127,9 @@ export default async function ApproveDraftPage({ params }: ApprovePageProps) {
             { label: "Draft vs active" },
           ]}
         />
-        <h1 className="mt-4 font-serif text-release-title font-semibold text-foreground">
+        <h1 className="mt-4 text-release-title font-semibold text-foreground">
           Draft vs active
         </h1>
-        <p className="mt-2 text-body-sm text-secondary">
-          Review coefficient diffs first, then promote with Use this model when
-          ready.
-        </p>
       </header>
 
       <div className="mt-8 space-y-8">
@@ -151,7 +147,7 @@ export default async function ApproveDraftPage({ params }: ApprovePageProps) {
           <section className="rounded-instrument border border-border bg-surface p-5">
             <p className="text-body-sm text-secondary">
               This model is already{" "}
-              <span className="font-mono">{draft.status}</span> — Use this
+              <span>{draft.status}</span> — Use this
               model is unavailable.
             </p>
           </section>
@@ -164,24 +160,24 @@ export default async function ApproveDraftPage({ params }: ApprovePageProps) {
           <div className="mt-3 flex flex-wrap gap-3 text-body-sm text-secondary">
             <span>
               Draft id{" "}
-              <span className="font-mono text-foreground">
+              <span className="text-foreground">
                 {draft.id?.slice(0, 8)}
               </span>
               <StatusPill tone="neutral">{draft.status}</StatusPill>
             </span>
             <span>
               Fitted{" "}
-              <span className="font-mono text-foreground">{draft.fittedAt}</span>
+              <span className="text-foreground">{draft.fittedAt}</span>
             </span>
             <span>
               Active{" "}
-              <span className="font-mono text-foreground">
+              <span className="text-foreground">
                 {formatActiveModelSource(active)}
               </span>
             </span>
           </div>
           {fb ? (
-            <p className="mt-3 font-mono text-xs text-secondary">
+            <p className="mt-3 text-xs text-secondary">
               forward_bias all live {fmtBias(fb.all.live)} / new{" "}
               {fmtBias(fb.all.new)} · clean {fmtBias(fb.clean.live)} /{" "}
               {fmtBias(fb.clean.new)} · newest_10 {fmtBias(fb.newest10.live)} /{" "}

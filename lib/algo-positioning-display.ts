@@ -35,6 +35,22 @@ export const ALGO_BAND_ORDER: AlgoBand[] = [
   "elite",
 ];
 
+export function algoBandForSaves(
+  saves: number,
+  thresholds: AlgoPositioningResult["thresholds"],
+): AlgoBand {
+  if (saves < thresholds.p25) {
+    return "weak";
+  }
+  if (saves < thresholds.p75) {
+    return "typical";
+  }
+  if (saves < thresholds.p90) {
+    return "strong";
+  }
+  return "elite";
+}
+
 /** Plain threshold copy: what the number means, not how it was computed. */
 export function algoBandThresholdPlain(
   positioning: Pick<AlgoPositioningResult, "band" | "thresholds">,

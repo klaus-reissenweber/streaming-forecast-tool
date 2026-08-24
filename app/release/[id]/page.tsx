@@ -8,7 +8,7 @@ import { DailyEntrySection } from "@/components/release/DailyEntrySection";
 import { FlagsPanel } from "@/components/release/FlagsPanel";
 import { GenrePlaybook } from "@/components/release/GenrePlaybook";
 import { HealthBanner } from "@/components/release/HealthBanner";
-import { LockedForecastBanner } from "@/components/release/LockedForecastBanner";
+import { Week1Variance } from "@/components/release/Week1Variance";
 import { MetricCards } from "@/components/release/MetricCards";
 import { ReleasePageHeader } from "@/components/release/ReleasePageHeader";
 import { StreamCurveChart } from "@/components/release/StreamCurveChart";
@@ -132,29 +132,23 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
       </div>
 
       <div className="mt-6 flex flex-col gap-6">
-        <LockedForecastBanner
+        <Week1Variance
           streams={viewModel.locked.streams}
           saves={viewModel.locked.saves}
           forecastSaveRate={viewModel.locked.impliedSaveRate}
-          actualSaveRate={
-            viewModel.wk1Complete ? viewModel.actualSaveRate : null
-          }
-          actualSaveRateVsBand={
-            viewModel.wk1Complete ? viewModel.actualSaveRateVsBand : null
-          }
-          saveRateBand={viewModel.locked.saveRateBand}
           actualStreams={
             viewModel.wk1Complete ? viewModel.actualStreams : null
-          }
-          actualStreamsVsBand={
-            viewModel.wk1Complete ? viewModel.actualStreamsVsBand : null
           }
           actualSaves={
             viewModel.wk1Complete ? viewModel.actualSaves : null
           }
+          actualSaveRate={
+            viewModel.wk1Complete ? viewModel.actualSaveRate : null
+          }
           expectedStreamRange={viewModel.locked.expectedStreamRange}
+          streamBand={viewModel.locked.streamBand}
+          saveRateBand={viewModel.locked.saveRateBand}
           lockedAtDisplay={viewModel.locked.lockedAtDisplay}
-          week1WithAds={viewModel.adLayer.week1WithAds}
         />
 
         <HealthBanner health={viewModel.monitoring.health} />
@@ -198,13 +192,19 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
             showcaseAdDaily={viewModel.adLayer.showcaseDaily}
             metaAdDaily={viewModel.adLayer.metaDaily}
             actualStreamsByDay={viewModel.actualStreamsByDay}
+            streamBand={viewModel.locked.streamBand}
             phase={viewModel.phase}
             status={viewModel.header.status}
             releaseDate={viewModel.header.releaseDate}
           />
         ) : null}
 
-        <AlgoPositioningModule positioning={viewModel.algoPositioning} />
+        <AlgoPositioningModule
+          positioning={viewModel.algoPositioning}
+          actualSaves={
+            viewModel.wk1Complete ? viewModel.actualSaves : null
+          }
+        />
 
         <GenrePlaybook genre={viewModel.header.genre} />
       </div>

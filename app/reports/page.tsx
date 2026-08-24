@@ -17,7 +17,7 @@ export default async function ReportsPage() {
   return (
     <main className="mx-auto max-w-6xl px-5 py-8">
       <header className="border-b border-border pb-4">
-        <h1 className="font-serif text-release-title font-semibold text-foreground">
+        <h1 className="text-release-title font-semibold text-foreground">
           Reports
         </h1>
         <p className="mt-1 text-body-sm text-secondary">
@@ -27,7 +27,7 @@ export default async function ReportsPage() {
       </header>
 
       {reports.length === 0 ? (
-        <p className="mt-6 text-body-sm text-muted">
+        <p className="mt-6 text-body-sm text-secondary">
           No reports yet. Generate one from a release page.
         </p>
       ) : (
@@ -48,7 +48,7 @@ export default async function ReportsPage() {
                       <span className="text-secondary"> · {artist}</span>
                     ) : null}
                   </span>
-                  <span className="shrink-0 font-mono text-caption text-muted">
+                  <span className="shrink-0 text-caption text-secondary">
                     {formatLockTimestamp(report.updatedAt)}
                   </span>
                 </Link>

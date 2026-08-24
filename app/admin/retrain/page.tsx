@@ -42,13 +42,9 @@ export default async function RetrainPage() {
   return (
     <main className="mx-auto max-w-6xl px-5 py-8">
       <header className="border-b border-border pb-4">
-        <h1 className="font-serif text-release-title font-semibold text-foreground">
+        <h1 className="text-release-title font-semibold text-foreground">
           Retrain
         </h1>
-        <p className="mt-1 text-body-sm text-secondary">
-          Fit a draft from closed week-1 releases, then review it under Approve
-          drafts.
-        </p>
       </header>
 
       <div className="mt-6">
@@ -69,9 +65,9 @@ export default async function RetrainPage() {
           <summary className="cursor-pointer text-section font-semibold text-foreground">
             Details
           </summary>
-          <p className="mt-3 text-sm text-muted">
+          <p className="mt-3 text-sm text-secondary">
             Active model{" "}
-            <span className="font-mono text-foreground">
+            <span className="text-foreground">
               {formatActiveModelSource(model)}
             </span>
           </p>
