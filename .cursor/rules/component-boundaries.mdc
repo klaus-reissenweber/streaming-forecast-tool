@@ -1,0 +1,59 @@
+---
+description: Where UI, view models, and forecast math may live
+globs: "**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Component boundaries
+
+## Data flow
+
+```
+app/<route>/page.tsx
+  → lib/load-*.ts          (fetch)
+  → lib/build-*-view-model.ts (pure assemble)
+  → components/<domain>/*  (render props)
+```
+
+Pages compose. They do not contain forecast math, flag rules, or large JSX modules.
+
+## Folders
+
+| Folder | Owns | Must not |
+|--------|------|----------|
+| `app/**/page.tsx` | Route, metadata, loaders, composition | Domain markup, token invention |
+| `app/**/actions.ts` | Server mutations | UI |
+| `components/layout` | Shell, sidebar, wordmark, breadcrumbs, `SectionHeader` | Domain data |
+| `components/ui` | Primitives (`StatusPill`) | Feature logic |
+| `components/brand` | Platform logos | App chrome |
+| `components/charts` | Shared chart fragments | Page layout |
+| `components/release` | `/release/[id]` cockpit | Dashboard/archive tables |
+| `components/dashboard` | `/` active list | Release cockpit modules |
+| `components/new` | `/new` form | Release-page layout |
+| `components/archive` | `/archive` | Live monitoring |
+| `components/report` | Public `/report/[slug]` | Internal sidebar assumptions |
+| `components/admin/retrain` | Retrain/approve | Release cockpit |
+| `lib/**` | Math, flags, view models, loaders, supabase | **Any JSX** |
+
+`lib/` never imports `components/`. Components never call `predictStreams` / `computeFlags` — they receive view-model slices.
+
+## Cross-domain
+
+Do not import across feature folders except:
+
+- `components/release/ChannelMixForecast` → `components/new/AdSpendLiveForecast` (one ad-metric card)
+- Any feature → `layout`, `ui`, `brand`, `charts`, `lib` types/formatters
+
+New cockpit UI goes in `components/release/`, not `page.tsx`. New primitives go in `components/ui/`, not a feature folder.
+
+```ts
+// ❌ BAD — math in a component
+const streams = predictStreams(inputs, coeffs);
+
+// ❌ BAD — JSX in lib
+export function FlagRow() { return <li>{title}</li>; }
+
+// ✅ GOOD
+const viewModel = buildReleaseViewModel(release, daily, ...);
+<FlagsPanel phase={viewModel.phase} flags={viewModel.flags} />
+```

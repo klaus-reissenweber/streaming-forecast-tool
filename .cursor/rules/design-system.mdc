@@ -1,0 +1,35 @@
+---
+description: Instrument Edition visual source of truth for Forecast UI
+alwaysApply: true
+---
+
+# Design system
+
+Read in this order before any UI change:
+
+1. `design-system/forecast/MASTER.md`
+2. `design-system/forecast/pages/<page>.md` if it exists (overrides Master)
+3. `design-system/forecast/reference-cockpit.jsx` for visual density and hierarchy
+
+Implemented tokens in `app/globals.css` and `tailwind.config.ts` win if docs drift.
+
+## Hard rules
+
+- Light-only Instrument Edition: cool gray canvas, white surfaces, 1px borders, `rounded-instrument` (4px).
+- No shadows, gradients, glass, emoji icons, or dark theme.
+- Accent `#C8E600` is a signal (left rules, tint fills, focus). Text on tint uses `text-accent-readable`. Never lime text on white, never white text on lime.
+- Page titles: Source Serif 4. Section titles: IBM Plex Sans. Figures: IBM Plex Mono + `tabular-nums`.
+- Hide empty modules. Do not stub “coming soon” cards.
+- No new hex in components. Charts read CSS variables / existing `chart-*` tokens.
+- Catalog palettes (musical red, Righteous/Poppins, dark SaaS) are rejected.
+
+```tsx
+// ❌ BAD
+<div className="rounded-xl shadow-md bg-black text-accent">Streams</div>
+
+// ✅ GOOD
+<section className="rounded-instrument border border-border bg-surface p-5">
+  <h2 className="text-section font-semibold">Streams</h2>
+  <p className="font-mono text-metric-value tabular-nums">128K</p>
+</section>
+```
