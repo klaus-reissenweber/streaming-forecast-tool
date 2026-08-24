@@ -1,7 +1,7 @@
 import type { Config } from "tailwindcss";
 
 /**
- * Instrument Edition design tokens.
+ * Forecast design tokens.
  * Consumed via @config in app/globals.css (Tailwind v4).
  */
 const config = {
@@ -13,65 +13,56 @@ const config = {
   theme: {
     extend: {
       colors: {
-        canvas: "#EDEEF1",
-        "canvas-subtle": "#F4F5F7",
-        surface: "#FFFFFF",
+        canvas: "var(--color-canvas)",
+        "canvas-subtle": "var(--color-canvas-subtle)",
+        card: "var(--color-card)",
+        surface: "var(--color-surface)",
         border: {
-          DEFAULT: "#E2E6EB",
-          subtle: "#ECEEF2",
+          DEFAULT: "var(--color-border)",
+          subtle: "var(--color-border-subtle)",
         },
-        foreground: "#12151A",
-        secondary: "#545B66",
-        muted: "#868E98",
-        disabled: "#555555",
+        foreground: "var(--color-foreground)",
+        secondary: "var(--color-secondary)",
+        mute: "var(--color-mute)",
+        muted: "var(--color-muted)",
+        disabled: "var(--color-disabled)",
         accent: {
-          DEFAULT: "#C8E600",
-          hover: "#B3CF00",
-          readable: "#5A6600",
-          tint: "#F7FCE8",
-          border: "#DFEBA3",
+          DEFAULT: "var(--color-accent)",
+          hover: "var(--color-accent-hover)",
+          readable: "var(--color-accent-readable)",
+          tint: "var(--color-accent-tint)",
+          border: "var(--color-accent-border)",
         },
         semantic: {
-          positive: "#1F6B52",
-          "positive-bg": "#ECF5F1",
-          warning: "#8A6400",
-          "warning-bg": "#F8F3E4",
-          negative: "#9B2335",
-          "negative-bg": "#F9ECEE",
-          info: "#1565A8",
-          "info-bg": "#ECF2FA",
-          neutral: "#545B66",
+          positive: "var(--color-semantic-positive)",
+          "positive-bg": "var(--color-semantic-positive-bg)",
+          warning: "var(--color-semantic-warning)",
+          "warning-bg": "var(--color-semantic-warning-bg)",
+          negative: "var(--color-semantic-negative)",
+          "negative-bg": "var(--color-semantic-negative-bg)",
+          info: "var(--color-semantic-info)",
+          "info-bg": "var(--color-semantic-info-bg)",
+          neutral: "var(--color-semantic-neutral)",
         },
-        projected: "#1565A8",
+        projected: "var(--color-projected)",
         chart: {
-          locked: "#8FA800",
-          projected: "#1565A8",
-          actual: "#12151A",
-          grid: "#ECEEF2",
-          axis: "#868E98",
+          locked: "var(--color-chart-locked)",
+          projected: "var(--color-chart-projected)",
+          actual: "var(--color-chart-actual)",
+          grid: "var(--color-chart-grid)",
+          axis: "var(--color-chart-axis)",
         },
         bracket: {
-          bg: "#F0F2F5",
-          text: "#545B66",
+          bg: "var(--color-bracket-bg)",
+          text: "var(--color-bracket-text)",
         },
       },
       fontFamily: {
-        serif: [
-          "var(--font-source-serif)",
-          "ui-serif",
-          "Georgia",
-          "serif",
-        ],
         sans: [
-          "var(--font-plex-sans)",
+          "var(--font-inter)",
           "ui-sans-serif",
           "system-ui",
           "sans-serif",
-        ],
-        mono: [
-          "var(--font-plex-mono)",
-          "ui-monospace",
-          "monospace",
         ],
       },
       fontSize: {

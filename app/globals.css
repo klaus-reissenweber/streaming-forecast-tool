@@ -9,17 +9,30 @@
 
   --color-canvas: #edeef1;
   --color-canvas-subtle: #f4f5f7;
-  --color-surface: #ffffff;
+  --color-card: #ffffff;
+  --color-surface: var(--color-card);
   --color-border: #e2e6eb;
   --color-border-subtle: #eceef2;
   --color-foreground: #12151a;
   --color-secondary: #545b66;
-  --color-muted: #868e98;
+  --color-mute: #868e98;
+  --color-muted: var(--color-mute);
+  --color-disabled: #555555;
   --color-accent: #c8e600;
   --color-accent-hover: #b3cf00;
   --color-accent-readable: #5a6600;
   --color-accent-tint: #f7fce8;
   --color-accent-border: #dfeba3;
+  --color-semantic-positive: #1f6b52;
+  --color-semantic-positive-bg: #ecf5f1;
+  --color-semantic-warning: #8a6400;
+  --color-semantic-warning-bg: #f8f3e4;
+  --color-semantic-negative: #9b2335;
+  --color-semantic-negative-bg: #f9ecee;
+  --color-semantic-info: #1565a8;
+  --color-semantic-info-bg: #ecf2fa;
+  --color-semantic-neutral: #545b66;
+  --color-projected: #1565a8;
   --color-chart-locked: #8fa800;
   --color-chart-spotify-ads: #1db954;
   --color-chart-spotify-marquee: #1db954;
@@ -28,9 +41,16 @@
   --color-chart-projected: #1565a8;
   --color-chart-actual: #12151a;
   --color-chart-grid: #eceef2;
+  --color-chart-axis: #868e98;
   --color-bracket-bg: #f0f2f5;
   --color-bracket-text: #545b66;
   --color-scanline: rgba(18, 21, 26, 0.04);
+
+  --font-serif: var(--font-inter), ui-serif, Georgia, serif;
+  --font-mono: var(--font-inter), ui-monospace, monospace;
+  --font-source-serif: var(--font-inter);
+  --font-plex-sans: var(--font-inter);
+  --font-plex-mono: var(--font-inter);
 
   --motion-duration-count: 300ms;
   --motion-duration-enter: 250ms;
@@ -45,34 +65,49 @@
     --motion-duration-flash: 0ms;
     --motion-duration-chart: 0ms;
   }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  [data-plot] path {
+    stroke-dashoffset: 0 !important;
+  }
 }
 
 /* ─── Tailwind theme (utility class generation) ─── */
 @theme inline {
   --color-canvas: var(--color-canvas);
   --color-canvas-subtle: var(--color-canvas-subtle);
+  --color-card: var(--color-card);
   --color-surface: var(--color-surface);
   --color-border: var(--color-border);
   --color-border-subtle: var(--color-border-subtle);
   --color-foreground: var(--color-foreground);
   --color-secondary: var(--color-secondary);
+  --color-mute: var(--color-mute);
   --color-muted: var(--color-muted);
-  --color-disabled: #555555;
+  --color-disabled: var(--color-disabled);
   --color-accent: var(--color-accent);
   --color-accent-hover: var(--color-accent-hover);
   --color-accent-readable: var(--color-accent-readable);
   --color-accent-tint: var(--color-accent-tint);
   --color-accent-border: var(--color-accent-border);
-  --color-semantic-positive: #1f6b52;
-  --color-semantic-positive-bg: #ecf5f1;
-  --color-semantic-warning: #8a6400;
-  --color-semantic-warning-bg: #f8f3e4;
-  --color-semantic-negative: #9b2335;
-  --color-semantic-negative-bg: #f9ecee;
-  --color-semantic-info: #1565a8;
-  --color-semantic-info-bg: #ecf2fa;
-  --color-semantic-neutral: #545b66;
-  --color-projected: #1565a8;
+  --color-semantic-positive: var(--color-semantic-positive);
+  --color-semantic-positive-bg: var(--color-semantic-positive-bg);
+  --color-semantic-warning: var(--color-semantic-warning);
+  --color-semantic-warning-bg: var(--color-semantic-warning-bg);
+  --color-semantic-negative: var(--color-semantic-negative);
+  --color-semantic-negative-bg: var(--color-semantic-negative-bg);
+  --color-semantic-info: var(--color-semantic-info);
+  --color-semantic-info-bg: var(--color-semantic-info-bg);
+  --color-semantic-neutral: var(--color-semantic-neutral);
+  --color-projected: var(--color-projected);
   --color-chart-locked: var(--color-chart-locked);
   --color-chart-spotify-ads: var(--color-chart-spotify-ads);
   --color-chart-spotify-marquee: var(--color-chart-spotify-marquee);
@@ -81,13 +116,11 @@
   --color-chart-projected: var(--color-chart-projected);
   --color-chart-actual: var(--color-chart-actual);
   --color-chart-grid: var(--color-chart-grid);
-  --color-chart-axis: #868e98;
+  --color-chart-axis: var(--color-chart-axis);
   --color-bracket-bg: var(--color-bracket-bg);
   --color-bracket-text: var(--color-bracket-text);
 
-  --font-serif: var(--font-source-serif), ui-serif, Georgia, serif;
-  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
   --radius-instrument: 4px;
   --radius-tag: 2px;
@@ -98,12 +131,17 @@
 }
 
 /* ─── Base ─── */
+html {
+  height: 100%;
+}
+
 body {
   background-color: var(--color-canvas);
   color: var(--color-foreground);
   font-family: var(--font-sans);
   font-size: 0.875rem;
   line-height: 1.5;
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
