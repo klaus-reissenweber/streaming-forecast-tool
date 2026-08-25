@@ -11,17 +11,12 @@ import {
   type ParsedTable,
 } from "@/lib/ad-upload/canonical";
 import {
-  extractTableFromImage,
-  extractTableFromPdf,
-} from "@/lib/ad-upload/extract-table";
-import {
   applyGapFill,
   computeGapNeeds,
   normalizeGapDecisions,
   type GapFillAction,
   type GapNeed,
 } from "@/lib/ad-upload/gap-fill";
-import { parseCsvBuffer, parseXlsxBuffer } from "@/lib/ad-upload/parse-tabular";
 import { proposeMapping } from "@/lib/ad-upload/propose-mapping";
 import {
   loadSourceProfile,
@@ -121,9 +116,23 @@ async function parseFileToTable(
   kind: "csv" | "xlsx" | "pdf" | "image",
   mime: string,
 ): Promise<ParsedTable> {
-  if (kind === "csv") return parseCsvBuffer(buffer);
-  if (kind === "xlsx") return parseXlsxBuffer(buffer);
-  if (kind === "pdf") return extractTableFromPdf(buffer);
+  if (kind === "csv") {
+    const { parseCsvBuffer } = await import("@/lib/ad-upload/parse-tabular");
+    return parseCsvBuffer(buffer);
+  }
+  if (kind === "xlsx") {
+    const { parseXlsxBuffer } = await import("@/lib/ad-upload/parse-tabular");
+    return parseXlsxBuffer(buffer);
+  }
+  if (kind === "pdf") {
+    const { extractTableFromPdf } = await import(
+      "@/lib/ad-upload/extract-table"
+    );
+    return extractTableFromPdf(buffer);
+  }
+  const { extractTableFromImage } = await import(
+    "@/lib/ad-upload/extract-table"
+  );
   return extractTableFromImage(buffer, mime);
 }
 
