@@ -3,6 +3,8 @@
  * All numbers are computed at generation time — the public page never recomputes.
  */
 
+import type { AdReportNotes } from "@/lib/ad-report/notes";
+
 export type AdReportChannelId =
   | "marquee"
   | "showcase"
@@ -111,6 +113,8 @@ export type AdReportMetricsSnapshot = {
     genre: string;
     releaseDate: string;
     releaseKey: string;
+    /** Single vs album. Stored figure — findings read it at render. */
+    releaseFormat?: "single" | "album" | null;
     /** e.g. Traffic, Awareness, Streaming. */
     objectiveLabel?: string | null;
   };
@@ -182,4 +186,6 @@ export type AdReportRecord = {
   updatedAt: string;
   expiresAt: string | null;
   metricsSnapshot: AdReportMetricsSnapshot;
+  /** Editorial JSON outside metrics_snapshot. Regenerating does not touch it. */
+  notes: AdReportNotes;
 };

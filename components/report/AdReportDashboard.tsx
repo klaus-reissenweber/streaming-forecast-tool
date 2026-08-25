@@ -6,6 +6,8 @@ import {
   MetaLogo,
   SpotifyLogo,
 } from "@/components/brand/PlatformLogos";
+import { EditableFindings } from "@/components/report/EditableFindings";
+import { EditableNoteBlock } from "@/components/report/EditableNoteBlock";
 import { SaveAsPdfButton } from "@/components/report/SaveAsPdfButton";
 import { StatusPill } from "@/components/ui/StatusPill";
 import Link from "next/link";
@@ -27,6 +29,18 @@ import {
   variancePct,
   week1FromDaily,
 } from "@/lib/ad-report/windows";
+import {
+  channelsForAnalysis,
+  metaFunnelForAnalysis,
+  releaseForAnalysis,
+  week1OutcomesForAnalysis,
+} from "@/lib/ad-report/analysis-inputs";
+import { hasUsableBudget, type AdReportNotes } from "@/lib/ad-report/notes";
+import {
+  channelComparisonFindings,
+  metaFunnelFindings,
+} from "@/lib/analysis/ads";
+import { week1Findings } from "@/lib/analysis/findings";
 import { STREAM_BANDS } from "@/lib/constants";
 import {
   classifyStreamsVsBand,
@@ -256,7 +270,7 @@ function ProgressBar({
       </p>
       <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-canvas">
         <div
-          className="h-full rounded-full bg-accent"
+          className="h-full rounded-full bg-projected"
           style={{ width: `${width}%` }}
         />
       </div>
@@ -332,11 +346,17 @@ export function AdReportDashboard({
   snapshot,
   generatedAt,
   backHref = null,
+  slug,
+  notes,
+  editable = false,
 }: {
   title: string;
   snapshot: AdReportMetricsSnapshot;
   generatedAt: string;
   backHref?: string | null;
+  slug: string;
+  notes: AdReportNotes;
+  editable?: boolean;
 }) {
   const {
     headline,
@@ -386,9 +406,9 @@ export function AdReportDashboard({
       variancePct(forecastSaves ?? 0, actualSaves));
 
   const metaFunnelComparison = resolveMetaFunnel(snapshot);
-  const budgetTotal = paid.budgetTotal ?? 0;
+  const budgetTotal = paid.budgetTotal;
   const spendPct =
-    budgetTotal > 0 ? (paid.totalSpend / budgetTotal) * 100 : 100;
+    hasUsableBudget(budgetTotal) ? (paid.totalSpend / budgetTotal) * 100 : 0;
 
   const visibleCampaigns = campaigns.filter((row) => {
     return (
@@ -409,6 +429,25 @@ export function AdReportDashboard({
   const campaignsWithCreatives = visibleCampaigns.filter(
     (c) => (c.creatives?.length ?? 0) > 0,
   );
+
+  const week1Analysis = week1Findings(
+    week1OutcomesForAnalysis({
+      forecastStreams: week1Forecast,
+      actualStreams: week1Actual,
+      expectedLo: expectedStreams.lo,
+      expectedHi: expectedStreams.hi,
+      forecastSaves: null,
+      actualSaves: null,
+      streamBand,
+    }),
+  );
+  const channelAnalysis = channelComparisonFindings(
+    channelsForAnalysis(snapshot),
+    releaseForAnalysis(snapshot),
+  );
+  const funnelAnalysis = metaFunnelComparison
+    ? metaFunnelFindings(metaFunnelForAnalysis(metaFunnelComparison))
+    : [];
 
   return (
     <div className="ad-report mx-auto max-w-5xl px-5 py-8 print:max-w-none print:px-0 print:py-0">
@@ -476,16 +515,14 @@ export function AdReportDashboard({
                   )}
                 />
               ) : null}
-              <ProgressBar
-                label="Spend Against Budget"
-                startLabel={formatUsd(paid.totalSpend, 0)}
-                endLabel={
-                  budgetTotal > 0
-                    ? formatUsd(budgetTotal, 0)
-                    : formatUsd(paid.totalSpend, 0)
-                }
-                pct={spendPct}
-              />
+              {hasUsableBudget(budgetTotal) ? (
+                <ProgressBar
+                  label="Spend Against Budget"
+                  startLabel={formatUsd(paid.totalSpend, 0)}
+                  endLabel={formatUsd(budgetTotal, 0)}
+                  pct={spendPct}
+                />
+              ) : null}
             </div>
           </div>
 
@@ -569,6 +606,12 @@ export function AdReportDashboard({
             . Not compared to the week-1 forecast.
           </p>
         ) : null}
+        <EditableFindings
+          slug={slug}
+          findings={week1Analysis}
+          notes={notes}
+          editable={editable}
+        />
       </section>
 
       {forecastSaves != null && !savesArePaid ? (
@@ -696,17 +739,24 @@ export function AdReportDashboard({
               </dd>
             </div>
           </dl>
+          <EditableFindings
+            slug={slug}
+            findings={funnelAnalysis}
+            notes={notes}
+            editable={editable}
+          />
         </section>
       ) : null}
 
       {spotifyChannels.length > 0 || metaChannels.length > 0 ? (
-        <div
-          className={
-            bothPlatforms
-              ? "mt-8 grid gap-6 lg:grid-cols-2 print:grid-cols-2"
-              : "mt-8"
-          }
-        >
+        <div className="mt-8">
+          <div
+            className={
+              bothPlatforms
+                ? "grid gap-6 lg:grid-cols-2 print:grid-cols-2"
+                : undefined
+            }
+          >
           {spotifyChannels.length > 0 ? (
             <section aria-label="Spotify Channels">
               <div className="mb-3 flex items-center gap-2">
@@ -823,6 +873,13 @@ export function AdReportDashboard({
               </div>
             </section>
           ) : null}
+          </div>
+          <EditableFindings
+            slug={slug}
+            findings={channelAnalysis}
+            notes={notes}
+            editable={editable}
+          />
         </div>
       ) : null}
 
@@ -993,6 +1050,25 @@ export function AdReportDashboard({
           </table>
         </div>
       </section>
+
+      <EditableNoteBlock
+        slug={slug}
+        noteKey="creative"
+        notes={notes}
+        editable={editable}
+      />
+      <EditableNoteBlock
+        slug={slug}
+        noteKey="audience"
+        notes={notes}
+        editable={editable}
+      />
+      <EditableNoteBlock
+        slug={slug}
+        noteKey="recommendations"
+        notes={notes}
+        editable={editable}
+      />
 
       <footer className="mt-10 border-t border-border pt-4 text-xs text-secondary print:mt-6">
         <p>

@@ -6,6 +6,7 @@ import {
   loadAdReportBySlug,
 } from "@/lib/ad-report/load";
 import type { AdReportMetricsSnapshot } from "@/lib/ad-report/types";
+import { requireAllowedUser } from "@/lib/auth/require-allowed-user";
 
 interface ReportPageProps {
   params: Promise<{ slug: string }>;
@@ -50,6 +51,9 @@ export default async function PublicAdReportPage({
   const backHref = isInternalReportPreview(from)
     ? `/release/${report.metricsSnapshot.release.id}`
     : null;
+  const internal = isInternalReportPreview(from);
+  const auth = internal ? await requireAllowedUser() : { ok: false as const };
+  const editable = Boolean(internal && auth.ok);
 
   return (
     <main className="min-h-full bg-canvas print:bg-white">
@@ -60,6 +64,9 @@ export default async function PublicAdReportPage({
           report.metricsSnapshot.generatedAt || report.updatedAt
         }
         backHref={backHref}
+        slug={report.slug}
+        notes={report.notes}
+        editable={editable}
       />
     </main>
   );

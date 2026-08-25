@@ -25,7 +25,11 @@ import { logActiveModelSource } from "@/lib/model/forecast-model";
 import { createServiceClient } from "@/lib/supabase/service";
 import { variancePct } from "@/lib/ad-report/windows";
 import { computeWeek1Actuals } from "@/lib/compute-week1-actuals";
-import { asMetaAdSurface, asSpotifyAdSurface } from "@/lib/ad-campaign-surface";
+import {
+  asMetaAdSurface,
+  asSpotifyAdSurface,
+  releaseFormatFromCampaignType,
+} from "@/lib/ad-campaign-surface";
 import { readableCampaignName } from "@/lib/campaign-display-name";
 import {
   classifyStreamsVsBand,
@@ -632,6 +636,7 @@ export async function buildAdReportSnapshot(
       genre: release.genre,
       releaseDate: release.release_date,
       releaseKey,
+      releaseFormat: releaseFormatFromCampaignType(release.release_type),
       objectiveLabel,
     },
     campaignWindow: window,

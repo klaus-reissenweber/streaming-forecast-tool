@@ -1,8 +1,17 @@
+import {
+  parseAdReportNotes,
+  type AdReportNotes,
+} from "@/lib/ad-report/notes";
 import type { AdReportMetricsSnapshot, AdReportRecord } from "@/lib/ad-report/types";
 import { normalizeMetricsSnapshot } from "@/lib/ad-report/labels";
 import { createServiceClient } from "@/lib/supabase/service";
 
-type AdReportRow = {
+export const AD_REPORT_COLUMNS =
+  "id, release_id, slug, title, created_at, updated_at, expires_at, metrics_snapshot, notes";
+const AD_REPORT_COLUMNS_WITHOUT_NOTES =
+  "id, release_id, slug, title, created_at, updated_at, expires_at, metrics_snapshot";
+
+export type AdReportRow = {
   id: string;
   release_id: string;
   slug: string;
@@ -11,9 +20,10 @@ type AdReportRow = {
   updated_at: string;
   expires_at: string | null;
   metrics_snapshot: AdReportMetricsSnapshot;
+  notes?: AdReportNotes | null;
 };
 
-function mapRow(row: AdReportRow): AdReportRecord {
+export function mapAdReportRow(row: AdReportRow): AdReportRecord {
   return {
     id: row.id,
     releaseId: row.release_id,
@@ -23,6 +33,7 @@ function mapRow(row: AdReportRow): AdReportRecord {
     updatedAt: row.updated_at,
     expiresAt: row.expires_at,
     metricsSnapshot: normalizeMetricsSnapshot(row.metrics_snapshot),
+    notes: parseAdReportNotes(row.notes),
   };
 }
 
@@ -30,6 +41,40 @@ function isExpired(expiresAt: string | null): boolean {
   if (!expiresAt) return false;
   const t = Date.parse(expiresAt);
   return Number.isFinite(t) && t <= Date.now();
+}
+
+export function isMissingNotesColumn(message: string): boolean {
+  return (
+    /notes/i.test(message) &&
+    /does not exist|schema cache|could not find/i.test(message)
+  );
+}
+
+type QueryResult = {
+  data: unknown;
+  error: { message: string } | null;
+};
+
+/**
+ * Select notes when the column exists. Until the migration is applied,
+ * fall back so generate/load keep working.
+ */
+export async function selectAdReport<T>(
+  run: (columns: string) => PromiseLike<QueryResult>,
+  errorLabel: string,
+): Promise<T | null> {
+  const withNotes = await run(AD_REPORT_COLUMNS);
+  if (!withNotes.error) {
+    return (withNotes.data as T | null) ?? null;
+  }
+  if (isMissingNotesColumn(withNotes.error.message)) {
+    const without = await run(AD_REPORT_COLUMNS_WITHOUT_NOTES);
+    if (without.error) {
+      throw new Error(`${errorLabel}: ${without.error.message}`);
+    }
+    return (without.data as T | null) ?? null;
+  }
+  throw new Error(`${errorLabel}: ${withNotes.error.message}`);
 }
 
 /** Public lookup by exact slug (service role). No listing. */
@@ -40,20 +85,14 @@ export async function loadAdReportBySlug(
   if (trimmed.length < 16) return null;
 
   const sb = createServiceClient();
-  const { data, error } = await sb
-    .from("ad_reports")
-    .select(
-      "id, release_id, slug, title, created_at, updated_at, expires_at, metrics_snapshot",
-    )
-    .eq("slug", trimmed)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(`ad_reports by slug: ${error.message}`);
-  }
+  const data = await selectAdReport<AdReportRow>(
+    (columns) =>
+      sb.from("ad_reports").select(columns).eq("slug", trimmed).maybeSingle(),
+    "ad_reports by slug",
+  );
   if (!data) return null;
 
-  const report = mapRow(data as AdReportRow);
+  const report = mapAdReportRow(data);
   if (isExpired(report.expiresAt)) return null;
   return report;
 }
@@ -67,20 +106,18 @@ export async function loadAdReportByReleaseId(
   options?: { includeExpired?: boolean },
 ): Promise<AdReportRecord | null> {
   const sb = createServiceClient();
-  const { data, error } = await sb
-    .from("ad_reports")
-    .select(
-      "id, release_id, slug, title, created_at, updated_at, expires_at, metrics_snapshot",
-    )
-    .eq("release_id", releaseId)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(`ad_reports by release: ${error.message}`);
-  }
+  const data = await selectAdReport<AdReportRow>(
+    (columns) =>
+      sb
+        .from("ad_reports")
+        .select(columns)
+        .eq("release_id", releaseId)
+        .maybeSingle(),
+    "ad_reports by release",
+  );
   if (!data) return null;
 
-  const report = mapRow(data as AdReportRow);
+  const report = mapAdReportRow(data);
   if (!options?.includeExpired && isExpired(report.expiresAt)) return null;
   return report;
 }
@@ -112,18 +149,15 @@ export function reportPublicUrl(slug: string, origin?: string): string {
 /** Auth'd listing of generated reports (expired rows omitted). */
 export async function loadAdReportsList(): Promise<AdReportRecord[]> {
   const sb = createServiceClient();
-  const { data, error } = await sb
-    .from("ad_reports")
-    .select(
-      "id, release_id, slug, title, created_at, updated_at, expires_at, metrics_snapshot",
-    )
-    .order("updated_at", { ascending: false });
-
-  if (error) {
-    throw new Error(`ad_reports list: ${error.message}`);
-  }
+  const data = await selectAdReport<AdReportRow[]>(
+    (columns) =>
+      sb.from("ad_reports").select(columns).order("updated_at", {
+        ascending: false,
+      }),
+    "ad_reports list",
+  );
 
   return (data ?? [])
-    .map((row) => mapRow(row as AdReportRow))
+    .map((row) => mapAdReportRow(row))
     .filter((report) => !isExpired(report.expiresAt));
 }

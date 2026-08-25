@@ -335,3 +335,129 @@ export function campaignFindings(
   out.push(...previousFindings(campaign));
   return out;
 }
+
+export type ChannelCost = {
+  label: string;
+  costPerStream: number;
+};
+
+export type ChannelComparisonInput = {
+  id: string;
+  label: string;
+  campaign: AdCampaign;
+  costPerStream: number | null;
+};
+
+function costPerStreamGapFindings(channels: ChannelCost[]): Finding[] {
+  const scored = channels.filter(
+    (ch) => Number.isFinite(ch.costPerStream) && ch.costPerStream > 0,
+  );
+  if (scored.length < 2) return [];
+  const ranked = [...scored].sort((a, b) => a.costPerStream - b.costPerStream);
+  const best = ranked[0]!;
+  const worst = ranked[ranked.length - 1]!;
+  if (best.costPerStream === worst.costPerStream) {
+    return [
+      {
+        id: "cps-gap",
+        text: `${best.label} and ${worst.label} both cost ${money(best.costPerStream)} per stream.`,
+      },
+    ];
+  }
+  const gap =
+    (worst.costPerStream - best.costPerStream) / worst.costPerStream;
+  return [
+    {
+      id: "cps-gap",
+      text: `${best.label} cost ${money(best.costPerStream)} per stream, ${pc(gap)} below ${worst.label} at ${money(worst.costPerStream)}.`,
+    },
+  ];
+}
+
+/** Benchmark each channel, then the cost-per-stream gap between them. */
+export function channelComparisonFindings(
+  channels: ChannelComparisonInput[],
+  release: AdRelease,
+): Finding[] {
+  const out: Finding[] = [];
+  for (const channel of channels) {
+    for (const finding of campaignFindings(channel.campaign, release)) {
+      out.push({
+        id: `${channel.id}:${finding.id}`,
+        text: `${channel.label}: ${finding.text}`,
+      });
+    }
+  }
+  out.push(
+    ...costPerStreamGapFindings(
+      channels.flatMap((channel) =>
+        channel.costPerStream != null &&
+        Number.isFinite(channel.costPerStream) &&
+        channel.costPerStream > 0
+          ? [{ label: channel.label, costPerStream: channel.costPerStream }]
+          : [],
+      ),
+    ),
+  );
+  return out;
+}
+
+const compactCount = (n: number) =>
+  Math.abs(n) >= 1e6
+    ? `${(n / 1e6).toFixed(2)}M`
+    : Math.abs(n) >= 1e4
+      ? `${Math.round(n / 1e3)}K`
+      : Math.abs(n) >= 1e3
+        ? `${(n / 1e3).toFixed(1).replace(/\.0$/, "")}K`
+        : `${Math.round(n)}`;
+
+export type MetaFunnelInput = {
+  predictedSpotifyClicks: number;
+  measuredSpotifyClicks: number | null;
+  clicksVariancePct: number | null;
+  cpc: number;
+  spotifyClickShare: number;
+};
+
+export function metaFunnelFindings(input: MetaFunnelInput): Finding[] {
+  const measured = input.measuredSpotifyClicks;
+  const predicted = input.predictedSpotifyClicks;
+  if (
+    measured == null ||
+    !Number.isFinite(measured) ||
+    !(predicted > 0) ||
+    !Number.isFinite(predicted)
+  ) {
+    return [];
+  }
+
+  const variancePct =
+    input.clicksVariancePct != null && Number.isFinite(input.clicksVariancePct)
+      ? input.clicksVariancePct
+      : ((measured - predicted) / predicted) * 100;
+  const shownMeasured = compactCount(measured);
+  const shownPredicted = compactCount(predicted);
+  const out: Finding[] = [];
+
+  if (Math.round(Math.abs(variancePct)) === 0) {
+    out.push({
+      id: "funnel-variance",
+      text: `Measured Spotify clicks of ${shownMeasured} matched the ${shownPredicted} the funnel predicted.`,
+    });
+    return out;
+  }
+
+  const side = variancePct > 0 ? "above" : "below";
+  out.push({
+    id: "funnel-variance",
+    text: `Measured Spotify clicks of ${shownMeasured} came in ${Math.round(Math.abs(variancePct))} percent ${side} the ${shownPredicted} the funnel predicted.`,
+  });
+
+  const sharePct = Math.round(input.spotifyClickShare * 100);
+  const direction = variancePct > 0 ? "understated" : "overstated";
+  out.push({
+    id: "funnel-model",
+    text: `A miss of that size means the model's cost per click of ${money(input.cpc)}, its ${sharePct} percent Spotify click share, or both, ${direction} delivery.`,
+  });
+  return out;
+}

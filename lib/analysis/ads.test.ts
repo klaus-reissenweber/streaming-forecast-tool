@@ -6,7 +6,7 @@ import {
   findFormatReference,
   marginVsBenchmark,
 } from "./ad-benchmarks";
-import { campaignFindings, type AdCampaign, type AdRelease } from "./ads";
+import { campaignFindings, channelComparisonFindings, metaFunnelFindings, type AdCampaign, type AdRelease } from "./ads";
 
 const bassRelease: AdRelease = { genre: "dubstep" };
 
@@ -193,5 +193,95 @@ describe("campaignFindings", () => {
       bassRelease,
     );
     expect(f.some((x) => x.id.startsWith("benchmark"))).toBe(false);
+  });
+});
+
+describe("channelComparisonFindings", () => {
+  it("prefixes each channel verdict and names the cost-per-stream gap", () => {
+    const f = channelComparisonFindings(
+      [
+        {
+          id: "marquee",
+          label: "Marquee",
+          costPerStream: 0.12,
+          campaign: {
+            platform: "spotify",
+            surface: "spotify_marquee",
+            metrics: [{ key: "conversion_rate", value: 6.5 }],
+          },
+        },
+        {
+          id: "meta_traffic",
+          label: "Meta Traffic",
+          costPerStream: 0.41,
+          campaign: meta({ metrics: [{ key: "cpc", value: 0.19 }] }),
+        },
+      ],
+      { genre: "dubstep", format: "single" },
+    );
+    expect(f.find((x) => x.id === "marquee:benchmark:conversion_rate")!.text).toBe(
+      "Marquee: Conversion rate of 6.50 percent matches the 2025 single benchmark of 6.50 percent.",
+    );
+    expect(f.find((x) => x.id === "meta_traffic:benchmark:cpc")!.text).toContain(
+      "Meta Traffic:",
+    );
+    expect(f.find((x) => x.id === "cps-gap")!.text).toBe(
+      "Marquee cost $0.12 per stream, 71 percent below Meta Traffic at $0.41.",
+    );
+  });
+
+  it("emits no gap when only one channel has a cost per stream", () => {
+    const f = channelComparisonFindings(
+      [
+        {
+          id: "meta_traffic",
+          label: "Meta Traffic",
+          costPerStream: 0.41,
+          campaign: meta({ metrics: [{ key: "cpc", value: 0.19 }] }),
+        },
+        {
+          id: "meta_awareness",
+          label: "Meta Awareness",
+          costPerStream: null,
+          campaign: {
+            platform: "meta",
+            surface: "meta_awareness",
+            metrics: [],
+          },
+        },
+      ],
+      bassRelease,
+    );
+    expect(f.some((x) => x.id === "cps-gap")).toBe(false);
+  });
+});
+
+describe("metaFunnelFindings", () => {
+  it("names the predicted-vs-measured gap and what it implies for the funnel", () => {
+    const f = metaFunnelFindings({
+      predictedSpotifyClicks: 100,
+      measuredSpotifyClicks: 435,
+      clicksVariancePct: 335,
+      cpc: 0.15,
+      spotifyClickShare: 0.45,
+    });
+    expect(f[0]!.text).toBe(
+      "Measured Spotify clicks of 435 came in 335 percent above the 100 the funnel predicted.",
+    );
+    expect(f[1]!.text).toBe(
+      "A miss of that size means the model's cost per click of $0.15, its 45 percent Spotify click share, or both, understated delivery.",
+    );
+  });
+
+  it("emits nothing when measured clicks are missing", () => {
+    expect(
+      metaFunnelFindings({
+        predictedSpotifyClicks: 100,
+        measuredSpotifyClicks: null,
+        clicksVariancePct: null,
+        cpc: 0.15,
+        spotifyClickShare: 0.45,
+      }),
+    ).toEqual([]);
   });
 });

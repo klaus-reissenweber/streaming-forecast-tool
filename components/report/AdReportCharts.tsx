@@ -21,7 +21,30 @@ import {
 import type { AdReportDailyPoint } from "@/lib/ad-report/types";
 import { formatCompactNumber, formatUsd } from "@/lib/format";
 
-const SPEND_COLORS = ["#5a6600", "#8fa800", "#12151a", "#868e98"];
+function mediaMixFills(
+  data: Array<{ channel: string; spend: number }>,
+): string[] {
+  const max = Math.max(0, ...data.map((entry) => entry.spend));
+  const largestAt = data.findIndex((entry) => entry.spend === max);
+  const rest = [
+    "var(--color-foreground)",
+    "var(--color-secondary)",
+    "var(--color-muted)",
+  ];
+  let restIndex = 0;
+  return data.map((_, index) => {
+    if (index === largestAt) return "var(--color-projected)";
+    return rest[restIndex++ % rest.length]!;
+  });
+}
+
+const tooltipStyle = {
+  backgroundColor: "var(--color-surface)",
+  borderColor: "var(--color-border)",
+  borderRadius: 4,
+  fontSize: 12,
+  color: "var(--color-foreground)",
+};
 
 export function SpendByChannelChart({
   spendByChannel,
@@ -32,6 +55,7 @@ export function SpendByChannelChart({
 }) {
   const data = spendByChannel.filter((d) => d.spend > 0);
   const total = data.reduce((s, d) => s + d.spend, 0);
+  const fills = mediaMixFills(data);
 
   const chart = (
     <div className={compact ? "h-40 w-full" : "mt-3 h-56 w-full"}>
@@ -54,7 +78,7 @@ export function SpendByChannelChart({
               {data.map((entry, index) => (
                 <Cell
                   key={entry.channel}
-                  fill={SPEND_COLORS[index % SPEND_COLORS.length]}
+                  fill={fills[index]}
                   stroke="transparent"
                 />
               ))}
@@ -65,11 +89,7 @@ export function SpendByChannelChart({
                 const pct = total > 0 ? Math.round((n / total) * 100) : 0;
                 return [`${formatUsd(n, 0)} (${pct}%)`, String(name)];
               }}
-              contentStyle={{
-                borderRadius: 4,
-                borderColor: "#e2e6eb",
-                fontSize: 12,
-              }}
+              contentStyle={tooltipStyle}
             />
           </PieChart>
         </ResponsiveContainer>
@@ -89,7 +109,7 @@ export function SpendByChannelChart({
             <span className="inline-flex items-center gap-1.5 text-secondary">
               <span
                 className="size-2 shrink-0 rounded-tag"
-                style={{ backgroundColor: SPEND_COLORS[index % SPEND_COLORS.length] }}
+                style={{ backgroundColor: fills[index] }}
                 aria-hidden="true"
               />
               {entry.channel}
@@ -142,6 +162,7 @@ export function ForecastVsActualChart({
       : [];
   const axisWidth = 44;
   const rightMargin = 8;
+  const axisTick = { fill: "var(--color-chart-axis)", fontSize: 11 };
 
   return (
     <section className="rounded-instrument border border-border bg-surface p-4">
@@ -154,24 +175,24 @@ export function ForecastVsActualChart({
             data={forecastVsActualDaily}
             margin={{ top: 8, right: rightMargin, left: 0, bottom: 0 }}
           >
-            <CartesianGrid stroke="#eceef2" vertical={false} />
+            <CartesianGrid stroke="var(--color-chart-grid)" vertical={false} />
             <XAxis
               dataKey="day"
               ticks={[1, 7, 14, 21, 28]}
-              tick={{ fill: "#868e98", fontSize: 11 }}
+              tick={axisTick}
               tickFormatter={(day) => String(day)}
-              axisLine={{ stroke: "#e2e6eb" }}
+              axisLine={{ stroke: "var(--color-border)" }}
               tickLine={false}
               label={{
                 value: "Day",
                 position: "insideBottom",
                 offset: -5,
-                fill: "#868e98",
+                fill: "var(--color-chart-axis)",
                 fontSize: 11,
               }}
             />
             <YAxis
-              tick={{ fill: "#868e98", fontSize: 11 }}
+              tick={axisTick}
               axisLine={false}
               tickLine={false}
               tickFormatter={(v: number) => formatCompactNumber(v)}
@@ -183,11 +204,7 @@ export function ForecastVsActualChart({
                 name === "forecastStreams" ? "Forecast" : "Actual",
               ]}
               labelFormatter={(day) => `Day ${day}`}
-              contentStyle={{
-                borderRadius: 4,
-                borderColor: "#e2e6eb",
-                fontSize: 12,
-              }}
+              contentStyle={tooltipStyle}
             />
             <Legend
               formatter={(value) =>
@@ -198,18 +215,19 @@ export function ForecastVsActualChart({
             <Line
               type="monotone"
               dataKey="forecastStreams"
-              stroke="#8fa800"
+              stroke="var(--color-chart-projected)"
               strokeWidth={2}
+              strokeDasharray="6 4"
               dot={false}
               isAnimationActive={false}
             />
             <Line
               type="monotone"
               dataKey="actualStreams"
-              stroke="#12151a"
+              stroke="var(--color-foreground)"
               strokeWidth={2}
               connectNulls={false}
-              dot={{ r: 2, fill: "#12151a" }}
+              dot={{ r: 2, fill: "var(--color-foreground)" }}
               isAnimationActive={false}
             />
           </LineChart>
