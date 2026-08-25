@@ -16,8 +16,8 @@ import { loadLastRetrainAt } from "@/lib/load-last-retrain-at";
 import { logActiveModelSource } from "@/lib/model/forecast-model";
 
 export const metadata: Metadata = {
-  title: "Release archive",
-  description: "Closed releases with forecast vs actual week-1 performance.",
+  title: "Release Archive",
+  description: "Closed releases with forecast against actual week 1 performance.",
 };
 
 const SORT_OPTIONS: ArchiveSortOption[] = [
@@ -99,7 +99,7 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
     <main className="mx-auto max-w-6xl px-5 py-8">
       <header className="border-b border-border pb-4">
         <h1 className="text-release-title font-semibold text-foreground">
-          Release archive
+          Release Archive
         </h1>
         {dateRange ? (
           <p className="mt-1 text-sm text-secondary">{dateRange}</p>

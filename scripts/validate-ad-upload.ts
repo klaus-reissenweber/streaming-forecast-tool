@@ -196,7 +196,7 @@ function main(): void {
       write.row!.streams_per_listener == null,
     "attributed streams not derived from streams_per_listener",
   );
-  assert(write.row!.format === "marquee", "format preserved for uid,format key");
+  assert(write.row!.surface === "marquee", "surface preserved for uid,surface key");
 
   console.log("PASS: ad-upload mapping + gap-fill");
 }

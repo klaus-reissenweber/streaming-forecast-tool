@@ -23,10 +23,10 @@ function CurveCard({ curve }: { curve: CurvePreview }) {
     <div className="rounded-instrument border border-border bg-surface p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="text-sm font-semibold text-foreground">
-          {curve.label} release
+          {curve.label} Release
         </h3>
         <span className="text-caption text-secondary">
-          {curve.releaseDate} · wk1 Σ new {curve.draftWk1Sum.toFixed(1)} / active{" "}
+          {curve.releaseDate} · Week 1 Σ new {curve.draftWk1Sum.toFixed(1)} / active{" "}
           {curve.activeWk1Sum.toFixed(1)}
         </span>
       </div>
@@ -81,9 +81,9 @@ export function ComposedCurvePreview({ curves }: { curves: CurvePreview[] }) {
     <section className="motion-fade-up">
       <div className="mb-3 flex flex-wrap items-baseline gap-2">
         <h2 className="text-section font-semibold text-foreground">
-          Composed curve preview
+          Composed Curve Preview
         </h2>
-        <span className="text-caption text-secondary">New vs active</span>
+        <span className="text-caption text-secondary">New against active</span>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
         {curves.map((curve) => (

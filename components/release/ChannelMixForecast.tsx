@@ -34,9 +34,9 @@ export function ChannelMixForecast({
   return (
     <section
       className="motion-fade-up"
-      aria-label="Channel mix forecast"
+      aria-label="Channel Mix Forecast"
     >
-      <SectionHeader>Channel mix</SectionHeader>
+      <SectionHeader>Channel Mix</SectionHeader>
 
       <div className="mt-4">
         <AdSpendLiveForecast

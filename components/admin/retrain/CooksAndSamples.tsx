@@ -16,7 +16,7 @@ export function CooksAndSamples({
       <div className="rounded-instrument border border-border bg-surface p-4">
         <div className="flex flex-wrap items-baseline gap-2">
           <h2 className="text-section font-semibold text-foreground">
-            Sample sizes
+            Sample Sizes
           </h2>
         </div>
         {samples ? (
@@ -49,7 +49,7 @@ export function CooksAndSamples({
       <div className="rounded-instrument border border-border bg-surface p-4">
         <div className="flex flex-wrap items-baseline gap-2">
           <h2 className="text-section font-semibold text-foreground">
-            Cook&apos;s D drops
+            Cook&apos;s D Drops
           </h2>
           <StatusPill tone="warning">{drops.length}</StatusPill>
         </div>

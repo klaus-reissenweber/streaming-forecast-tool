@@ -250,7 +250,7 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
       onSubmit={handleSubmit}
       className="w-full rounded-instrument border border-border bg-surface p-5 sm:p-6"
     >
-      <FormSection label="Track data">
+      <FormSection label="Track Data">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <label className="flex flex-col gap-1">
             <span className="text-body-sm font-medium text-foreground">
@@ -284,7 +284,7 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
         <div className="mt-4 space-y-3">
           <div>
             <h3 className="text-body-sm font-medium text-foreground">
-              Release artists
+              Release Artists
             </h3>
             <p className="mt-1 text-caption text-secondary">
               Up to {MAX_RELEASE_ARTISTS}. Roles must be explicit. The forecast
@@ -407,7 +407,7 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
         <div className="mt-4">
           <ToggleGroup
             name="isFeature"
-            label="Solo vs feature"
+            label="Solo or feature"
             options={[...FEATURE_OPTIONS]}
             value={values.isFeature ? "feature" : "solo"}
             onChange={(choice) => setField("isFeature", choice === "feature")}
@@ -443,7 +443,7 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
         </label>
       </FormSection>
 
-      <FormSection label="Paid advertising" tone="secondary">
+      <FormSection label="Paid Advertising" tone="secondary">
         <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-1">
@@ -525,7 +525,7 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
         </div>
       </FormSection>
 
-      <FormSection label="Streaming forecast">
+      <FormSection label="Streaming Forecast">
         <div className="space-y-4">
           <ToggleGroup
             name="releaseType"

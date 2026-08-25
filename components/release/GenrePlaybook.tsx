@@ -23,19 +23,19 @@ const PLAYBOOK_SECTIONS: readonly {
     key: "optimize_for",
     ruleClass: "border-l-accent",
     titleClass: "text-accent-readable",
-    title: "What to optimize for",
+    title: "What to Optimize For",
   },
   {
     key: "best_practices",
     ruleClass: "border-l-semantic-info",
     titleClass: "text-semantic-info",
-    title: "Best practices",
+    title: "Best Practices",
   },
   {
     key: "creative",
     ruleClass: "border-l-muted",
     titleClass: "text-foreground",
-    title: "Creative direction",
+    title: "Creative Direction",
   },
   {
     key: "avoid",
@@ -94,8 +94,8 @@ export function GenrePlaybook({ genre }: GenrePlaybookProps) {
   const genreLabel = formatGenreLabel(genre);
 
   return (
-    <section className="motion-fade-up" aria-label="Genre playbook">
-      <SectionHeader>{genreLabel} operational playbook</SectionHeader>
+    <section className="motion-fade-up" aria-label="Genre Playbook">
+      <SectionHeader>{genreLabel} Operational Playbook</SectionHeader>
 
       <ul className="mt-4 overflow-hidden rounded-instrument border border-border bg-surface">
         {PLAYBOOK_SECTIONS.map((section, index) => {

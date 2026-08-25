@@ -29,8 +29,8 @@ interface ApprovePageProps {
 }
 
 export const metadata: Metadata = {
-  title: "Check retrain",
-  description: "Review draft-vs-active diffs and use a retrain model.",
+  title: "Check Retrain",
+  description: "Review diffs of the draft against the active model and use a retrain model.",
 };
 
 function fmtBias(value: number): string {
@@ -48,7 +48,7 @@ export default async function ApproveDraftPage({ params }: ApprovePageProps) {
     return (
       <main className="mx-auto max-w-3xl px-5 py-8">
         <h1 className="text-release-title font-semibold text-foreground">
-          Check retrain
+          Check Retrain
         </h1>
         <p className="mt-3 text-body-sm text-secondary">{auth.error}</p>
         <p className="mt-6">
@@ -64,7 +64,7 @@ export default async function ApproveDraftPage({ params }: ApprovePageProps) {
     return (
       <main className="mx-auto max-w-3xl px-5 py-8">
         <h1 className="text-release-title font-semibold text-foreground">
-          Check retrain
+          Check Retrain
         </h1>
         <p className="mt-3 text-body-sm text-secondary">
           Your account is not authorized to review retrain drafts.
@@ -87,7 +87,7 @@ export default async function ApproveDraftPage({ params }: ApprovePageProps) {
     return (
       <main className="mx-auto max-w-3xl px-5 py-8">
         <h1 className="text-release-title font-semibold text-foreground">
-          Check retrain
+          Check Retrain
         </h1>
         <div className="mt-4 rounded-instrument border border-accent-border bg-accent-tint px-4 py-4">
           <p className="text-body-sm font-medium text-foreground">
@@ -123,12 +123,12 @@ export default async function ApproveDraftPage({ params }: ApprovePageProps) {
         <PageBreadcrumbs
           items={[
             { label: "Model", href: "/admin/retrain" },
-            { label: "Approve drafts", href: "/admin/retrain/approve" },
-            { label: "Draft vs active" },
+            { label: "Approve Drafts", href: "/admin/retrain/approve" },
+            { label: "Draft Against Active" },
           ]}
         />
         <h1 className="mt-4 text-release-title font-semibold text-foreground">
-          Draft vs active
+          Draft Against Active
         </h1>
       </header>
 

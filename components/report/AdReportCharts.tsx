@@ -108,8 +108,8 @@ export function SpendByChannelChart({
 
   if (compact) {
     return (
-      <section aria-label="Media mix">
-        <h2 className="text-section font-semibold text-foreground">Media mix</h2>
+      <section aria-label="Media Mix">
+        <h2 className="text-section font-semibold text-foreground">Media Mix</h2>
         {chart}
         {legend}
       </section>
@@ -119,7 +119,7 @@ export function SpendByChannelChart({
   return (
     <section className="rounded-instrument border border-border bg-surface p-4">
       <h2 className="text-section font-semibold text-foreground">
-        Spend by channel
+        Spend by Channel
       </h2>
       {chart}
       {legend}
@@ -146,7 +146,7 @@ export function ForecastVsActualChart({
   return (
     <section className="rounded-instrument border border-border bg-surface p-4">
       <h2 className="text-section font-semibold text-foreground">
-        Forecast vs actual streams
+        Forecast Against Actual Streams
       </h2>
       <div className="mt-3 h-56 w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -159,8 +159,16 @@ export function ForecastVsActualChart({
               dataKey="day"
               ticks={[1, 7, 14, 21, 28]}
               tick={{ fill: "#868e98", fontSize: 11 }}
+              tickFormatter={(day) => String(day)}
               axisLine={{ stroke: "#e2e6eb" }}
               tickLine={false}
+              label={{
+                value: "Day",
+                position: "insideBottom",
+                offset: -5,
+                fill: "#868e98",
+                fontSize: 11,
+              }}
             />
             <YAxis
               tick={{ fill: "#868e98", fontSize: 11 }}

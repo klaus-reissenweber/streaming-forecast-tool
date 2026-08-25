@@ -56,7 +56,7 @@ export function HealthBanner({ health }: HealthBannerProps) {
   return (
     <section
       className="motion-fade-up relative overflow-hidden rounded-instrument border border-border bg-surface py-2 pl-3.5 pr-3.5"
-      aria-label="Release health"
+      aria-label="Release Health"
     >
       <span
         className={`instrument-health-rule pointer-events-none absolute inset-y-0 left-0 w-[3px] ${toneStyles.ruleClass}`}

@@ -45,7 +45,7 @@ export function ApproveActivateForm({
     <section className="rounded-instrument border border-border bg-surface p-5 motion-fade-up">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-section font-semibold text-foreground">
-          Use this model
+          Use This Model
         </h2>
         <StatusPill tone={allHardPassed ? "positive" : "warning"}>
           {allHardPassed ? "Hard pass" : "Override required"}

@@ -327,7 +327,7 @@ export function LockedForecastBanner({
   return (
     <section
       className="motion-fade-up relative min-w-0 overflow-hidden rounded-instrument border border-border bg-accent-tint px-4 py-3.5 md:px-5"
-      aria-label="Week-1 forecast"
+      aria-label="Week 1 Forecast"
     >
       <span
         className="pointer-events-none absolute inset-y-0 left-0 w-1 origin-top bg-accent animate-instrument-rule-grow"
@@ -335,7 +335,7 @@ export function LockedForecastBanner({
       />
 
       <SectionHeader description={lockedAtDisplay}>
-        Week-1 forecast
+        Week 1 Forecast
       </SectionHeader>
 
       <div className="mt-3 md:hidden">
@@ -404,7 +404,7 @@ export function LockedForecastBanner({
         }
         role="table"
         aria-label={
-          showActuals ? "Week-1 forecast vs actual" : "Week-1 forecast"
+          showActuals ? "Week 1 Forecast Against Actual" : "Week 1 Forecast"
         }
       >
         {showActuals ? (

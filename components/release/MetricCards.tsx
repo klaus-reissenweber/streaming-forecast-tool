@@ -76,7 +76,7 @@ export function MetricCards({
   return (
     <section
       className="motion-fade-up"
-      aria-label="Key metrics"
+      aria-label="Key Metrics"
     >
       <SectionHeader>Metrics</SectionHeader>
 
@@ -84,8 +84,8 @@ export function MetricCards({
         <dl className="flex flex-col sm:flex-row sm:items-stretch sm:divide-x sm:divide-border-subtle">
           {showSaveVelocity ? (
             <MetricCell
-              label="Save velocity"
-              sublabel="Vs median week-1 saves for this artist size"
+              label="Save Velocity"
+              sublabel="Compared with the median week 1 saves for this artist size"
               value={
                 <AnimatedSaveVelocityMetric
                   display={saveVelocity}
@@ -97,7 +97,7 @@ export function MetricCards({
 
           {showAlgo ? (
             <MetricCell
-              label="Algo positioning"
+              label="Algorithmic Positioning"
               sublabel={algoBandSublabel}
               value={algoBandLabel}
             />

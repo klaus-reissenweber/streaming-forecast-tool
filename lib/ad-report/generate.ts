@@ -4,6 +4,7 @@
  */
 
 import { buildAdReportSnapshot } from "@/lib/ad-report/build-snapshot";
+import { normalizeMetricsSnapshot } from "@/lib/ad-report/labels";
 import {
   loadAdReportByReleaseId,
   reportPublicPath,
@@ -83,7 +84,9 @@ export async function generateOrRefreshAdReport(
     createdAt: data.created_at as string,
     updatedAt: data.updated_at as string,
     expiresAt: (data.expires_at as string | null) ?? null,
-    metricsSnapshot: data.metrics_snapshot as AdReportRecord["metricsSnapshot"],
+    metricsSnapshot: normalizeMetricsSnapshot(
+      data.metrics_snapshot as AdReportRecord["metricsSnapshot"],
+    ),
   };
 
   const path = reportPublicPath(report.slug);

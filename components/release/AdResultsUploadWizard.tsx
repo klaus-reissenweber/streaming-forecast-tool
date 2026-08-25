@@ -517,17 +517,17 @@ export function AdResultsUploadWizard({
         <div
           className="flex flex-wrap gap-2"
           role="tablist"
-          aria-label="Entry mode"
+          aria-label="Entry Mode"
         >
           <ModeTab
             active={entryMode === "manual"}
             onClick={() => switchMode("manual")}
-            label="Enter manually"
+            label="Enter Manually"
           />
           <ModeTab
             active={entryMode === "upload"}
             onClick={() => switchMode("upload")}
-            label="Upload file"
+            label="Upload File"
           />
         </div>
       ) : null}
@@ -798,7 +798,7 @@ export function AdResultsUploadWizard({
 
           <div className="rounded-instrument border border-border bg-surface p-4">
             <h3 className="text-sm font-semibold text-foreground">
-              File-level constants
+              File-Level Constants
             </h3>
             <p className="mt-1 text-caption text-secondary">
               Apply when the file doesn&apos;t state platform / format /
@@ -882,7 +882,7 @@ export function AdResultsUploadWizard({
 
           <div className="rounded-instrument border border-border bg-surface p-4">
             <h3 className="text-sm font-semibold text-foreground">
-              Column mapping
+              Column Mapping
             </h3>
             <table className="mt-3 w-full text-left text-xs">
               <thead>
@@ -927,7 +927,7 @@ export function AdResultsUploadWizard({
 
           <div className="rounded-instrument border border-border bg-surface p-4">
             <h3 className="text-sm font-semibold text-foreground">
-              Preview (first {previewRows.length} rows)
+              Preview (First {previewRows.length} Rows)
             </h3>
             <div className="mt-3 overflow-x-auto">
               <table className="w-full text-left text-xs">
@@ -1174,7 +1174,7 @@ export function AdResultsUploadWizard({
                 <p className="text-label text-foreground">Creatives (optional)</p>
                 <p className="mt-1 text-caption text-secondary">
                   Upload one or more images per campaign. They appear on the
-                  report next to spend, impressions, clicks, and CTR.
+                  report next to spend, impressions, clicks and click-through rate.
                 </p>
               </div>
               {creativeStatus ? (

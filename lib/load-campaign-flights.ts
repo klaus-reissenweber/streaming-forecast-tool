@@ -30,7 +30,7 @@ export async function loadCampaignFlightsForReleaseKey(
   const [spotifyRes, metaRes] = await Promise.all([
     sb
       .from("ad_spotify_campaigns")
-      .select("id, format, start_date, end_date, spend_usd")
+      .select("id, surface, start_date, end_date, spend_usd")
       .eq("release_key", key),
     sb
       .from("ad_meta_campaigns")
@@ -54,7 +54,7 @@ export async function loadCampaignFlightsForReleaseKey(
       id: String(row.id),
       name: readableCampaignName({
         platform: "spotify",
-        format: strOrNull(row.format),
+        format: strOrNull(row.surface),
       }),
       startDate: strOrNull(row.start_date),
       endDate: strOrNull(row.end_date),

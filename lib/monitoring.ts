@@ -114,15 +114,15 @@ function healthCopy(
   const lockedLabel = formatCompactNumber(lockedWk1);
   const dayRange =
     streamDaysEntered === 1
-      ? "D1"
-      : `D1–D${streamDaysEntered}`;
+      ? "Day 1"
+      : `Days 1 to ${streamDaysEntered}`;
 
   const week1Complete = streamDaysEntered >= 7;
 
   switch (status) {
     case "awaiting":
       return {
-        title: "Awaiting day 1 data",
+        title: "Awaiting Day 1 data",
         detail:
           "Health scoring activates once daily streams are entered after release.",
       };
@@ -130,22 +130,22 @@ function healthCopy(
       return {
         title: "Outperforming forecast",
         detail: week1Complete
-          ? "Week-1 streams finished above the locked forecast."
-          : `Projected ${projectedLabel} wk1 vs ${lockedLabel} forecast (+${Math.abs(deltaPct).toFixed(0)}% from ${dayRange} pace).`,
+          ? "Week 1 streams finished above the locked forecast."
+          : `Projected ${projectedLabel} week 1 against ${lockedLabel} forecast (+${Math.abs(deltaPct).toFixed(0)}% from ${dayRange} pace).`,
       };
     case "lagging":
       return {
         title: "Lagging forecast",
         detail: week1Complete
-          ? "Week-1 streams finished below the locked forecast."
-          : `Projected ${projectedLabel} wk1 vs ${lockedLabel} forecast (${deltaPct.toFixed(0)}% from ${dayRange} pace).`,
+          ? "Week 1 streams finished below the locked forecast."
+          : `Projected ${projectedLabel} week 1 against ${lockedLabel} forecast (${deltaPct.toFixed(0)}% from ${dayRange} pace).`,
       };
     case "on-track":
       return {
         title: "On track",
         detail: week1Complete
-          ? "Week-1 streams landed within 10% of the locked forecast."
-          : `Projected ${projectedLabel} wk1 vs ${lockedLabel} forecast (within ±${HEALTH_OUTPERFORM_THRESHOLD_PCT}% from ${dayRange} pace).`,
+          ? "Week 1 streams landed within 10% of the locked forecast."
+          : `Projected ${projectedLabel} week 1 against ${lockedLabel} forecast (within ±${HEALTH_OUTPERFORM_THRESHOLD_PCT}% from ${dayRange} pace).`,
       };
   }
 }

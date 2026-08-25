@@ -28,8 +28,8 @@ export const NAV_SECTIONS: NavSection[] = [
     id: "releases",
     label: "Releases",
     items: [
-      { id: "active", label: "Active releases", href: "/" },
-      { id: "new", label: "New release", href: "/new" },
+      { id: "active", label: "Active Releases", href: "/" },
+      { id: "new", label: "New Release", href: "/new" },
       { id: "archive", label: "Archive", href: "/archive" },
     ],
   },
@@ -37,7 +37,7 @@ export const NAV_SECTIONS: NavSection[] = [
     id: "ads",
     label: "Ads",
     items: [
-      { id: "ad-results", label: "Ad results", href: "/ads" },
+      { id: "ad-results", label: "Ad Results", href: "/ads" },
       { id: "reports", label: "Reports", href: "/reports" },
     ],
   },
@@ -46,7 +46,7 @@ export const NAV_SECTIONS: NavSection[] = [
     label: "Model",
     items: [
       { id: "retrain", label: "Retrain", href: "/admin/retrain" },
-      { id: "approve", label: "Approve drafts", href: "/admin/retrain/approve" },
+      { id: "approve", label: "Approve Drafts", href: "/admin/retrain/approve" },
     ],
   },
 ];

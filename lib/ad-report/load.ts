@@ -1,4 +1,5 @@
 import type { AdReportMetricsSnapshot, AdReportRecord } from "@/lib/ad-report/types";
+import { normalizeMetricsSnapshot } from "@/lib/ad-report/labels";
 import { createServiceClient } from "@/lib/supabase/service";
 
 type AdReportRow = {
@@ -21,7 +22,7 @@ function mapRow(row: AdReportRow): AdReportRecord {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     expiresAt: row.expires_at,
-    metricsSnapshot: row.metrics_snapshot,
+    metricsSnapshot: normalizeMetricsSnapshot(row.metrics_snapshot),
   };
 }
 

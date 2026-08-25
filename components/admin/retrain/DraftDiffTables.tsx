@@ -50,7 +50,7 @@ function DiffTable({
               <th className="pb-1 font-normal">Param</th>
               <th className="pb-1 font-normal">New</th>
               <th className="pb-1 font-normal">Active</th>
-              <th className="pb-1 font-normal">Δ</th>
+              <th className="pb-1 font-normal">Change</th>
             </tr>
           </thead>
           <tbody>
@@ -81,45 +81,45 @@ export function DraftDiffTables({ diff }: { diff: ModelDiff }) {
     <section className="motion-fade-up">
       <div className="mb-3 flex flex-wrap items-baseline gap-2">
         <h2 className="text-section font-semibold text-foreground">
-          Diff vs active
+          Diff Against Active
         </h2>
-        <span className="text-caption text-secondary">New / active / Δ</span>
+        <span className="text-caption text-secondary">New / active / Change</span>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
         <DiffTable title="DOW" rows={diff.dow} digits={3} />
-        <DiffTable title="Editorial kernel" rows={diff.editorialKernel} digits={2} />
+        <DiffTable title="Editorial Kernel" rows={diff.editorialKernel} digits={2} />
         <DiffTable
-          title="Trend median"
+          title="Trend Median"
           rows={diff.trendMedian}
           digits={1}
           compact
         />
-        <DiffTable title="Trend p25" rows={diff.trendP25} digits={1} compact />
-        <DiffTable title="Trend p75" rows={diff.trendP75} digits={1} compact />
+        <DiffTable title="Trend P25" rows={diff.trendP25} digits={1} compact />
+        <DiffTable title="Trend P75" rows={diff.trendP75} digits={1} compact />
         <DiffTable
-          title="Release-type multipliers"
+          title="Release-Type Multipliers"
           rows={diff.releaseTypeMagnitude}
           digits={3}
         />
         <DiffTable
-          title="Save-rate bands"
+          title="Save-Rate Bands"
           rows={diff.saveRateBands}
           digits={1}
           compact
         />
         <DiffTable
-          title="Stream bands"
+          title="Stream Bands"
           rows={diff.streamBands}
           digits={2}
         />
         <DiffTable
-          title="Save-count bands"
+          title="Save-Count Bands"
           rows={diff.saveCountBands}
           digits={0}
           compact
         />
         <DiffTable
-          title="Ad model"
+          title="Ad Model"
           rows={diff.adModel}
           digits={4}
           compact

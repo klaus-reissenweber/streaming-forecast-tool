@@ -203,7 +203,7 @@ def fetch_campaigns(client) -> tuple[list[dict], list[dict]]:
     spotify = (
         client.table("ad_spotify_campaigns")
         .select(
-            "release_key, artist, format, spend_usd, converted_listeners, "
+            "release_key, artist, surface, spend_usd, converted_listeners, "
             "est_attributed_streams, usable_for_modeling, start_date, end_date"
         )
         .execute()
@@ -255,7 +255,7 @@ def plan_mix(row: dict, spotify_format: str, meta_objective: str | None) -> dict
 def actual_mix(spotify_rows: list[dict], meta_rows: list[dict]) -> dict[str, float]:
     mix = {ch: 0.0 for ch in CHANNELS}
     for row in spotify_rows:
-        fmt = str(row.get("format") or "")
+        fmt = str(row.get("surface") or "")
         if fmt in mix:
             mix[fmt] += num(row.get("spend_usd"))
     for row in meta_rows:
@@ -275,7 +275,7 @@ def actual_streams(spotify_rows: list[dict], meta_rows: list[dict], model: dict,
     out = {ch: 0.0 for ch in CHANNELS}
     measured = {ch: False for ch in CHANNELS}
     for row in spotify_rows:
-        fmt = str(row.get("format") or "")
+        fmt = str(row.get("surface") or "")
         streams = num(row.get("est_attributed_streams"))
         if fmt in out:
             out[fmt] += streams

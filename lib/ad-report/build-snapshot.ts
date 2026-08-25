@@ -25,6 +25,7 @@ import { logActiveModelSource } from "@/lib/model/forecast-model";
 import { createServiceClient } from "@/lib/supabase/service";
 import { variancePct } from "@/lib/ad-report/windows";
 import { computeWeek1Actuals } from "@/lib/compute-week1-actuals";
+import { asMetaAdSurface, asSpotifyAdSurface } from "@/lib/ad-campaign-surface";
 import { readableCampaignName } from "@/lib/campaign-display-name";
 import {
   classifyStreamsVsBand,
@@ -105,13 +106,13 @@ async function loadAdRowsForRelease(releaseKey: string): Promise<{
     sb
       .from("ad_spotify_campaigns")
       .select(
-        "artist, release_key, campaign_uid, format, spend_usd, reach, clicks, converted_listeners, streams_per_listener, active_streams_per_listener, est_attributed_streams, saves, start_date, end_date, usable_for_modeling, derived_fields, source_partner",
+        "artist, release_key, campaign_uid, surface, spend_usd, reach, clicks, converted_listeners, streams_per_listener, active_streams_per_listener, est_attributed_streams, saves, start_date, end_date, usable_for_modeling, derived_fields, source_partner",
       )
       .eq("release_key", releaseKey),
     sb
       .from("ad_meta_campaigns")
       .select(
-        "release_key, campaign_uid, campaign_name, objective, spend_usd, link_clicks, impressions, reach, linkfire_visits, linkfire_spotify_clicks, linkfire_streams, start_date, end_date, derived_fields, source_partner",
+        "release_key, campaign_uid, campaign_name, objective, surface, spend_usd, link_clicks, impressions, reach, linkfire_visits, linkfire_spotify_clicks, linkfire_streams, start_date, end_date, derived_fields, source_partner",
       )
       .eq("release_key", releaseKey),
   ]);
@@ -122,7 +123,7 @@ async function loadAdRowsForRelease(releaseKey: string): Promise<{
     const lean = await sb
       .from("ad_spotify_campaigns")
       .select(
-        "artist, release_key, campaign_uid, format, spend_usd, reach, clicks, converted_listeners, active_streams_per_listener, est_attributed_streams, start_date, end_date, usable_for_modeling, derived_fields, source_partner",
+        "artist, release_key, campaign_uid, surface, spend_usd, reach, clicks, converted_listeners, active_streams_per_listener, est_attributed_streams, start_date, end_date, usable_for_modeling, derived_fields, source_partner",
       )
       .eq("release_key", releaseKey);
     if (lean.error) {
@@ -265,14 +266,14 @@ export async function buildAdReportSnapshot(
   const channels: Record<AdReportChannelId, AdReportChannelSnapshot> = {
     marquee: emptyChannel("marquee", "Marquee", "measured"),
     showcase: emptyChannel("showcase", "Showcase", "measured"),
-    meta_traffic: emptyChannel("meta_traffic", "Meta traffic", "estimate"),
-    meta_awareness: emptyChannel("meta_awareness", "Meta awareness", "n/a"),
+    meta_traffic: emptyChannel("meta_traffic", "Meta Traffic", "estimated"),
+    meta_awareness: emptyChannel("meta_awareness", "Meta Awareness", "unavailable"),
   };
 
   const campaigns: AdReportCampaignRow[] = [];
 
   for (const row of spotify) {
-    const format = String(row.format ?? "").toLowerCase();
+    const format = asSpotifyAdSurface(row.surface) ?? "marquee";
     const channelId: AdReportChannelId =
       format === "showcase" ? "showcase" : "marquee";
     const spend = num(row.spend_usd);
@@ -337,8 +338,10 @@ export async function buildAdReportSnapshot(
       row.objective as string | null | undefined,
       "traffic",
     );
+    const storedSurface = asMetaAdSurface(row.surface);
     const channelId: AdReportChannelId =
-      objective === "awareness" ? "meta_awareness" : "meta_traffic";
+      storedSurface ??
+      (objective === "awareness" ? "meta_awareness" : "meta_traffic");
     const spend = num(row.spend_usd);
     const impressions = numOrNull(row.impressions);
     const reach = numOrNull(row.reach);
@@ -377,7 +380,7 @@ export async function buildAdReportSnapshot(
       objective,
       spend,
       streams: channelId === "meta_traffic" ? enteredStreams ?? 0 : null,
-      streamsLabel: channelId === "meta_traffic" ? "estimate" : null,
+      streamsLabel: channelId === "meta_traffic" ? "estimated" : null,
       impressions,
       reach,
       clicks,
@@ -436,21 +439,21 @@ export async function buildAdReportSnapshot(
       if (entered != null) {
         // Partner-entered streams win; do not also apply click×SPL.
         camp.streams = entered;
-        camp.streamsLabel = "estimate";
+        camp.streamsLabel = "estimated";
         camp.costPerStream = cps(camp.spend, entered);
         channelStreams += entered;
         hasAnyStreams = true;
       } else if (measured != null && measured > 0) {
         const est = Math.round(measured * perClick);
         camp.streams = est;
-        camp.streamsLabel = "estimate";
+        camp.streamsLabel = "estimated";
         camp.costPerStream = cps(camp.spend, est);
         channelStreams += est;
         hasAnyStreams = true;
       } else if (camp.clicks != null && camp.clicks > 0) {
         const est = Math.round(camp.clicks * share * perClick);
         camp.streams = est;
-        camp.streamsLabel = "estimate";
+        camp.streamsLabel = "estimated";
         camp.costPerStream = cps(camp.spend, est);
         channelStreams += est;
         hasAnyStreams = true;
@@ -462,7 +465,7 @@ export async function buildAdReportSnapshot(
 
     if (traffic.spend > 0 || traffic.clicks != null || hasAnyMeasured || hasAnyStreams) {
       traffic.streams = hasAnyStreams ? channelStreams : null;
-      traffic.streamsLabel = "estimate";
+      traffic.streamsLabel = "estimated";
       traffic.costPerStream = cps(traffic.spend, traffic.streams);
       const predictedRounded = Math.round(predictedTotal);
       const measured = hasAnyMeasured ? measuredTotal : null;
@@ -480,7 +483,7 @@ export async function buildAdReportSnapshot(
   }
 
   for (const ch of Object.values(channels)) {
-    if (ch.streamsLabel !== "n/a") {
+    if (ch.streamsLabel !== "unavailable") {
       ch.costPerStream = cps(ch.spend, ch.streams);
     }
   }
@@ -571,12 +574,12 @@ export async function buildAdReportSnapshot(
           : null;
 
     if (camp.platform === "spotify") {
-      camp.resultLabel = "Streams";
+      camp.resultLabel = "streams";
       camp.resultActual = positiveMetric(camp.streams);
       camp.resultForecast = null;
       camp.status = null;
     } else if (camp.channel === "meta_traffic") {
-      camp.resultLabel = "Spotify clicks";
+      camp.resultLabel = "spotify_clicks";
       camp.resultActual =
         positiveMetric(camp.linkfireSpotifyClicks) ??
         positiveMetric(camp.clicks);
@@ -590,7 +593,7 @@ export async function buildAdReportSnapshot(
         camp.status = null;
       }
     } else {
-      camp.resultLabel = "Impressions";
+      camp.resultLabel = "impressions";
       camp.resultActual = positiveMetric(camp.impressions);
       camp.resultForecast = null;
       camp.status = null;

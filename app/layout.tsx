@@ -21,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="flex h-full min-h-full flex-col font-sans antialiased">
+      <body className="flex min-h-full flex-col font-sans antialiased">
         <AppShell>{children}</AppShell>
       </body>
     </html>

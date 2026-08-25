@@ -418,7 +418,7 @@ export async function deleteManualAdCampaign(input: {
           : null;
       let query = sb.from("ad_spotify_campaigns").delete().eq("campaign_uid", uid);
       if (format) {
-        query = query.eq("format", format);
+        query = query.eq("surface", format);
       }
       const { error } = await query;
       if (error) {

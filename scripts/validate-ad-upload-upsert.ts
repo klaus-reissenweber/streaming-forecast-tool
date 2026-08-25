@@ -60,8 +60,8 @@ function unitChecks(): void {
     "mapped rows share campaign_uid",
   );
   assert(
-    mRow.row!.format === "marquee" && sRow.row!.format === "showcase",
-    "formats",
+    mRow.row!.surface === "marquee" && sRow.row!.surface === "showcase",
+    "surfaces",
   );
 
   const renamed = emptyCanonicalRow(2);
@@ -152,7 +152,7 @@ async function liveUpsertTest(): Promise<void> {
     throw new Error(
       `Live upsert failed: ${result.errors.join("; ")}. ` +
         "If 'no unique constraint matching ON CONFLICT', apply " +
-        "migration 202608050004 (unique campaign_uid, format).",
+        "migration 202608240001 (unique campaign_uid, surface).",
     );
   }
 
@@ -160,17 +160,17 @@ async function liveUpsertTest(): Promise<void> {
 
   const { data, error } = await sb
     .from("ad_spotify_campaigns")
-    .select("campaign_uid, format, spend_usd")
+    .select("campaign_uid, surface, spend_usd")
     .eq("campaign_uid", uid)
-    .order("format");
+    .order("surface");
   if (error) throw new Error(error.message);
 
-  const formats = (data ?? []).map((r) => r.format).sort();
+  const surfaces = (data ?? []).map((r) => r.surface).sort();
   assert(
-    formats.length === 2 &&
-      formats[0] === "marquee" &&
-      formats[1] === "showcase",
-    `expected both formats, got ${JSON.stringify(data)}`,
+    surfaces.length === 2 &&
+      surfaces[0] === "marquee" &&
+      surfaces[1] === "showcase",
+    `expected both surfaces, got ${JSON.stringify(data)}`,
   );
   assert(
     (data ?? []).every((r) => r.campaign_uid === uid),

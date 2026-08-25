@@ -11,7 +11,8 @@ export type AdSpotifyCampaignRow = {
   artist: string;
   release_key: string;
   campaign_uid: string;
-  format: "marquee" | "showcase";
+  surface: "marquee" | "showcase";
+  release_format: "single" | "album" | null;
   release_type: string | null;
   country: string | null;
   segment_targeting: string | null;
@@ -36,6 +37,9 @@ export type AdMetaCampaignRow = {
   release_key: string;
   campaign_name: string | null;
   objective: string | null;
+  surface: "meta_awareness" | "meta_traffic" | null;
+  surface_source: "ctr_rule" | "imported" | null;
+  market: string | null;
   spend_usd: number | null;
   link_clicks: number | null;
   landing_page_views: number | null;
@@ -52,10 +56,10 @@ export type AdMetaCampaignRow = {
 };
 
 const SPOTIFY_SELECT =
-  "id, artist, release_key, campaign_uid, format, release_type, country, segment_targeting, spend_usd, reach, clicks, converted_listeners, active_streams_per_listener, est_attributed_streams, conversion_rate_pct, release_date, start_date, end_date, days_release_to_campaign, campaign_days, usable_for_modeling, exclusion_reason";
+  "id, artist, release_key, campaign_uid, surface, release_format, release_type, country, segment_targeting, spend_usd, reach, clicks, converted_listeners, active_streams_per_listener, est_attributed_streams, conversion_rate_pct, release_date, start_date, end_date, days_release_to_campaign, campaign_days, usable_for_modeling, exclusion_reason";
 
 const META_SELECT =
-  "id, release_key, campaign_name, objective, spend_usd, link_clicks, landing_page_views, cpc, linkfire_visits, linkfire_clickthroughs, spotify_click_share, impressions, reach, linkfire_ctr_pct, linkfire_streams, start_date, end_date";
+  "id, release_key, campaign_name, objective, surface, surface_source, market, spend_usd, link_clicks, landing_page_views, cpc, linkfire_visits, linkfire_clickthroughs, spotify_click_share, impressions, reach, linkfire_ctr_pct, linkfire_streams, start_date, end_date";
 
 export async function loadAdSpotifyCampaigns(options?: {
   usableOnly?: boolean;

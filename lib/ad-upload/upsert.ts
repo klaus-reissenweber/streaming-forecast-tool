@@ -2,7 +2,7 @@
  * Upsert normalized canonical rows into ad_spotify_campaigns / ad_meta_campaigns.
  *
  * Conflict targets must match table unique constraints:
- * - ad_spotify_campaigns: unique (campaign_uid, format)
+ * - ad_spotify_campaigns: unique (campaign_uid, surface)
  * - ad_meta_campaigns: unique (campaign_uid) when migrated; else unique (release_key)
  */
 
@@ -31,7 +31,7 @@ export function campaignUid(parts: Array<string | null | undefined>): string {
 
 /**
  * Spotify campaign_uid is shared across formats for the same campaign so
- * Marquee + Showcase persist as two rows under unique (campaign_uid, format).
+ * Marquee + Showcase persist as two rows under unique (campaign_uid, surface).
  * Do not include format or spend in the identity.
  */
 export function spotifyCampaignUid(row: {
@@ -158,6 +158,7 @@ const SPOTIFY_OPTIONAL_COLS = [
   "saves",
   "streams_per_listener",
   "active_streams_per_listener",
+  "release_format",
 ] as const;
 
 function stripCols(
@@ -172,7 +173,7 @@ function stripCols(
 }
 
 /**
- * Upsert Spotify rows on unique (campaign_uid, format).
+ * Upsert Spotify rows on unique (campaign_uid, surface).
  * Strips optional provenance columns when the DB is pre-migration.
  */
 async function upsertSpotifyRows(
@@ -183,8 +184,8 @@ async function upsertSpotifyRows(
   for (let attempt = 0; attempt < 4; attempt++) {
     const { error, count } = await sb.from("ad_spotify_campaigns").upsert(
       payload,
-      // Must match unique (campaign_uid, format) — campaign_uid alone will error.
-      { onConflict: "campaign_uid,format", count: "exact" },
+      // Must match unique (campaign_uid, surface) — campaign_uid alone will error.
+      { onConflict: "campaign_uid,surface", count: "exact" },
     );
     if (!error) {
       return { count: count ?? payload.length, error: null };
@@ -199,6 +200,44 @@ async function upsertSpotifyRows(
     return { count: 0, error: error.message };
   }
   return { count: 0, error: "Spotify upsert failed after column stripping" };
+}
+
+/**
+ * Result-indicator rows (surface_source = imported) win over the CTR heuristic
+ * on re-upsert. Missing columns (pre-migration) are ignored.
+ */
+async function restoreImportedMetaSurface(
+  sb: ReturnType<typeof createServiceClient>,
+  rows: Record<string, unknown>[],
+): Promise<Record<string, unknown>[]> {
+  const uids = [
+    ...new Set(
+      rows
+        .map((row) =>
+          typeof row.campaign_uid === "string" ? row.campaign_uid.trim() : "",
+        )
+        .filter(Boolean),
+    ),
+  ];
+  if (uids.length === 0) return rows;
+  const { data, error } = await sb
+    .from("ad_meta_campaigns")
+    .select("campaign_uid, surface, surface_source")
+    .in("campaign_uid", uids)
+    .eq("surface_source", "imported");
+  if (error || !data?.length) return rows;
+  const imported = new Map(
+    data.map((row) => [String(row.campaign_uid), row] as const),
+  );
+  return rows.map((row) => {
+    const existing = imported.get(String(row.campaign_uid ?? ""));
+    if (!existing) return row;
+    return {
+      ...row,
+      surface: existing.surface,
+      surface_source: "imported",
+    };
+  });
 }
 
 export async function upsertCanonicalRows(options: {
@@ -286,7 +325,7 @@ export async function upsertCanonicalRows(options: {
   }
 
   if (metaRows.length > 0) {
-    let payload = metaRows;
+    let payload = await restoreImportedMetaSurface(sb, metaRows);
     let wrote = false;
     for (let attempt = 0; attempt < 5; attempt++) {
       const { error, count } = await sb.from("ad_meta_campaigns").upsert(
@@ -307,6 +346,9 @@ export async function upsertCanonicalRows(options: {
         "source_partner",
         "impressions",
         "campaign_uid",
+        "surface",
+        "surface_source",
+        "market",
       ].filter((col) => error.message.includes(`'${col}'`));
       if (stripable.length > 0) {
         payload = stripCols(payload, stripable);
@@ -325,6 +367,9 @@ export async function upsertCanonicalRows(options: {
           delete copy.source_partner;
           delete copy.impressions;
           delete copy.linkfire_spotify_clicks;
+          delete copy.surface;
+          delete copy.surface_source;
+          delete copy.market;
           return copy;
         });
         const retry = await sb

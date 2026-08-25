@@ -116,13 +116,13 @@ export function DashboardSummaryBar({ summary }: DashboardSummaryBarProps) {
   const { healthDistribution } = summary;
   const activeContext =
     healthDistribution.awaiting > 0
-      ? `${healthDistribution.awaiting} awaiting day-1 data`
-      : "Monitoring window D1–D28";
+      ? `${healthDistribution.awaiting} awaiting Day 1 data`
+      : "Monitoring window Days 1–28";
 
   return (
     <section
       className="motion-fade-up overflow-hidden rounded-instrument border border-border bg-surface"
-      aria-label="Dashboard summary"
+      aria-label="Dashboard Summary"
     >
       <div className="p-5 pb-0">
         <SectionHeader>Summary</SectionHeader>
@@ -176,7 +176,7 @@ export function DashboardSummaryBar({ summary }: DashboardSummaryBarProps) {
       </dl>
 
       <div className="border-t border-border-subtle px-5 py-4">
-        <h3 className="text-label text-foreground">Recent flags</h3>
+        <h3 className="text-label text-foreground">Recent Flags</h3>
         {summary.recentFlags.length === 0 ? (
           <p className="mt-2 text-body-sm text-secondary">
             No flags surfaced in the last 24 hours.

@@ -20,9 +20,9 @@ export async function generateMetadata({
 }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const release = await loadRelease(id);
-  if (!release) return { title: "Upload ad results" };
+  if (!release) return { title: "Upload Ad Results" };
   return {
-    title: `Upload ad results · ${release.track_name}`,
+    title: `Upload Ad Results · ${release.track_name}`,
     description: `Import partner ad results for ${release.track_name}.`,
   };
 }
@@ -34,7 +34,7 @@ export default async function AdUploadPage({ params }: PageProps) {
     return (
       <main className="mx-auto max-w-3xl px-5 py-8">
         <h1 className="text-release-title font-semibold text-foreground">
-          Upload ad results
+          Upload Ad Results
         </h1>
         <p className="mt-3 text-body-sm text-secondary">{auth.error}</p>
         <p className="mt-6">
@@ -67,12 +67,12 @@ export default async function AdUploadPage({ params }: PageProps) {
             href: release.status === "closed" ? "/archive" : "/",
           },
           { label: release.track_name, href: `/release/${id}` },
-          { label: "Ad results" },
+          { label: "Ad Results" },
         ]}
       />
       <div className="mt-4 mb-6">
         <h1 className="text-release-title font-semibold text-foreground">
-          Ad results
+          Ad Results
         </h1>
         <p className="mt-1 text-sm text-secondary">
           Enter campaign numbers manually, or upload a partner export — both

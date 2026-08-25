@@ -9,7 +9,7 @@ export function ArchiveSummaryBar({ summary }: ArchiveSummaryBarProps) {
   return (
     <section
       className="motion-fade-up rounded-instrument border border-border bg-surface p-5"
-      aria-label="Archive summary"
+      aria-label="Archive Summary"
     >
       <SectionHeader>Summary</SectionHeader>
 
@@ -22,7 +22,7 @@ export function ArchiveSummaryBar({ summary }: ArchiveSummaryBarProps) {
         <span className="font-semibold tabular-nums text-foreground">
           {summary.retrainEligible}
         </span>{" "}
-        with complete wk1 data (retrain-eligible)
+        with complete week 1 data (retrain-eligible)
       </p>
     </section>
   );

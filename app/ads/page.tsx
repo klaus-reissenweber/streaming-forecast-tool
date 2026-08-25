@@ -15,7 +15,7 @@ import {
 } from "@/lib/load-release-list";
 
 export const metadata: Metadata = {
-  title: "Ad results",
+  title: "Ad Results",
   description: "Pick a release to enter or upload partner ad results.",
 };
 
@@ -37,7 +37,7 @@ export default async function AdsPage() {
     <main className="mx-auto max-w-6xl px-5 py-8">
       <header className="border-b border-border pb-4">
         <h1 className="text-release-title font-semibold text-foreground">
-          Ad results
+          Ad Results
         </h1>
       </header>
 

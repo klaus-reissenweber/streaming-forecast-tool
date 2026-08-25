@@ -72,6 +72,13 @@ function saveRateForDays(
   return (saves / streams) * 100;
 }
 
+function daySpanPhrase(days: ForecastDay[]): string {
+  if (days.length === 1) {
+    return `Day ${days[0]}`;
+  }
+  return `Days ${days[0]}–${days[days.length - 1]}`;
+}
+
 /** Pure deviation detection from daily actuals vs forecast benchmarks. */
 export function computeFlags(ctx: FlagDetectionContext): ReleaseFlag[] {
   if (ctx.monitoring.health.streamDaysEntered === 0) {
@@ -91,7 +98,7 @@ export function computeFlags(ctx: FlagDetectionContext): ReleaseFlag[] {
       type: "info",
       title: "Day 1 only entered",
       detail:
-        "D2 is critical for refining the week-1 projection. Enter D2 streams as soon as they are available.",
+        "Day 2 is critical for refining the week 1 projection. Enter Day 2 streams as soon as they are available.",
     });
   }
 
@@ -106,15 +113,15 @@ export function computeFlags(ctx: FlagDetectionContext): ReleaseFlag[] {
         flags.push({
           id: "d1-editorial-spike",
           type: "positive",
-          title: "Strong D1 with editorial support",
-          detail: `D1 streams (${formatCompactNumber(d1Streams)}) are ${multiplier}× the forecast expectation (${formatCompactNumber(expectedD1)}). Tier ${ctx.release.editorial_tier} editorial coverage likely contributed.`,
+          title: "Strong Day 1 with editorial support",
+          detail: `Day 1 streams (${formatCompactNumber(d1Streams)}) are ${multiplier}× the forecast expectation (${formatCompactNumber(expectedD1)}). Tier ${ctx.release.editorial_tier} editorial coverage likely contributed.`,
         });
       } else {
         flags.push({
           id: "d1-spike",
           type: "positive",
-          title: "Strong D1 stream spike",
-          detail: `D1 streams (${formatCompactNumber(d1Streams)}) are ${multiplier}× the forecast expectation (${formatCompactNumber(expectedD1)}).`,
+          title: "Strong Day 1 stream spike",
+          detail: `Day 1 streams (${formatCompactNumber(d1Streams)}) are ${multiplier}× the forecast expectation (${formatCompactNumber(expectedD1)}).`,
         });
       }
     }
@@ -128,7 +135,7 @@ export function computeFlags(ctx: FlagDetectionContext): ReleaseFlag[] {
         id: "save-velocity-low",
         type: "warning",
         title: "Save velocity below typical",
-        detail: `Projected week-1 saves (${formatCompactNumber(projectedSaves)}) are below typical for this artist size (under ${formatCompactNumber(Math.round(velocityFloor))}).`,
+        detail: `Projected week 1 saves (${formatCompactNumber(projectedSaves)}) are below typical for this artist size (under ${formatCompactNumber(Math.round(velocityFloor))}).`,
       });
     }
 
@@ -137,7 +144,7 @@ export function computeFlags(ctx: FlagDetectionContext): ReleaseFlag[] {
         id: "save-velocity-high",
         type: "positive",
         title: "Save velocity in the top 10%",
-        detail: `Projected week-1 saves (${formatCompactNumber(projectedSaves)}) are in the top 10% for this artist size (above ${formatCompactNumber(tierBands.p90)}).`,
+        detail: `Projected week 1 saves (${formatCompactNumber(projectedSaves)}) are in the top 10% for this artist size (above ${formatCompactNumber(tierBands.p90)}).`,
       });
     }
   }
@@ -159,7 +166,7 @@ export function computeFlags(ctx: FlagDetectionContext): ReleaseFlag[] {
         id: "save-velocity-drop",
         type: "warning",
         title: "Save velocity dropping",
-        detail: `Save rate fell from ${formatPercent(priorRate, 1)} (D${priorDays.join("–D")}) to ${formatPercent(recentRate, 1)} (D${recentDays.join("–D")}), a ${Math.round(((priorRate - recentRate) / priorRate) * 100)}% decline.`,
+        detail: `Save rate fell from ${formatPercent(priorRate, 1)} (${daySpanPhrase(priorDays)}) to ${formatPercent(recentRate, 1)} (${daySpanPhrase(recentDays)}), a ${Math.round(((priorRate - recentRate) / priorRate) * 100)}% decline.`,
       });
     }
   }

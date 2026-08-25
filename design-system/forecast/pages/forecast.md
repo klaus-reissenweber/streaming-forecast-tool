@@ -42,6 +42,9 @@
 - **h1:** `font-serif text-release-title`. Artist sits in the same line at `font-normal text-secondary` after ` · `.
 - **Hero figures:** Plex Mono `2.5rem` / 600 / `tabular-nums` / tracking `-0.02em`. Labels are `text-label uppercase text-muted`.
 - **Variance / band copy:** same figure size; color from semantic tone, not accent lime.
+- **Numerals for all numbers.** Week 1, Day 12, Days 1–28. No hyphen in Week 1. En dash for ranges.
+- **No abbreviations** in prose or labels (no CPC, CTR, wk1, D1, n/a, vs). Spell the phrase. Where a column is too narrow, move the unit into the header rather than shortening the value.
+- **Title Case for headlines.** Page titles, card titles, section headers, fieldset legends, tab labels, and disclosure summaries. Capitalise the first and last word, and all nouns, verbs, adjectives, and adverbs. Leave articles, coordinating conjunctions, and prepositions of fewer than four letters in lower case unless they are first or last. Examples: Forecast Against Actual, Week 1 Forecast, Cost per Stream, Draft Against Active, Days 1 to 28. Do not Title Case form field labels, table column headers, table cell values, or body copy. Field labels stay sentence case (Monthly listeners, not Monthly Listeners) so they do not compete with the section heading above.
 - **Section titles stay sans.** Do not switch locked-banner or chart headers to serif.
 
 ### Color Overrides
@@ -70,7 +73,7 @@ Compose these; do not inline their markup in `page.tsx`:
 | Component | Role |
 |-----------|------|
 | `ReleasePageHeader` | Identity, status, close, report |
-| `LockedForecastBanner` | Week-1 streams / saves / save rate ± actuals |
+| `LockedForecastBanner` | Week 1 streams / saves / save rate ± actuals |
 | `HealthBanner` | Monitoring verdict |
 | `MetricCards` | Save velocity + live algo band |
 | `AdResultsStatus` | Campaign ingest |
@@ -88,8 +91,8 @@ New cockpit UI belongs in `components/release/`, not in `app/release/[id]/page.t
 ## Recommendations
 
 - Pre-release: header + locked banner + health (awaiting) + algo + playbook. That is a complete page.
-- After D1: health, flags, metrics, and the daily grid appear. The curve appears once actual streams exist.
-- After week-1 completes: locked banner grows a Forecast / Actual / Difference grid. Keep the same hero; do not add a second scoreboard.
+- After Day 1: health, flags, metrics, and the daily grid appear. The curve appears once actual streams exist.
+- After week 1 completes: locked banner grows a Forecast / Actual / Difference grid. Keep the same hero; do not add a second scoreboard.
 - Mobile: locked banner stacks metric blocks; comparison becomes a 3-column mini-grid per metric. Sidebar becomes the top drawer.
 - Count-up stagger 50ms on hero figures; respect reduced motion via existing CSS tokens.
 - Do not add a dark cockpit variant, a marketing hero, or a “product demo” video pattern on this route.

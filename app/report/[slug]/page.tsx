@@ -26,10 +26,10 @@ export async function generateMetadata({
   const { slug } = await params;
   const report = await loadAdReportBySlug(slug).catch(() => null);
   if (!report || !isValidSnapshot(report.metricsSnapshot)) {
-    return { title: "Report not found", robots: { index: false, follow: false } };
+    return { title: "Report Not Found", robots: { index: false, follow: false } };
   }
   return {
-    title: `${report.title} · Performance report`,
+    title: `${report.title} · Performance Report`,
     description: `Paid + forecast performance snapshot for ${report.metricsSnapshot.release.trackName}.`,
     robots: { index: false, follow: false },
   };

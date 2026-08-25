@@ -127,7 +127,7 @@ function asForecastModel(model: ActiveModel): ForecastModel {
 
 function fmtPctBias(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) {
-    return "n/a";
+    return "Not available";
   }
   const pct = value * 100;
   const sign = pct > 0 ? "+" : "";
@@ -136,7 +136,7 @@ function fmtPctBias(value: number | null | undefined): string {
 
 function fmtNum(value: number, digits = 3): string {
   if (!Number.isFinite(value)) {
-    return "n/a";
+    return "Not available";
   }
   return value.toFixed(digits);
 }
@@ -546,7 +546,7 @@ function evaluateInsufficientSample(
   return {
     id: "insufficient_sample",
     severity: "soft",
-    label: "Clean count vs threshold",
+    label: "Clean count against threshold",
     passed: !flagged,
     value: `clean=${clean} (need ≥ ${min})`,
     detail: flagged
@@ -641,7 +641,7 @@ function evaluateLargeParameterMove(
   return {
     id: "large_parameter_move",
     severity: "soft",
-    label: "Large parameter moves vs active",
+    label: "Large parameter moves against active",
     passed,
     value: passed
       ? "no large moves"
@@ -722,7 +722,7 @@ export function evaluateAdModelBands(draft: ActiveModel): GuardrailCheck {
     severity: "soft",
     label: "Ad model rates in sane bands",
     passed,
-    value: passed ? "CPL/SPL/CPC/CPM in band; base=1.0" : issues.join("; "),
+    value: passed ? "cost per listener / streams per listener / cost per click / cost per thousand impressions in band; base=1.0" : issues.join("; "),
     detail: passed
       ? undefined
       : "Soft only — lean on priors / review before promote",
@@ -783,7 +783,7 @@ export function evaluateAdModelLargeMove(
     }
     if (adRelMove(row.active, row.draft) > AD_LARGE_MOVE_REL) {
       movers.push(
-        `${row.label} Δ=${((adRelMove(row.active, row.draft) * 100).toFixed(0))}%`,
+        `${row.label} change=${((adRelMove(row.active, row.draft) * 100).toFixed(0))}%`,
       );
     }
   }
@@ -793,7 +793,7 @@ export function evaluateAdModelLargeMove(
   return {
     id: "ad_model_large_move",
     severity: "soft",
-    label: "Large ad_model moves vs active",
+    label: "Large ad_model moves against active",
     passed,
     value: passed
       ? `no moves > ${(AD_LARGE_MOVE_REL * 100).toFixed(0)}%`

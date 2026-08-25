@@ -11,6 +11,11 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import { createServiceClient } from "@/lib/supabase/service";
+import {
+  classifyMetaSurfaceFromCtr,
+  releaseFormatFromCampaignType,
+  resolveMetaSurface,
+} from "@/lib/ad-campaign-surface";
 
 const SEED_DIR = path.join(process.cwd(), "seed", "ad");
 const SPOTIFY_CSV = path.join(SEED_DIR, "model-spotify-campaigns.csv");
@@ -231,7 +236,8 @@ function mapSpotifyRow(r: CsvRow): Record<string, unknown> | null {
     artist: r.artist,
     release_key: r.release_key,
     campaign_uid: r.campaign_uid,
-    format,
+    surface: format,
+    release_format: releaseFormatFromCampaignType(r.release_type),
     release_type: r.release_type || null,
     country: r.country || null,
     segment_targeting: r.segment_targeting || null,
@@ -311,8 +317,9 @@ function slugPart(raw: string): string {
 }
 
 /**
- * Ads Manager export rows → awareness objective with impressions/reach.
- * release_key is a stable synthetic key (unique constraint).
+ * Ads Manager export rows with impressions/reach. Surface comes from Result
+ * indicator when mapped; CTR fills the rest. Objective follows surface —
+ * not a blanket awareness stamp.
  */
 function mapAwarenessDeliveryRows(rows: CsvRow[]): Record<string, unknown>[] {
   const out: Record<string, unknown>[] = [];
@@ -340,13 +347,25 @@ function mapAwarenessDeliveryRows(rows: CsvRow[]): Record<string, unknown>[] {
       releaseKey = `${releaseKey}+`;
     }
     seen.add(releaseKey);
+    const linkClicks = num(r["Link clicks"]);
+    const classified = resolveMetaSurface({
+      resultIndicator: r["Result indicator"],
+      linkClicks,
+      impressions,
+    });
+    const objective =
+      classified.surface === "meta_awareness"
+        ? "awareness"
+        : classified.surface === "meta_traffic"
+          ? "traffic"
+          : null;
     out.push({
       release_key: releaseKey,
       campaign_uid: releaseKey,
       campaign_name: name || null,
-      objective: "awareness",
+      objective,
       spend_usd: spend,
-      link_clicks: num(r["Link clicks"]),
+      link_clicks: linkClicks,
       landing_page_views: num(r["Landing page views"]),
       cpc: num(r["CPC (link click)"]),
       linkfire_visits: null,
@@ -358,6 +377,8 @@ function mapAwarenessDeliveryRows(rows: CsvRow[]): Record<string, unknown>[] {
       linkfire_streams: null,
       start_date: start,
       end_date: end,
+      surface: classified.surface,
+      surface_source: classified.source,
     });
   }
   return out;
@@ -376,6 +397,9 @@ function mapMetaRow(
   const start =
     dateOrNull(r.first_campaign_date) ?? dateOrNull(r.release_date);
   const end = joined?.endDate ?? null;
+  const linkClicks = num(r.meta_link_clicks);
+  const impressions = null;
+  const classified = classifyMetaSurfaceFromCtr(linkClicks, impressions);
 
   return {
     release_key: r.release_key,
@@ -384,18 +408,20 @@ function mapMetaRow(
     // Release-master Meta aggregates are link-click (traffic) campaigns.
     objective: "traffic",
     spend_usd: num(r.meta_spend_usd),
-    link_clicks: num(r.meta_link_clicks),
+    link_clicks: linkClicks,
     landing_page_views: num(r.meta_landing_page_views),
     cpc: num(r.meta_cost_per_click_usd),
     linkfire_visits: num(r.linkfire_visits),
     linkfire_clickthroughs: num(r.linkfire_clickthroughs),
     spotify_click_share: joined?.share ?? null,
-    impressions: null,
+    impressions,
     reach: num(r.meta_reach),
     linkfire_ctr_pct: summary?.ctrPct ?? num(r.linkfire_ctr_pct),
     linkfire_streams: summary?.streams ?? null,
     start_date: start,
     end_date: end,
+    surface: classified.surface,
+    surface_source: classified.source,
   };
 }
 
@@ -412,6 +438,9 @@ function stripUnknownMetaColumns(
     "linkfire_streams",
     "derived_fields",
     "source_partner",
+    "surface",
+    "surface_source",
+    "market",
   ];
   const drop = optional.filter((col) => errorMessage.includes(`'${col}'`));
   if (drop.length === 0) return rows;
@@ -533,7 +562,7 @@ async function main(): Promise<number> {
   const spotifyCount = await replaceTable(
     "ad_spotify_campaigns",
     spotifyRows,
-    "campaign_uid,format",
+    "campaign_uid,surface",
   );
   const metaCount = await replaceTable(
     "ad_meta_campaigns",

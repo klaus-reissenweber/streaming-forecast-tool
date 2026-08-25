@@ -1,7 +1,7 @@
 /** Full thousands formatting (e.g. 1163 → "1,163") — distinguishes nearby values. */
 export function formatCount(value: number): string {
   if (!Number.isFinite(value)) {
-    return "n/a";
+    return "—";
   }
   return Math.round(value).toLocaleString("en-US");
 }
@@ -12,7 +12,7 @@ export function formatCompactNumber(
   fractionDigits = 0,
 ): string {
   if (!Number.isFinite(value)) {
-    return "n/a";
+    return "—";
   }
 
   const abs = Math.abs(value);
@@ -119,14 +119,14 @@ export function formatPercentRailLabels(
 
 export function formatPercent(value: number, decimals = 1): string {
   if (!Number.isFinite(value)) {
-    return "n/a";
+    return "—";
   }
   return `${value.toFixed(decimals)}%`;
 }
 
 export function formatUsd(value: number, decimals = 0): string {
   if (!Number.isFinite(value)) {
-    return "n/a";
+    return "—";
   }
   return new Intl.NumberFormat("en-US", {
     style: "currency",

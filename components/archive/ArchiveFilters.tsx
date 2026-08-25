@@ -57,7 +57,7 @@ export function ArchiveFilters({
   return (
     <div
       className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:gap-x-4 md:gap-y-2"
-      aria-label="Archive filters"
+      aria-label="Archive Filters"
     >
       <label className="flex w-full flex-col gap-1.5 md:w-auto md:flex-row md:items-center md:gap-2">
         <span className="text-label text-foreground">Genre</span>

@@ -88,15 +88,15 @@ export function AlgoPositioningModule({
   });
 
   const summary = showActual
-    ? `Algo positioning. Forecast ${formatCompactNumber(saves)} saves, actual ${formatCompactNumber(actualSaves)} saves. Reached ${ALGO_BAND_DISPLAY[reachedBand].label}.`
-    : `Algo positioning. Forecast ${formatCompactNumber(saves)} saves. ${ALGO_BAND_DISPLAY[reachedBand].label} band.`;
+    ? `Algorithmic Positioning. Forecast ${formatCompactNumber(saves)} saves, actual ${formatCompactNumber(actualSaves)} saves. Reached ${ALGO_BAND_DISPLAY[reachedBand].label}.`
+    : `Algorithmic Positioning. Forecast ${formatCompactNumber(saves)} saves. ${ALGO_BAND_DISPLAY[reachedBand].label} band.`;
 
   return (
     <section
       className="motion-fade-up rounded-instrument border border-border bg-surface p-5"
       aria-label={summary}
     >
-      <SectionHeader>Algo positioning</SectionHeader>
+      <SectionHeader>Algorithmic Positioning</SectionHeader>
 
       <div className="mt-5">
         <div className="flex">

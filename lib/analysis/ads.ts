@@ -69,12 +69,12 @@ const RATE = new Set<string>([
 ]);
 
 const LABEL: Record<string, string> = {
-  cpc: "CPC",
-  ctr: "click-through",
-  cpv: "CPV",
+  cpc: "Cost per click",
+  ctr: "Click-through rate",
+  cpv: "Cost per view",
   cplpv: "Cost per landing page view",
   cost_per_purchase: "Cost per purchase",
-  roas: "ROAS",
+  roas: "Return on ad spend",
   conversion_rate: "Conversion rate",
   streams_per_listener: "Streams per listener",
   intent_rate: "Intent rate",
@@ -94,7 +94,7 @@ const PRIMARY: Partial<Record<Surface, { key: string; better: "lower" | "higher"
 const SURFACE_PHRASE: Partial<Record<Surface, string>> = {
   meta_awareness: "awareness",
   meta_traffic: "traffic",
-  meta_lpv: "LPV",
+  meta_lpv: "landing page views",
   meta_sales: "sales",
 };
 
@@ -238,7 +238,7 @@ function marketFindings(campaign: AdCampaign): Finding[] {
     if (ctr != null && cpc != null && leadsOnCtr(best, ranked)) {
       out.push({
         id: "market-best",
-        text: `${best.market} led on both counts: ${ctr.toFixed(2)} percent click-through at ${money(cpc)} per click.`,
+        text: `${best.market} led on both counts: ${ctr.toFixed(2)} percent click-through rate at ${money(cpc)} per click.`,
       });
     } else {
       out.push({
@@ -267,11 +267,11 @@ function marketFindings(campaign: AdCampaign): Finding[] {
 
   out.push({
     id: "market-best",
-    text: `${best.market} led at ${bestPrimary.toFixed(2)} ROAS.`,
+    text: `${best.market} led at ${bestPrimary.toFixed(2)} return on ad spend.`,
   });
   out.push({
     id: "market-worst",
-    text: `${worst.market} trailed at ${worstPrimary.toFixed(2)} ROAS.`,
+    text: `${worst.market} trailed at ${worstPrimary.toFixed(2)} return on ad spend.`,
   });
   return out;
 }

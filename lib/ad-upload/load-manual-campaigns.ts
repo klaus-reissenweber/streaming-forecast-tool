@@ -52,7 +52,7 @@ export async function loadManualCampaignsForReleaseKey(
     sb
       .from("ad_spotify_campaigns")
       .select(
-        "campaign_uid, format, spend_usd, reach, clicks, converted_listeners, est_attributed_streams, saves, start_date, end_date",
+        "campaign_uid, surface, spend_usd, reach, clicks, converted_listeners, est_attributed_streams, saves, start_date, end_date",
       )
       .eq("release_key", key),
     sb
@@ -73,13 +73,13 @@ export async function loadManualCampaignsForReleaseKey(
   const spotify: ManualCampaignDraft[] = (spotifyRes.data ?? []).map((row) => ({
     ...emptyManualDraft(),
     campaign_uid: str(row.campaign_uid) || null,
-    campaign_name: asFormat(row.format)
-      ? asFormat(row.format) === "marquee"
+    campaign_name: asFormat(row.surface)
+      ? asFormat(row.surface) === "marquee"
         ? "Marquee"
         : "Showcase"
       : "",
     spend: num(row.spend_usd),
-    format: asFormat(row.format),
+    format: asFormat(row.surface),
     reach: num(row.reach),
     clicks: num(row.clicks),
     converted_listeners: num(row.converted_listeners),

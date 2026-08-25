@@ -9,7 +9,7 @@ import { loadDraftModelSummaries } from "@/lib/load-draft-model";
 import { loadRecentRetrainJobs } from "@/lib/load-retrain-job";
 
 export const metadata: Metadata = {
-  title: "Approve drafts",
+  title: "Approve Drafts",
   description: "Review retrain jobs and draft models before promoting.",
 };
 
@@ -36,7 +36,7 @@ export default async function ApproveDraftsPage() {
     return (
       <main className="mx-auto max-w-3xl px-5 py-8">
         <h1 className="text-release-title font-semibold text-foreground">
-          Approve drafts
+          Approve Drafts
         </h1>
         <p className="mt-3 text-body-sm text-secondary">{auth.error}</p>
         <p className="mt-6">
@@ -58,16 +58,16 @@ export default async function ApproveDraftsPage() {
       <PageBreadcrumbs
         items={[
           { label: "Model", href: "/admin/retrain" },
-          { label: "Approve drafts" },
+          { label: "Approve Drafts" },
         ]}
       />
       <header className="mt-4 border-b border-border pb-4">
         <h1 className="text-release-title font-semibold text-foreground">
-          Approve drafts
+          Approve Drafts
         </h1>
       </header>
 
-      <section className="mt-8" aria-label="Retrain jobs">
+      <section className="mt-8" aria-label="Retrain Jobs">
         <SectionHeader>Jobs</SectionHeader>
         {jobs.length === 0 ? (
           <p className="mt-3 text-body-sm text-secondary">No retrain jobs yet.</p>
@@ -105,7 +105,7 @@ export default async function ApproveDraftsPage() {
         )}
       </section>
 
-      <section className="mt-8" aria-label="Draft models">
+      <section className="mt-8" aria-label="Draft Models">
         <SectionHeader>Drafts</SectionHeader>
         {drafts.length === 0 ? (
           <p className="mt-3 text-body-sm text-secondary">No standing drafts.</p>

@@ -3,11 +3,11 @@
  * Import scripts are responsible for populating delivery / Linkfire columns.
  */
 
+import { asSpotifyAdSurface } from "@/lib/ad-campaign-surface";
 import { coerceMetaObjective } from "@/lib/meta-objective";
 import {
   isLinkfireAutoRouter,
   normalizeArtistKey,
-  type AdFormat,
   type AdGenre,
   type MetaAwarenessFitRow,
   type MetaCampaignFitRow,
@@ -34,7 +34,7 @@ export async function loadAdFitInputs(): Promise<AdFitInputs> {
   const { data: camps, error: campErr } = await sb
     .from("ad_spotify_campaigns")
     .select(
-      "artist, format, spend_usd, converted_listeners, est_attributed_streams, usable_for_modeling",
+      "artist, surface, spend_usd, converted_listeners, est_attributed_streams, usable_for_modeling",
     );
   if (campErr) throw new Error(`ad_spotify_campaigns: ${campErr.message}`);
 
@@ -95,7 +95,7 @@ export async function loadAdFitInputs(): Promise<AdFitInputs> {
 
   const spotify: SpotifyCampaignFitRow[] = (camps ?? []).map((r) => ({
     artist: String(r.artist),
-    format: r.format as AdFormat,
+    format: asSpotifyAdSurface(r.surface) ?? "marquee",
     spendUsd: num(r.spend_usd),
     convertedListeners: num(r.converted_listeners),
     estAttributedStreams: num(r.est_attributed_streams),

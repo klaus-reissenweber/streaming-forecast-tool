@@ -72,11 +72,9 @@ interface ChartPalette {
 }
 
 const WEEK_MARKS = [1, 7, 14, 21, 28] as const;
-const COMPACT_X_MARKS = [1, 14, 28] as const;
-const MD_MIN_WIDTH_PX = 768;
 const CHART_Y_AXIS_WIDTH = 48;
 const CHART_MARGIN_TOP = 28;
-const CHART_X_AXIS_HEIGHT = 32;
+const CHART_X_AXIS_HEIGHT = 40;
 const CAMPAIGN_WINDOW_DAYS = 28;
 /** Inset so the first/last dots and their labels sit inside the plot, not on the clip edge. */
 const AXIS_POINT_PAD = 12;
@@ -224,20 +222,6 @@ function xAxisTicks(endDay: number, marks: readonly number[]): number[] {
   return ticks;
 }
 
-function useMdUp(): boolean {
-  const [mdUp, setMdUp] = useState(false);
-
-  useEffect(() => {
-    const media = window.matchMedia(`(min-width: ${MD_MIN_WIDTH_PX}px)`);
-    const sync = () => setMdUp(media.matches);
-    sync();
-    media.addEventListener("change", sync);
-    return () => media.removeEventListener("change", sync);
-  }, []);
-
-  return mdUp;
-}
-
 function useChartPalette(): ChartPalette {
   if (typeof window === "undefined") {
     return DEFAULT_PALETTE;
@@ -325,7 +309,6 @@ export function StreamCurveChart({
   releaseDate,
 }: StreamCurveChartProps) {
   const palette = useChartPalette();
-  const mdUp = useMdUp();
   const projectedDraw = useLineDrawIn(DRAW_STAGGER_MS.projected, {
     dashedWhenDone: true,
   });
@@ -345,7 +328,7 @@ export function StreamCurveChart({
     actualStreamsByDay,
     streamBand,
   ).slice(0, xMax);
-  const axisTicks = xAxisTicks(xMax, mdUp ? WEEK_MARKS : COMPACT_X_MARKS);
+  const axisTicks = xAxisTicks(xMax, WEEK_MARKS);
   const hasActuals = actualStreamsByDay.some((value) => value != null);
   const hasProjected =
     projectedStreamCurve != null && status !== "closed";
@@ -411,7 +394,7 @@ export function StreamCurveChart({
       id: "locked",
       label: "Organic forecast",
       value: sumNumbers(lockedStreamCurve.dailyStreams),
-      sublabel: "D1–D28",
+      sublabel: "Days 1–28",
       color: palette.projected,
       enabled: showLocked,
     },
@@ -421,7 +404,7 @@ export function StreamCurveChart({
       id: "marqueeAds",
       label: "Marquee lift",
       value: sumNumbers(marqueeAdDaily ?? []),
-      sublabel: "D1–D28",
+      sublabel: "Days 1–28",
       color: palette.marqueeAds,
       enabled: showMarquee,
     });
@@ -431,7 +414,7 @@ export function StreamCurveChart({
       id: "showcaseAds",
       label: "Showcase lift",
       value: sumNumbers(showcaseAdDaily ?? []),
-      sublabel: "D1–D28",
+      sublabel: "Days 1–28",
       color: palette.showcaseAds,
       enabled: showShowcase,
     });
@@ -441,7 +424,7 @@ export function StreamCurveChart({
       id: "metaAds",
       label: "Meta lift",
       value: sumNumbers(metaAdDaily ?? []),
-      sublabel: "D1–D28",
+      sublabel: "Days 1–28",
       color: palette.metaAds,
       enabled: showMeta,
     });
@@ -451,7 +434,7 @@ export function StreamCurveChart({
       id: "projected",
       label: "Live pace",
       value: sumNumbers(projectedStreamCurve?.dailyStreams ?? []),
-      sublabel: "D1–D28",
+      sublabel: "Days 1–28",
       color: palette.projected,
       enabled: showProjected,
     });
@@ -461,7 +444,7 @@ export function StreamCurveChart({
       id: "actual",
       label: "Daily actuals",
       value: sumPresent(actualStreamsByDay),
-      sublabel: lastActualDay > 0 ? `D1–D${lastActualDay}` : "Entered days",
+      sublabel: lastActualDay > 0 ? `Days 1–${lastActualDay}` : "Entered days",
       color: palette.actual,
       enabled: showActual,
     });
@@ -482,7 +465,7 @@ export function StreamCurveChart({
   return (
     <section
       className="motion-fade-up relative min-w-0 overflow-hidden rounded-instrument border border-border bg-surface p-4 md:p-5"
-      aria-label="Stream curve"
+      aria-label="Stream Curve"
     >
       <span
         className="pointer-events-none absolute inset-y-0 left-0 w-1 origin-top bg-projected animate-instrument-rule-grow"
@@ -490,7 +473,7 @@ export function StreamCurveChart({
       />
 
       <div>
-        <SectionHeader>Stream curve</SectionHeader>
+        <SectionHeader>Stream Curve</SectionHeader>
       </div>
 
       <ChartSeriesCards series={seriesCards} onToggle={onToggleSeries} />
@@ -520,7 +503,7 @@ export function StreamCurveChart({
               padding={{ left: AXIS_POINT_PAD, right: AXIS_POINT_PAD }}
               allowDecimals={false}
               niceTicks="none"
-              tickFormatter={(day) => `D${day}`}
+              tickFormatter={(day) => String(day)}
               tick={{
                 fill: palette.axis,
                 fontFamily: "var(--font-plex-mono)",
@@ -529,6 +512,14 @@ export function StreamCurveChart({
               axisLine={{ stroke: palette.grid }}
               tickLine={false}
               height={CHART_X_AXIS_HEIGHT}
+              label={{
+                value: "Day",
+                position: "insideBottom",
+                offset: -4,
+                fill: palette.axis,
+                fontFamily: "var(--font-plex-sans)",
+                fontSize: 10,
+              }}
             />
             <YAxis
               yAxisId="left"
@@ -581,7 +572,7 @@ export function StreamCurveChart({
                   return [null, null];
                 }
                 if (value == null || typeof value !== "number") {
-                  return ["n/a", String(name)];
+                  return ["Not available", String(name)];
                 }
                 return [value.toLocaleString("en-US"), String(name)];
               }}

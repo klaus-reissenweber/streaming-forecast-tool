@@ -42,7 +42,7 @@ function MetricCell({
 }) {
   return (
     <div className="min-w-0 flex-1 basis-0 border-t border-border px-4 py-3 sm:px-5 sm:py-4">
-      <p className="text-[10px] font-medium uppercase tracking-[0.06em] text-foreground">
+      <p className="text-[10px] font-medium uppercase leading-tight tracking-[0.06em] text-foreground">
         {label}
       </p>
       <p className="mt-1 text-[1.5rem] font-semibold tabular-nums leading-none tracking-[-0.02em] text-foreground">
@@ -185,7 +185,7 @@ export function AdSpendLiveForecast({
     >
       {hasSpotify ? (
         <ForecastCard
-          title="Spotify ads"
+          title="Spotify Ads"
           logo={<SpotifyLogo className="h-5 w-5" />}
           spendLabel={spotifySpendParts.join(" · ") || undefined}
         >
@@ -206,19 +206,19 @@ export function AdSpendLiveForecast({
               }
             />
           ) : null}
-          <MetricCell label="CPS" value={spotifyCps} />
+          <MetricCell label="Cost per stream" value={spotifyCps} />
         </ForecastCard>
       ) : null}
 
       {hasMetaTraffic ? (
         <ForecastCard
-          title="Meta traffic"
+          title="Meta Traffic"
           logo={<MetaLogo className="h-5 w-auto" />}
           spendLabel={formatUsd(metaTrafficSpend, 0)}
-          note="Streams are an estimate. Also builds reach and a retargetable audience — CPS understates its value."
+          note="Streams are estimated. Also builds reach and a retargetable audience — cost per stream understates its value."
         >
           <MetricCell
-            label="Streams (estimate)"
+            label="Streams (Estimated)"
             value={
               <AnimatedCount
                 value={metaFunnel.projectedStreams}
@@ -244,13 +244,13 @@ export function AdSpendLiveForecast({
               />
             }
           />
-          <MetricCell label="CPS" value={metaCps} />
+          <MetricCell label="Cost per stream" value={metaCps} />
         </ForecastCard>
       ) : null}
 
       {hasAwareness ? (
         <ForecastCard
-          title="Meta awareness"
+          title="Meta Awareness"
           logo={<MetaLogo className="h-5 w-auto" />}
           spendLabel={formatUsd(metaAwarenessSpend, 0)}
         >
@@ -275,7 +275,7 @@ export function AdSpendLiveForecast({
         </ForecastCard>
       ) : null}
 
-      <ForecastCard title="Paid totals">
+      <ForecastCard title="Paid Totals">
         <MetricCell
           label="Streams"
           value={<AnimatedCount value={totalStreams} delay={0} />}

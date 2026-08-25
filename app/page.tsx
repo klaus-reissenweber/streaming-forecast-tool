@@ -7,7 +7,7 @@ import { loadActiveReleasesWithDailyData } from "@/lib/load-active-releases";
 import { logActiveModelSource } from "@/lib/model/forecast-model";
 
 export const metadata: Metadata = {
-  title: "Active releases",
+  title: "Active Releases",
   description:
     "At-a-glance health monitoring across all active release campaigns.",
 };
@@ -29,7 +29,7 @@ export default async function HomePage() {
     <main className="mx-auto max-w-6xl px-5 py-8">
       <header className="border-b border-border pb-4">
         <h1 className="text-release-title font-semibold text-foreground">
-          Active releases
+          Active Releases
         </h1>
       </header>
 

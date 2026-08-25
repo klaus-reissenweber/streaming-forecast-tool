@@ -38,7 +38,7 @@ export async function generateMetadata({
   const release = await loadRelease(id);
 
   if (!release) {
-    return { title: "Release not found" };
+    return { title: "Release Not Found" };
   }
 
   return {

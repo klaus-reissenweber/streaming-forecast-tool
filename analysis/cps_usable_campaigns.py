@@ -140,7 +140,7 @@ def main() -> int:
     campaigns = paginate(
         client,
         "ad_spotify_campaigns",
-        "id, artist, release_key, campaign_uid, format, spend_usd, "
+        "id, artist, release_key, campaign_uid, surface, spend_usd, "
         "converted_listeners, est_attributed_streams, usable_for_modeling, "
         "exclusion_reason, country, release_type, derived_fields",
     )
@@ -208,7 +208,7 @@ def main() -> int:
         ml = ml_by_release_key.get(rkey)
         if ml is None and akey in ml_by_key:
             ml = float(np.median(ml_by_key[akey]))
-        fmt = str(c.get("format") or "")
+        fmt = str(c.get("surface") or "")
         records.append(
             {
                 "id": str(c.get("id")),

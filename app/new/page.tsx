@@ -8,7 +8,7 @@ export default async function NewReleasePage() {
     <main className="mx-auto max-w-3xl px-5 py-8">
       <header className="border-b border-border pb-4">
         <h1 className="text-release-title font-semibold text-foreground">
-          Create release
+          Create Release
         </h1>
       </header>
 

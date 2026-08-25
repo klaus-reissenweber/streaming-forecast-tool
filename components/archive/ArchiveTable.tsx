@@ -9,6 +9,7 @@ import type {
   ArchiveViewModel,
   DeltaTone,
 } from "@/lib/build-archive-view-model";
+import { NotAvailable } from "@/components/ui/NotAvailable";
 import {
   formatCompactNumber,
   formatLockTimestamp,
@@ -45,13 +46,13 @@ function forecastActualTitle(
   actual: number | null,
 ): string {
   const actualLabel =
-    actual == null ? "n/a" : formatCompactNumber(actual);
+    actual == null ? "Not available" : formatCompactNumber(actual);
   return `${formatCompactNumber(forecast)} forecast → ${actualLabel} actual`;
 }
 
 function streamsDeltaCell(row: ArchiveRow): ReactNode {
   if (row.streamsDeltaPct == null) {
-    return <span className="text-secondary">n/a</span>;
+    return <NotAvailable />;
   }
 
   const vsBand = row.streamsVsBand;
@@ -85,7 +86,7 @@ function formatDeltaPctCell(
   tone: DeltaTone | null,
 ): ReactNode {
   if (deltaPct == null) {
-    return <span className="text-secondary">n/a</span>;
+    return <NotAvailable />;
   }
 
   return (
@@ -100,7 +101,7 @@ function saveRateCell(
   vsBand: SaveRateVsBand | null,
 ): ReactNode {
   if (actualSaveRate == null || vsBand == null) {
-    return <span className="text-secondary">n/a</span>;
+    return <NotAvailable />;
   }
 
   return (
@@ -159,7 +160,7 @@ function ArchiveReleaseCard({ row }: { row: ArchiveRow }) {
       <p className="mt-0.5 text-caption text-secondary">
         Released {row.releaseDateDisplay}
         {" · Closed "}
-        {row.closedAtDisplay ?? "n/a"}
+        {row.closedAtDisplay ?? <NotAvailable />}
       </p>
     </Link>
   );
@@ -176,7 +177,7 @@ export function ArchiveTable({ viewModel }: ArchiveTableProps) {
   return (
     <section
       className="motion-fade-up min-w-0 overflow-hidden rounded-instrument border border-border bg-surface"
-      aria-label="Closed releases"
+      aria-label="Closed Releases"
     >
       <div className="p-5">
         <SectionHeader>Releases</SectionHeader>
@@ -185,7 +186,7 @@ export function ArchiveTable({ viewModel }: ArchiveTableProps) {
       {rows.length === 0 ? (
         <p className="mx-5 mb-5 border border-dashed border-border bg-canvas px-4 py-12 text-center text-sm text-secondary">
           No closed releases yet. Releases appear here once marked closed in the
-          database (auto-close on D28 arrives in step 8).
+          database (auto-close on Day 28 arrives in step 8).
         </p>
       ) : (
         <>
@@ -254,10 +255,10 @@ export function ArchiveTable({ viewModel }: ArchiveTableProps) {
                     {row.releaseDateDisplay}
                   </td>
                   <td className={`${NUM} px-2 text-secondary`}>
-                    {row.actualStreams != null ? (
+                      {row.actualStreams != null ? (
                       formatCompactNumber(row.actualStreams)
                     ) : (
-                      <span className="text-secondary">n/a</span>
+                      <NotAvailable />
                     )}
                   </td>
                   <td
@@ -292,7 +293,7 @@ export function ArchiveTable({ viewModel }: ArchiveTableProps) {
                         : undefined
                     }
                   >
-                    {row.closedAtDisplay ?? "n/a"}
+                    {row.closedAtDisplay ?? <NotAvailable />}
                   </td>
                 </tr>
               ))}

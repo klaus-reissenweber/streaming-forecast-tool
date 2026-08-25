@@ -16,6 +16,13 @@ import type {
   AdReportMetricsSnapshot,
 } from "@/lib/ad-report/types";
 import {
+  RESULT_LABEL_DISPLAY,
+  STREAMS_LABEL_DISPLAY,
+  isEstimatedStreams,
+  isUnavailableStreams,
+  parseResultLabel,
+} from "@/lib/ad-report/labels";
+import {
   d28ActualFromDaily,
   variancePct,
   week1FromDaily,
@@ -58,6 +65,12 @@ function displayCampaignName(row: AdReportCampaignRow): string {
   return readableCampaignName(row);
 }
 
+function channelCardHeading(label: string): string {
+  if (label === "Meta traffic") return "Meta Traffic";
+  if (label === "Meta awareness") return "Meta Awareness";
+  return label;
+}
+
 function campaignCompareMetrics(c: AdReportCampaignRow) {
   const resultActual =
     c.resultActual ??
@@ -67,9 +80,10 @@ function campaignCompareMetrics(c: AdReportCampaignRow) {
         positiveOrNull(c.clicks)));
   const resultForecast =
     c.resultForecast ?? positiveOrNull(c.predictedSpotifyClicks);
-  const resultLabel =
-    c.resultLabel ??
-    (c.platform === "spotify" ? "Streams" : "Spotify clicks");
+  const resultKey =
+    parseResultLabel(c.resultLabel) ??
+    (c.platform === "spotify" ? "streams" : "spotify_clicks");
+  const resultLabel = RESULT_LABEL_DISPLAY[resultKey];
   const status =
     c.status ??
     (resultActual != null && resultForecast != null
@@ -106,11 +120,11 @@ function CampaignCompareCard({
             {displayCampaignName(campaign)}
           </p>
           <div className="mt-1 flex flex-wrap gap-1.5">
-            {campaign.streamsLabel === "estimate" ||
+            {isEstimatedStreams(campaign.streamsLabel) ||
             campaign.derivedFields.length > 0 ? (
               <StatusPill tone="warning">Derived</StatusPill>
             ) : isSpotify ? (
-              <StatusPill tone="neutral">Measured</StatusPill>
+              <StatusPill tone="neutral">{STREAMS_LABEL_DISPLAY.measured}</StatusPill>
             ) : null}
             {!campaign.usableForModeling ? (
               <StatusPill tone="warning">Report only</StatusPill>
@@ -179,16 +193,15 @@ function MetricValue({
       <span className="tabular-nums">
         {formatCount(value)}
         {estimate ? (
-          <sup
-            className="ml-0.5 text-[0.65em] font-normal text-secondary"
-            title="Modeled estimate"
-          >
+          <sup className="ml-0.5 text-[0.65em] font-normal text-secondary">
             *
           </sup>
         ) : null}
       </span>
       {estimate ? (
-        <span className="text-[10px] leading-tight text-secondary">estimate</span>
+        <span className="text-[10px] leading-tight text-secondary">
+          {STREAMS_LABEL_DISPLAY.estimated}
+        </span>
       ) : null}
     </span>
   );
@@ -454,7 +467,7 @@ export function AdReportDashboard({
             <div className="mt-4 space-y-3">
               {campaignWindow.startDate && campaignWindow.endDate ? (
                 <ProgressBar
-                  label="Campaign duration"
+                  label="Campaign Duration"
                   startLabel={formatReleaseDate(campaignWindow.startDate)}
                   endLabel={formatReleaseDate(campaignWindow.endDate)}
                   pct={rangeFillPct(
@@ -464,7 +477,7 @@ export function AdReportDashboard({
                 />
               ) : null}
               <ProgressBar
-                label="Spend vs budget"
+                label="Spend Against Budget"
                 startLabel={formatUsd(paid.totalSpend, 0)}
                 endLabel={
                   budgetTotal > 0
@@ -485,12 +498,12 @@ export function AdReportDashboard({
         </div>
       </header>
 
-      <section className="mt-6" aria-label="Week 1 forecast vs week 1 actual">
+      <section className="mt-6" aria-label="Week 1 Forecast Against Week 1 Actual">
         <h2 className="text-section font-semibold text-foreground">
-          Week 1 forecast vs week 1 actual
+          Week 1 Forecast Against Week 1 Actual
         </h2>
         <p className="mt-1 text-sm text-secondary">
-          Both sides cover D1–D7
+          Both sides cover Days 1 to 7
           {week1Days > 0 ? ` · ${week1Days} day${week1Days === 1 ? "" : "s"} entered` : ""}.
         </p>
         <dl className="mt-3 grid gap-3 sm:grid-cols-3">
@@ -546,7 +559,7 @@ export function AdReportDashboard({
         </dl>
         {d28.actualStreams != null ? (
           <p className="mt-3 text-sm text-secondary">
-            D1–D28 actual total{" "}
+            Days 1–28 actual total{" "}
             <span className="text-foreground">
               {formatCompactNumber(d28.actualStreams)}
             </span>
@@ -559,9 +572,9 @@ export function AdReportDashboard({
       </section>
 
       {forecastSaves != null && !savesArePaid ? (
-        <section className="mt-6" aria-label="Week 1 saves">
+        <section className="mt-6" aria-label="Week 1 Saves">
           <h2 className="text-section font-semibold text-foreground">
-            Week 1 saves
+            Week 1 Saves
           </h2>
           <dl className="mt-3 grid gap-3 sm:grid-cols-3">
             <div className="rounded-instrument border border-border bg-surface px-4 py-3">
@@ -594,9 +607,9 @@ export function AdReportDashboard({
         </section>
       ) : null}
 
-      <section className="mt-6" aria-label="Aggregated campaign metrics">
+      <section className="mt-6" aria-label="Aggregated Campaign Metrics">
         <h2 className="text-section font-semibold text-foreground">
-          Aggregated campaign metrics
+          Aggregated Campaign Metrics
         </h2>
         <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
@@ -629,7 +642,7 @@ export function AdReportDashboard({
         </div>
       </section>
 
-      <section className="mt-6" aria-label="Forecast vs actual chart">
+      <section className="mt-6" aria-label="Forecast Against Actual Chart">
         <ForecastVsActualChart
           forecastVsActualDaily={snapshot.charts.forecastVsActualDaily}
           releaseDate={release.releaseDate}
@@ -643,15 +656,15 @@ export function AdReportDashboard({
       </section>
 
       {metaFunnelComparison ? (
-        <section className="mt-8" aria-label="Meta funnel comparison">
+        <section className="mt-8" aria-label="Meta Funnel Comparison">
           <div className="mb-3 flex items-center gap-2">
             <MetaLogo className="h-5 w-auto" />
             <h2 className="text-section font-semibold text-foreground">
-              Meta funnel comparison
+              Meta Funnel Comparison
             </h2>
           </div>
           <p className="text-sm text-secondary">
-            Spotify clicks — model prediction vs measured Linkfire clicks.
+            Predicted against measured Linkfire clicks.
           </p>
           <dl className="mt-3 grid gap-3 sm:grid-cols-3">
             <div className="rounded-instrument border border-border bg-surface px-4 py-3">
@@ -695,7 +708,7 @@ export function AdReportDashboard({
           }
         >
           {spotifyChannels.length > 0 ? (
-            <section aria-label="Spotify channels">
+            <section aria-label="Spotify Channels">
               <div className="mb-3 flex items-center gap-2">
                 <SpotifyLogo className="h-5 w-5" />
                 <h2 className="text-section font-semibold text-foreground">
@@ -716,12 +729,14 @@ export function AdReportDashboard({
                   >
                     <div className="flex items-baseline justify-between gap-2">
                       <h3 className="text-sm font-semibold text-foreground">
-                        {ch.label}
+                        {channelCardHeading(ch.label)}
                       </h3>
                       {ch.hasDerivedValues ? (
                         <StatusPill tone="warning">Derived</StatusPill>
                       ) : (
-                        <StatusPill tone="neutral">Measured</StatusPill>
+                        <StatusPill tone="neutral">
+                          {STREAMS_LABEL_DISPLAY.measured}
+                        </StatusPill>
                       )}
                     </div>
                     <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-body-sm">
@@ -747,7 +762,7 @@ export function AdReportDashboard({
           ) : null}
 
           {metaChannels.length > 0 ? (
-            <section aria-label="Meta channels">
+            <section aria-label="Meta Channels">
               <div className="mb-3 flex items-center gap-2">
                 <MetaLogo className="h-5 w-auto" />
                 <h2 className="text-section font-semibold text-foreground">
@@ -768,20 +783,24 @@ export function AdReportDashboard({
                   >
                     <div className="flex items-baseline justify-between gap-2">
                       <h3 className="text-sm font-semibold text-foreground">
-                        {ch.label}
+                        {channelCardHeading(ch.label)}
                       </h3>
-                      {ch.streamsLabel === "estimate" || ch.hasDerivedValues ? (
+                      {isEstimatedStreams(ch.streamsLabel) || ch.hasDerivedValues ? (
                         <StatusPill tone="warning">Derived</StatusPill>
                       ) : (
-                        <StatusPill tone="neutral">Measured</StatusPill>
+                        <StatusPill tone="neutral">
+                          {STREAMS_LABEL_DISPLAY.measured}
+                        </StatusPill>
                       )}
                     </div>
                     <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-body-sm">
                       <ChannelMetric label="Spend" value={ch.spend} money />
                       <ChannelMetric
                         label="Streams"
-                        value={ch.streamsLabel === "n/a" ? null : ch.streams}
-                        estimate={ch.streamsLabel === "estimate"}
+                        value={
+                          isUnavailableStreams(ch.streamsLabel) ? null : ch.streams
+                        }
+                        estimate={isEstimatedStreams(ch.streamsLabel)}
                       />
                       <ChannelMetric label="Impressions" value={ch.impressions} />
                       <ChannelMetric label="Clicks" value={ch.clicks} />
@@ -808,7 +827,7 @@ export function AdReportDashboard({
       ) : null}
 
       {hasCreatives && campaignsWithCreatives.length > 0 ? (
-        <section className="mt-8" aria-label="Creatives by campaign">
+        <section className="mt-8" aria-label="Creatives by Campaign">
           <h2 className="text-section font-semibold text-foreground">
             Creatives
           </h2>
@@ -850,9 +869,9 @@ export function AdReportDashboard({
         </section>
       ) : null}
 
-      <section className="mt-8" aria-label="Marketing objective compare">
+      <section className="mt-8" aria-label="Marketing Objective Compare">
         <h2 className="text-section font-semibold text-foreground">
-          Marketing objective compare
+          Marketing Objective Compare
         </h2>
         <ul className="mt-3 divide-y divide-border-subtle overflow-hidden rounded-instrument border border-border bg-surface md:hidden print:hidden">
           {visibleCampaigns.length === 0 ? (
@@ -908,14 +927,16 @@ export function AdReportDashboard({
                         <span className="text-foreground">
                           {displayCampaignName(c)}
                         </span>
-                        {c.streamsLabel === "estimate" ||
+                        {isEstimatedStreams(c.streamsLabel) ||
                         c.derivedFields.length > 0 ? (
                           <span className="ml-2">
                             <StatusPill tone="warning">Derived</StatusPill>
                           </span>
                         ) : c.platform === "spotify" ? (
                           <span className="ml-2">
-                            <StatusPill tone="neutral">Measured</StatusPill>
+                            <StatusPill tone="neutral">
+                              {STREAMS_LABEL_DISPLAY.measured}
+                            </StatusPill>
                           </span>
                         ) : null}
                         {!c.usableForModeling ? (
@@ -977,7 +998,7 @@ export function AdReportDashboard({
         <p>
           Red Light Creative · Read-only performance snapshot.{" "}
           <sup>*</sup> Meta streams are modeled estimates; Spotify attributed
-          streams are measured. Week-1 comparisons use D1–D7 only.
+          streams are measured. Week 1 comparisons use Days 1 to 7 only.
         </p>
       </footer>
     </div>

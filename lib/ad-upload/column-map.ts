@@ -10,6 +10,7 @@
  *   linkfire_visits / linkfire_spotify_clicks → same DB names (Meta)
  */
 
+import { classifyMetaSurfaceFromCtr } from "@/lib/ad-campaign-surface";
 import type {
   AdUploadPlatform,
   CanonicalField,
@@ -20,7 +21,7 @@ import type {
 export const SPOTIFY_DB_COLUMNS = {
   artist: "artist",
   release_key: "release_key",
-  format: "format",
+  format: "surface",
   spend: "spend_usd",
   reach: "reach",
   clicks: "clicks",
@@ -88,6 +89,7 @@ const DB_OR_ALIAS_TO_CANONICAL: Record<string, CanonicalField> = {
   start_date: "start_date",
   end_date: "end_date",
   format: "format",
+  surface: "format",
   objective: "objective",
   artist: "artist",
   release_key: "release_key",
@@ -123,7 +125,7 @@ export function canonicalToSpotifyDbRow(
     artist: row.artist,
     release_key: row.release_key,
     campaign_uid: extras.campaign_uid,
-    format: row.format,
+    [SPOTIFY_DB_COLUMNS.format]: row.format,
     [SPOTIFY_DB_COLUMNS.spend]: row.spend,
     [SPOTIFY_DB_COLUMNS.reach]: row.reach,
     [SPOTIFY_DB_COLUMNS.clicks]: row.clicks,
@@ -155,6 +157,7 @@ export function canonicalToMetaDbRow(
     source_partner: string | null;
   },
 ): Record<string, unknown> {
+  const classified = classifyMetaSurfaceFromCtr(row.clicks, row.impressions);
   return {
     release_key: row.release_key,
     campaign_uid: extras.campaign_uid,
@@ -171,6 +174,8 @@ export function canonicalToMetaDbRow(
     end_date: row.end_date,
     derived_fields: extras.derived_fields,
     source_partner: extras.source_partner,
+    surface: classified.surface,
+    surface_source: classified.source,
   };
 }
 
@@ -188,8 +193,8 @@ export function spotifyDbPayloadRejectReason(
   if (dbRow.release_key == null || String(dbRow.release_key).trim() === "") {
     missing.push("release_key");
   }
-  if (dbRow.format !== "marquee" && dbRow.format !== "showcase") {
-    missing.push("format");
+  if (dbRow.surface !== "marquee" && dbRow.surface !== "showcase") {
+    missing.push("surface");
   }
   const spend = Number(dbRow.spend_usd);
   if (!(spend > 0)) missing.push("spend_usd");
@@ -220,7 +225,7 @@ export function spotifyDbRowToCanonical(
   | "end_date"
   | "source_row_index"
 > {
-  const formatRaw = String(dbRow.format ?? "");
+  const formatRaw = String(dbRow.surface ?? "");
   return {
     spend: numOrNull(dbRow.spend_usd),
     reach: numOrNull(dbRow.reach),

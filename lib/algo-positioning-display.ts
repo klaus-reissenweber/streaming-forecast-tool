@@ -1,7 +1,7 @@
 import { formatCompactNumber } from "@/lib/format";
 import type { AlgoBand, AlgoPositioningResult } from "@/lib/forecast";
 
-/** UI labels and copy for algo positioning bands (prototype v3.2). */
+/** UI labels and copy for algorithmic positioning bands (prototype v3.2). */
 export const ALGO_BAND_DISPLAY: Record<
   AlgoBand,
   { label: string; description: string }

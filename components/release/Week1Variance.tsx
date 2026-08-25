@@ -72,7 +72,7 @@ export function Week1Variance({
   return (
     <section
       className="motion-fade-up relative min-w-0 overflow-hidden rounded-instrument border border-border bg-surface px-4 py-3.5 md:px-5"
-      aria-label="Week-1 forecast"
+      aria-label="Week 1 Forecast"
     >
       <span
         className="pointer-events-none absolute inset-y-0 left-0 w-1 origin-top bg-projected animate-instrument-rule-grow"
@@ -80,7 +80,7 @@ export function Week1Variance({
       />
 
       <SectionHeader description={lockedAtDisplay}>
-        Week-1 forecast
+        Week 1 Forecast
       </SectionHeader>
 
       <div className="mt-4 flex flex-col gap-5">

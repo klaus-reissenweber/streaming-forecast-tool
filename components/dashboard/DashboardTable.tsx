@@ -64,7 +64,7 @@ function formatDayIntoCampaign(day: number | null): string {
   if (day == null) {
     return "—";
   }
-  return `D${day}`;
+  return String(day);
 }
 
 function formatProjectedWk1Cell(row: DashboardRow): ReactNode {
@@ -76,7 +76,7 @@ function formatProjectedWk1Cell(row: DashboardRow): ReactNode {
         {formatCompactNumber(row.projectedWk1)}
       </span>
       <span className={`text-[11px] tabular-nums ${deltaClass}`}>
-        vs {formatCompactNumber(row.lockedWk1)} forecast
+        against {formatCompactNumber(row.lockedWk1)} forecast
         {row.healthStatus !== "awaiting" ? (
           <>
             <span className="text-secondary"> · </span>
@@ -195,7 +195,7 @@ export function DashboardTable({ viewModel }: DashboardTableProps) {
   return (
     <section
       className="motion-fade-up overflow-hidden rounded-instrument border border-border bg-surface"
-      aria-label="Active releases"
+      aria-label="Active Releases"
     >
       <div className="p-5">
         <SectionHeader>Releases</SectionHeader>
@@ -234,7 +234,7 @@ export function DashboardTable({ viewModel }: DashboardTableProps) {
                   Health
                 </th>
                 <th className="px-4 py-3 font-medium uppercase tracking-[0.06em]">
-                  Projected wk1
+                  Projected Week 1
                 </th>
                 <th className="px-4 py-3 font-medium uppercase tracking-[0.06em]">
                   Flags

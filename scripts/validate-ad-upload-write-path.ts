@@ -104,8 +104,8 @@ function main(): void {
   assert(errors.length === 0, `write errors: ${errors.join("; ")}`);
   assert(writeable.length === 3, `expected 3 writeable rows, got ${writeable.length}`);
   assert(
-    writeable.every((r) => r && r.format === "marquee"),
-    "format from file constant",
+    writeable.every((r) => r && r.surface === "marquee"),
+    "surface from file constant",
   );
   const w0 = writeable[0]!;
   const w2 = writeable[2]!;

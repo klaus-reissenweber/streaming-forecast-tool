@@ -3,7 +3,7 @@ import Link from "next/link";
 export default function ReleaseNotFound() {
   return (
     <main className="mx-auto max-w-2xl px-5 py-16 text-center">
-      <h1 className="text-2xl font-semibold text-stone-900">Release not found</h1>
+      <h1 className="text-2xl font-semibold text-stone-900">Release Not Found</h1>
       <p className="mt-3 text-sm leading-relaxed text-stone-600">
         This release doesn&apos;t exist, or the link may be incorrect. Check the URL
         and try again.

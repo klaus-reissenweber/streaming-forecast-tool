@@ -153,8 +153,8 @@ export function DailyEntrySection({
   }
 
   return (
-    <section className="motion-fade-up" aria-label="Daily data">
-      <SectionHeader>Daily data</SectionHeader>
+    <section className="motion-fade-up" aria-label="Daily Data">
+      <SectionHeader>Daily Data</SectionHeader>
 
       <div className="mt-4 rounded-instrument border border-border bg-surface p-5">
         {sectionError ? (

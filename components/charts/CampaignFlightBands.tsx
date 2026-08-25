@@ -36,7 +36,7 @@ export function CampaignFlightBands({
         paddingLeft: axisWidth + plotInset,
         paddingRight: rightMargin + plotInset,
       }}
-      aria-label="Campaign flight windows"
+      aria-label="Campaign Flight Windows"
     >
       {bands.map((band, index) => {
         const plot = flightBandPlotStyle(band.startDay, band.endDay, windowDays);
@@ -50,7 +50,7 @@ export function CampaignFlightBands({
                 width: plot.width,
                 backgroundColor: color,
               }}
-              title={`${band.name} · D${band.startDay}–D${band.endDay}`}
+              title={`${band.name} · Days ${band.startDay}–${band.endDay}`}
             >
               <span className="block truncate px-1.5 text-[10px] font-medium leading-4 text-secondary">
                 {band.name}

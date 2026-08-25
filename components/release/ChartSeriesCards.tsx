@@ -79,7 +79,7 @@ export function ChartSeriesCards({
     <div
       className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-6"
       role="group"
-      aria-label="Chart series"
+      aria-label="Chart Series"
     >
       {series.map((item) => (
         <button

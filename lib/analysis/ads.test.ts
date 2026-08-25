@@ -49,7 +49,7 @@ describe("campaignFindings", () => {
       bassRelease,
     );
     expect(f[0]!.text).toBe(
-      "CPC of $0.19 is excellent for a bass traffic campaign, 24 percent below the $0.25 threshold.",
+      "Cost per click of $0.19 is excellent for a bass traffic campaign, 24 percent below the $0.25 threshold.",
     );
   });
 
@@ -155,7 +155,7 @@ describe("campaignFindings", () => {
     const best = f.find((x) => x.id === "market-best")!;
     const worst = f.find((x) => x.id === "market-worst")!;
     expect(best.text).toBe(
-      "Chicago led on both counts: 6.48 percent click-through at $0.12 per click.",
+      "Chicago led on both counts: 6.48 percent click-through rate at $0.12 per click.",
     );
     expect(worst.text).toBe("Dallas trailed at $0.31 per click.");
   });

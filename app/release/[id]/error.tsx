@@ -31,7 +31,7 @@ export default function ReleaseError({ error, reset }: ReleaseErrorProps) {
         }
       >
         <h1 className="text-xl font-semibold text-stone-900">
-          {corrupt ? "Release data problem" : "Couldn\u2019t load release"}
+          {corrupt ? "Release Data Problem" : "Couldn\u2019t Load Release"}
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-stone-700">{message}</p>
 

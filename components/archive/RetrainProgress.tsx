@@ -173,7 +173,7 @@ export function RetrainProgress({
   return (
     <section
       className="motion-fade-up rounded-instrument border border-border bg-surface p-5"
-      aria-label="Retrain progress"
+      aria-label="Retrain Progress"
     >
       <SectionHeader>Retrain</SectionHeader>
 
@@ -184,7 +184,7 @@ export function RetrainProgress({
           aria-valuemin={0}
           aria-valuemax={threshold}
           aria-valuenow={progressCount}
-          aria-label="Eligible releases closed since last retrain"
+          aria-label="Eligible Releases Closed Since Last Retrain"
         >
           <div
             className={

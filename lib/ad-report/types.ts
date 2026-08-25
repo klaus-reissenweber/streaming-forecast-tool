@@ -9,13 +9,19 @@ export type AdReportChannelId =
   | "meta_traffic"
   | "meta_awareness";
 
+/** Stored in metrics_snapshot — map to display text at render time. */
+export type AdReportStreamsLabel = "estimated" | "measured" | "unavailable";
+
+/** Stored in metrics_snapshot — map to display text at render time. */
+export type AdReportResultLabel = "streams" | "spotify_clicks" | "impressions";
+
 export type AdReportChannelSnapshot = {
   id: AdReportChannelId;
   label: string;
   spend: number;
   /** Primary stream output (measured Spotify; estimated Meta traffic). */
   streams: number | null;
-  streamsLabel: "measured" | "estimate" | "n/a";
+  streamsLabel: AdReportStreamsLabel;
   /** Null when the metric was not captured (never show a bare 0). */
   impressions: number | null;
   reach: number | null;
@@ -45,7 +51,7 @@ export type AdReportCampaignRow = {
   objective: string | null;
   spend: number;
   streams: number | null;
-  streamsLabel: "measured" | "estimate" | null;
+  streamsLabel: AdReportStreamsLabel | null;
   impressions: number | null;
   reach: number | null;
   clicks: number | null;
@@ -67,7 +73,7 @@ export type AdReportCampaignRow = {
   creatives: AdReportCreativeAsset[];
   /** Channel planned spend allocated to this campaign. */
   budget?: number | null;
-  resultLabel?: string | null;
+  resultLabel?: AdReportResultLabel | null;
   resultActual?: number | null;
   resultForecast?: number | null;
   status?: "achieved" | "under_achieved" | null;
