@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/songstats-totals",
-      "schedule": "0 6,14,22 * * *"
+      "schedule": "0 14 * * *"
     }
   ]
 }
