@@ -67,6 +67,7 @@ export interface ReleaseArtistWriteRow {
   monthly_listeners: number | null;
   role: ArtistRole;
   position: number;
+  songstats_artist_id?: string | null;
 }
 
 export const MIN_ARTIST_MONTHLY_LISTENERS = 1;
