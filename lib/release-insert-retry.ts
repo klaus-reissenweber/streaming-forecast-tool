@@ -41,7 +41,7 @@ export function isProtectedSongstatsReleaseColumn(column: string): boolean {
  * Ad-spend columns may be omitted on PGRST204. Songstats columns may not.
  * If a retry would drop a protected column, fail instead.
  */
-export function rowForPgrst204Retry<T extends Record<string, unknown>>(
+export function rowForPgrst204Retry<T extends object>(
   row: T,
   error: { code?: string | null; message?: string | null },
 ): { ok: true; row: T } | { ok: false; error: string } {
@@ -50,7 +50,7 @@ export function rowForPgrst204Retry<T extends Record<string, unknown>>(
     return { ok: false, error: SONGSTATS_SCHEMA_REQUIRED_ERROR };
   }
 
-  const next = { ...row };
+  const next = { ...row } as T & Record<string, unknown>;
   for (const column of OPTIONAL_AD_SPEND_COLUMNS) {
     delete next[column];
   }
