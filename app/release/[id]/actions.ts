@@ -11,6 +11,11 @@ import { replaceReleaseArtists } from "@/lib/persist-release-artists";
 import { isValidReleaseId, loadRelease } from "@/lib/load-release";
 import type { ReleaseArtistDraft } from "@/lib/release-artists";
 import { releaseSaveErrorMessage } from "@/lib/release-save-error";
+import {
+  ingestReleaseTotals,
+  RefreshTooSoonError,
+  assertRefreshAllowed,
+} from "@/lib/songstats/ingest";
 import { createClient } from "@/lib/supabase/server";
 import type { DailyDayFieldInput, DailyDayInput } from "@/lib/validate-daily-day";
 import {
@@ -44,6 +49,10 @@ export type CloseReleaseResult =
 export type SaveReleaseArtistsResult =
   | { success: true }
   | { success: false; error: string; errors?: string[] };
+
+export type RefreshSongstatsResult =
+  | { success: true }
+  | { success: false; error: string };
 
 const RELEASE_NOT_FOUND = "Release not found.";
 const RELEASE_CLOSED =
@@ -132,6 +141,50 @@ export async function closeRelease(
   revalidatePath("/archive");
 
   return { success: true, action: "closed" };
+}
+
+export async function refreshSongstatsTotals(
+  releaseId: string,
+): Promise<RefreshSongstatsResult> {
+  const auth = await requireAllowedUser();
+  if (!auth.ok) {
+    return { success: false, error: auth.error };
+  }
+  if (!isValidReleaseId(releaseId)) {
+    return { success: false, error: INVALID_RELEASE_ID };
+  }
+
+  const release = await loadRelease(releaseId);
+  if (!release) {
+    return { success: false, error: RELEASE_NOT_FOUND };
+  }
+  if (release.status !== "active") {
+    return { success: false, error: "Songstats refresh is only available on active releases." };
+  }
+  if (!release.isrc) {
+    return { success: false, error: "This release has no ISRC." };
+  }
+
+  try {
+    await assertRefreshAllowed(releaseId);
+    await ingestReleaseTotals({
+      releaseId,
+      isrc: release.isrc,
+      releaseDate: release.release_date,
+      trigger: "manual",
+    });
+  } catch (err) {
+    if (err instanceof RefreshTooSoonError) {
+      return { success: false, error: err.message };
+    }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Songstats refresh failed.",
+    };
+  }
+
+  revalidatePath(`/release/${releaseId}`);
+  return { success: true };
 }
 
 /**

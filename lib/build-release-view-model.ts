@@ -101,7 +101,9 @@ function chartSeriesFromDailyData(dailyData: DailyDataPoint[]): {
   const streamsByDay = new Map<number, number>();
 
   for (const row of dailyData) {
-    streamsByDay.set(row.day_number, row.streams);
+    if (row.streams != null) {
+      streamsByDay.set(row.day_number, row.streams);
+    }
   }
 
   const actualStreamsByDay = Array.from({ length: 28 }, (_, index) =>

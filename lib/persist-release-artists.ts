@@ -57,6 +57,7 @@ export async function replaceReleaseArtists(
     monthly_listeners: row.monthly_listeners,
     role: row.role,
     position: row.position,
+    songstats_artist_id: row.songstats_artist_id ?? null,
   }));
 
   const { error: insertError } = await supabase

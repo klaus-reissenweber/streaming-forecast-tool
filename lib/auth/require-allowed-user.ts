@@ -1,4 +1,5 @@
 import { isAllowedEmail } from "@/lib/auth/allowed-emails";
+import { readDevBypassUser } from "@/lib/auth/dev-bypass";
 import { createClient } from "@/lib/supabase/server";
 import type { User } from "@supabase/supabase-js";
 
@@ -11,6 +12,23 @@ export type RequireAllowedUserResult =
  * Do not rely on middleware alone — actions are directly callable.
  */
 export async function requireAllowedUser(): Promise<RequireAllowedUserResult> {
+  const bypass = readDevBypassUser();
+  if (bypass) {
+    const supabase = await createClient();
+    return {
+      ok: true,
+      user: {
+        id: bypass.id,
+        email: bypass.email,
+        aud: "authenticated",
+        app_metadata: {},
+        user_metadata: {},
+        created_at: new Date(0).toISOString(),
+      } as User,
+      supabase,
+    };
+  }
+
   const supabase = await createClient();
   const {
     data: { user },

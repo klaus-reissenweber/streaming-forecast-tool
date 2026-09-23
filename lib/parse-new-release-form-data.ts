@@ -31,6 +31,10 @@ function parseArtistsFromFormData(formData: FormData): NewReleaseArtistDraft[] {
             monthlyListeners:
               record.monthlyListeners == null ? "" : String(record.monthlyListeners),
             role: isArtistRole(roleRaw) ? roleRaw : "",
+            songstatsArtistId:
+              typeof record.songstatsArtistId === "string"
+                ? record.songstatsArtistId
+                : null,
           };
         });
       }

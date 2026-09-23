@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { createRelease } from "@/app/new/actions";
 import { AdSpendLiveForecast } from "@/components/new/AdSpendLiveForecast";
-import { MonthlyListenersField } from "@/components/new/MonthlyListenersField";
+import { SongstatsLockFields } from "@/components/new/SongstatsLockFields";
 import { ToggleGroup } from "@/components/new/ToggleGroup";
 import {
   EDITORIAL_TIER_DEFINITIONS,
@@ -141,6 +141,9 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
     ...(submitError ? [submitError] : []),
   ] as string[];
 
+  const dateWarning = validation.warnings.some((item) =>
+    item.includes("differs from the entered date"),
+  );
   const canSubmit = validation.valid && !pending;
 
   function setField<K extends keyof NewReleaseFormRawValues>(
@@ -263,22 +266,19 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
               disabled={pending}
             />
           </label>
+        </div>
 
-          <label className="flex flex-col gap-1">
-            <span className="text-body-sm font-medium text-foreground">
-              Artist
-            </span>
-            <input
-              className={TEXT_INPUT_CLASS}
-              value={values.artistName}
-              onChange={(event) => setField("artistName", event.target.value)}
-              disabled={pending}
-            />
-            <span className="text-caption text-secondary">
-              Spotify credit line (display only). Forecast monthly listeners
-              come from the primary artist below.
-            </span>
-          </label>
+        <div className="mt-4">
+          <SongstatsLockFields
+            values={values}
+            setValues={(updater) => {
+              setValues(updater);
+              setSubmitError(null);
+              setServerFieldErrors({});
+            }}
+            disabled={pending}
+            onMessage={setSubmitError}
+          />
         </div>
 
         <div className="mt-4 space-y-3">
@@ -347,17 +347,7 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
                 </div>
 
                 <div className="mt-3">
-                  {isPrimary ? (
-                    <MonthlyListenersField
-                      inputId={`artist-ml-${index}`}
-                      label="Monthly listeners (primary — used by the forecast)"
-                      value={artist.monthlyListeners}
-                      onChange={(monthlyListeners) =>
-                        setArtist(index, { monthlyListeners })
-                      }
-                      disabled={pending}
-                    />
-                  ) : (
+                  {isPrimary ? null : (
                     <label className="flex flex-col gap-1 sm:max-w-xs">
                       <span className="text-body-sm font-medium text-foreground">
                         Monthly listeners (optional)
@@ -563,9 +553,11 @@ export function ReleaseCreationForm({ adModel }: { adModel: AdModel }) {
           >
             {pending
               ? "Locking forecast…"
-              : canSubmit
-                ? "Create release & lock forecast"
-                : "Fix the items above to continue"}
+              : !canSubmit
+                ? "Fix the items above to continue"
+                : dateWarning
+                  ? "Save anyway"
+                  : "Create release & lock forecast"}
           </button>
         </div>
       </FormSection>

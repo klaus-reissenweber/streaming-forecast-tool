@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isAllowedEmail } from "@/lib/auth/allowed-emails";
+import { readDevBypassUser } from "@/lib/auth/dev-bypass";
 
 const PUBLIC_PATHS = ["/login", "/auth/callback", "/report"];
 
@@ -11,6 +12,10 @@ function isPublicPath(pathname: string): boolean {
 }
 
 export async function updateSession(request: NextRequest) {
+  if (readDevBypassUser()) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(

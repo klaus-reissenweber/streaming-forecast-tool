@@ -48,6 +48,7 @@ export interface ReleaseRow {
   status: string;
   created_at: string;
   closed_at: string | null;
+  isrc?: string | null;
 }
 
 /** Validated release row used by the release detail view and forecast mapping. */
@@ -81,6 +82,7 @@ export type ReleaseRecord = Omit<
   campaign_duration_days: number | null;
   meta_traffic_spend_planned: number;
   meta_awareness_spend_planned: number;
+  isrc?: string | null;
 };
 
 /** Row shape returned by Supabase `daily_data` select. */
@@ -88,8 +90,8 @@ export interface DailyDataRow {
   id: string;
   release_id: string;
   day_number: number;
-  streams: number;
-  saves: number;
+  streams: number | null;
+  saves: number | null;
   recorded_at: string;
 }
 
@@ -139,6 +141,7 @@ const RELEASE_SELECT_COLUMNS = [
   "status",
   "created_at",
   "closed_at",
+  "isrc",
 ].join(", ");
 
 const DAILY_DATA_SELECT_COLUMNS = [
@@ -339,6 +342,10 @@ export function parseReleaseRow(row: ReleaseRow): ReleaseRecord {
       status: parseEnum(row.status, "status", ["active", "closed"] as const),
       created_at: parseRequiredString(row.created_at, "created_at"),
       closed_at: parseNullableTimestamp(row.closed_at, "closed_at"),
+      isrc:
+        typeof row.isrc === "string" && row.isrc.trim() !== ""
+          ? row.isrc.trim()
+          : null,
     };
   } catch (err) {
     const message =
@@ -362,8 +369,8 @@ export function parseDailyDataRow(row: DailyDataRow): DailyDataPoint {
       id: parseRequiredString(row.id, "id"),
       release_id: parseRequiredString(row.release_id, "release_id"),
       day_number: dayNumber,
-      streams: parseInteger(row.streams, "streams", { min: 0 }),
-      saves: parseInteger(row.saves, "saves", { min: 0 }),
+      streams: parseOptionalIntegerOrNull(row.streams, "streams"),
+      saves: parseOptionalIntegerOrNull(row.saves, "saves"),
       recorded_at: parseRequiredString(row.recorded_at, "recorded_at"),
     };
   } catch (err) {

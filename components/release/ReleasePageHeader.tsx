@@ -1,4 +1,5 @@
 import { CloseReleaseButton } from "@/components/release/CloseReleaseButton";
+import { RefreshSongstatsButton } from "@/components/release/RefreshSongstatsButton";
 import { ReleaseArtistRoster } from "@/components/release/ReleaseArtistRoster";
 import { ReleaseReportActions } from "@/components/release/ReleaseReportActions";
 import { StatusPill } from "@/components/ui/StatusPill";
@@ -19,6 +20,7 @@ export interface ReleasePageHeaderProps {
   reportUrl?: string | null;
   artists?: readonly ReleaseArtist[];
   forecastUsedMonthlyListeners: number;
+  isrc?: string | null;
 }
 
 function formatGenreLabel(genre: Genre): string {
@@ -57,6 +59,7 @@ export function ReleasePageHeader({
   reportUrl = null,
   artists = [],
   forecastUsedMonthlyListeners,
+  isrc = null,
 }: ReleasePageHeaderProps) {
   const tierLabel = EDITORIAL_TIER_DEFINITIONS[editorialTier].label;
   const badge = statusBadge(status);
@@ -85,6 +88,9 @@ export function ReleasePageHeader({
           <StatusPill tone={badge.tone}>{badge.label}</StatusPill>
           {status === "active" ? (
             <CloseReleaseButton releaseId={releaseId} />
+          ) : null}
+          {status === "active" && isrc ? (
+            <RefreshSongstatsButton releaseId={releaseId} />
           ) : null}
           <ReleaseReportActions
             releaseId={releaseId}

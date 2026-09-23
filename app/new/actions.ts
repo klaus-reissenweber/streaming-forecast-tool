@@ -9,13 +9,16 @@ import {
   toReleaseArtistInsertRows,
   toReleaseForecastInputs,
 } from "@/lib/map-new-release";
+import { rowForPgrst204Retry } from "@/lib/release-insert-retry";
 import { logActiveModelSource } from "@/lib/model/forecast-model";
 import { rawValuesFromFormData } from "@/lib/parse-new-release-form-data";
 import {
   RELEASE_SAVE_ERROR_FATAL,
   releaseSaveErrorMessage,
 } from "@/lib/release-save-error";
+import { isDevAuthBypassActive } from "@/lib/auth/dev-bypass";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import {
   parseAndValidateNewReleaseForm,
   type NewReleaseFieldKey,
@@ -90,18 +93,26 @@ export async function createRelease(
       modelVersionId,
     });
 
-    const supabase = await createClient();
+    const supabase = isDevAuthBypassActive()
+      ? createServiceClient()
+      : await createClient();
     let { data, error } = await supabase
       .from("releases")
       .insert(row)
       .select("id")
       .single();
 
-    // Optional ad-spend columns may be absent until migrations land.
+    // Optional ad-spend columns may be absent until those migrations land.
+    // Songstats lock columns are never stripped — fail visibly instead.
     if (error && error.code === "PGRST204") {
+      const retry = rowForPgrst204Retry(row, error);
+      if (!retry.ok) {
+        return { success: false, error: retry.error };
+      }
       if (
         parsed.values.metaTrafficSpendPlanned > 0 &&
-        parsed.values.metaAwarenessSpendPlanned > 0
+        parsed.values.metaAwarenessSpendPlanned > 0 &&
+        retry.row.meta_traffic_spend_planned === undefined
       ) {
         return {
           success: false,
@@ -109,18 +120,17 @@ export async function createRelease(
             "Split Meta traffic/awareness spend requires migration 202608050001. Apply it, or enter only one Meta spend type.",
         };
       }
-      const {
-        meta_traffic_spend_planned: _t,
-        meta_awareness_spend_planned: _a,
-        spotify_marquee_spend_planned: _m,
-        spotify_showcase_spend_planned: _s,
-        ...legacyRow
-      } = row;
       ({ data, error } = await supabase
         .from("releases")
-        .insert(legacyRow)
+        .insert(retry.row)
         .select("id")
         .single());
+      if (error?.code === "PGRST204") {
+        const again = rowForPgrst204Retry(retry.row, error);
+        if (!again.ok) {
+          return { success: false, error: again.error };
+        }
+      }
     }
 
     if (error || !data?.id) {

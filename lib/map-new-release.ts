@@ -36,6 +36,17 @@ export interface NewReleaseInsertRow {
   /** Present when 202608050001 is applied; omitted otherwise by create action. */
   meta_traffic_spend_planned?: number;
   meta_awareness_spend_planned?: number;
+  isrc?: string | null;
+  songstats_track_id?: string | null;
+  songstats_artist_id?: string | null;
+  inputs_version?: number;
+  ml_captured_at?: string | null;
+  ml_overridden?: boolean;
+  ml_override_reason?: string | null;
+  followers_at_release?: number | null;
+  popularity_at_release?: number | null;
+  label?: string | null;
+  forecast_artist_source?: string | null;
 }
 
 export function toReleaseForecastInputs(
@@ -92,6 +103,19 @@ export function toNewReleaseInsertRow(
     locked_forecast_saves: forecast.lockedForecastSaves,
     model_version_used: forecast.modelVersionId,
     status: "active",
+    isrc: values.isrc || null,
+    songstats_track_id: values.songstatsTrackId,
+    songstats_artist_id: values.songstatsArtistId,
+    inputs_version: values.inputsVersion,
+    ml_captured_at: values.mlCapturedAt,
+    ml_overridden: values.mlOverridden,
+    ml_override_reason: values.mlOverrideReason || null,
+    followers_at_release:
+      values.inputsVersion === 2 ? values.followers : null,
+    popularity_at_release:
+      values.inputsVersion === 2 ? values.popularity : null,
+    label: values.label || null,
+    forecast_artist_source: values.forecastArtistSource || null,
   };
 }
 
@@ -112,6 +136,7 @@ export function toReleaseArtistInsertRows(
       monthly_listeners: row.monthlyListeners,
       role: row.role,
       position: index + 1,
+      songstats_artist_id: row.songstatsArtistId,
     }));
 }
 
@@ -130,4 +155,17 @@ export const DEFAULT_NEW_RELEASE_FORM_VALUES: NewReleaseFormRawValues = {
   spotifyShowcaseSpendPlanned: 0,
   metaTrafficSpendPlanned: 0,
   metaAwarenessSpendPlanned: 0,
+  isrc: "",
+  songstatsTrackId: null,
+  songstatsArtistId: null,
+  label: "",
+  genres: [],
+  followers: "",
+  popularity: "",
+  mlCapturedAt: null,
+  mlOverridden: false,
+  mlOverrideReason: "",
+  forecastArtistSource: "",
+  fetchedReleaseDate: null,
+  songstatsFallback: false,
 };

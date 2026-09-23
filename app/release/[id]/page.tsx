@@ -128,6 +128,7 @@ export default async function ReleasePage({ params }: ReleasePageProps) {
           forecastUsedMonthlyListeners={
             release.monthly_listeners_at_release
           }
+          isrc={release.isrc}
         />
       </div>
 

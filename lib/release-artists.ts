@@ -34,6 +34,7 @@ export interface ReleaseArtistInsert {
   monthly_listeners: number | null;
   role: ArtistRole;
   position: number;
+  songstats_artist_id?: string | null;
 }
 
 export function isArtistRole(value: string): value is ArtistRole {

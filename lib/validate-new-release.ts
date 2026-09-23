@@ -15,6 +15,13 @@ import {
   isArtistRole,
   type ArtistRole,
 } from "@/lib/release-artists";
+import type { ForecastArtistSource, InputsVersion } from "@/lib/songstats/create-form";
+import {
+  inputsVersionFor,
+  ISRC_RECHECK_ERROR,
+  isrcRequiresRecheck,
+  releaseDateWarning,
+} from "@/lib/songstats/create-form";
 
 /** One credited artist on the create form (1–4). */
 export interface NewReleaseArtistValues {
@@ -22,6 +29,7 @@ export interface NewReleaseArtistValues {
   /** Null when unknown (non-primary only). */
   monthlyListeners: number | null;
   role: ArtistRole | "";
+  songstatsArtistId: string | null;
 }
 
 /** Raw roster row while typing. Empty ML string = unknown. */
@@ -29,6 +37,7 @@ export interface NewReleaseArtistDraft {
   name: string;
   monthlyListeners: number | string;
   role: ArtistRole | "";
+  songstatsArtistId?: string | null;
 }
 
 /** Coerced, typed values used by validation and forecast mapping. */
@@ -55,6 +64,20 @@ export interface NewReleaseFormValues {
   /** traffic + awareness (legacy total). */
   metaSpendPlanned: number;
   metaObjective: MetaObjective;
+  isrc: string;
+  songstatsTrackId: string | null;
+  songstatsArtistId: string | null;
+  label: string;
+  genres: string[];
+  followers: number | null;
+  popularity: number | null;
+  mlCapturedAt: string | null;
+  mlOverridden: boolean;
+  mlOverrideReason: string;
+  inputsVersion: InputsVersion;
+  forecastArtistSource: ForecastArtistSource | "";
+  fetchedReleaseDate: string | null;
+  songstatsFallback: boolean;
 }
 
 /**
@@ -75,6 +98,19 @@ export interface NewReleaseFormRawValues {
   spotifyShowcaseSpendPlanned: number | string;
   metaTrafficSpendPlanned: number | string;
   metaAwarenessSpendPlanned: number | string;
+  isrc?: string;
+  songstatsTrackId?: string | null;
+  songstatsArtistId?: string | null;
+  label?: string;
+  genres?: string[];
+  followers?: number | string | null;
+  popularity?: number | string | null;
+  mlCapturedAt?: string | null;
+  mlOverridden?: boolean;
+  mlOverrideReason?: string;
+  forecastArtistSource?: ForecastArtistSource | "";
+  fetchedReleaseDate?: string | null;
+  songstatsFallback?: boolean;
 }
 
 export type NewReleaseFieldKey = keyof NewReleaseFormValues;
@@ -92,6 +128,7 @@ export const DEFAULT_RELEASE_ARTIST_DRAFT: NewReleaseArtistDraft = {
   name: "",
   monthlyListeners: DEFAULT_MONTHLY_LISTENERS,
   role: "primary",
+  songstatsArtistId: null,
 };
 
 export function defaultNewReleaseArtists(): NewReleaseArtistDraft[] {
@@ -158,6 +195,19 @@ function draftHasContent(draft: NewReleaseArtistDraft): boolean {
   const hasMl =
     ml !== "" && ml != null && !(typeof ml === "number" && !Number.isFinite(ml));
   return Boolean(name || draft.role || hasMl);
+}
+
+function coerceOptionalWhole(
+  raw: number | string | null | undefined,
+): { value: number | null } {
+  if (raw == null || raw === "") {
+    return { value: null };
+  }
+  const numeric = typeof raw === "number" ? raw : Number(String(raw).trim());
+  if (!Number.isFinite(numeric) || !Number.isInteger(numeric)) {
+    return { value: null };
+  }
+  return { value: numeric };
 }
 
 function coerceOptionalMl(
@@ -283,6 +333,11 @@ export function coerceNewReleaseFormValues(
       name: draft.name.trim(),
       monthlyListeners,
       role: isArtistRole(draft.role) ? draft.role : "",
+      songstatsArtistId:
+        typeof draft.songstatsArtistId === "string" &&
+        draft.songstatsArtistId.trim() !== ""
+          ? draft.songstatsArtistId.trim()
+          : null,
     });
   }
   if (artists.length === 0) {
@@ -290,6 +345,7 @@ export function coerceNewReleaseFormValues(
       name: creditLine.trim(),
       monthlyListeners: ml.ok ? ml.value : DEFAULT_MONTHLY_LISTENERS,
       role: "primary",
+      songstatsArtistId: null,
     });
   }
 
@@ -301,6 +357,21 @@ export function coerceNewReleaseFormValues(
         ? ml.value
         : DEFAULT_MONTHLY_LISTENERS;
   const artistName = creditLine.trim() || (primary?.name ?? "");
+
+  const followers = coerceOptionalWhole(raw.followers);
+  const popularity = coerceOptionalWhole(raw.popularity);
+  const mlOverridden = Boolean(raw.mlOverridden);
+  const songstatsFallback = Boolean(raw.songstatsFallback);
+  const songstatsArtistId =
+    (typeof raw.songstatsArtistId === "string" && raw.songstatsArtistId.trim()) ||
+    primary?.songstatsArtistId ||
+    null;
+  const fetched = Boolean(raw.mlCapturedAt && songstatsArtistId);
+  const inputsVersion = inputsVersionFor({
+    fetched,
+    overridden: mlOverridden,
+    fallback: songstatsFallback,
+  });
 
   const values: NewReleaseFormValues = {
     trackName: raw.trackName,
@@ -320,6 +391,20 @@ export function coerceNewReleaseFormValues(
     metaAwarenessSpendPlanned: awareness,
     metaSpendPlanned: traffic + awareness,
     metaObjective: deriveMetaObjectiveFromSpends(traffic, awareness),
+    isrc: (raw.isrc ?? "").trim(),
+    songstatsTrackId: raw.songstatsTrackId?.trim() || null,
+    songstatsArtistId,
+    label: (raw.label ?? "").trim(),
+    genres: Array.isArray(raw.genres) ? raw.genres : [],
+    followers: followers.value,
+    popularity: popularity.value,
+    mlCapturedAt: raw.mlCapturedAt ?? null,
+    mlOverridden,
+    mlOverrideReason: (raw.mlOverrideReason ?? "").trim(),
+    inputsVersion,
+    forecastArtistSource: raw.forecastArtistSource ?? "",
+    fetchedReleaseDate: raw.fetchedReleaseDate ?? null,
+    songstatsFallback,
   };
 
   return { values, fieldErrors };
@@ -497,6 +582,22 @@ export function validateNewReleaseForm(
     warnings.push(
       "No paid spend entered. Forecast will be organic-only (no ad lift modeled).",
     );
+  }
+
+  if (values.mlOverridden && !values.mlOverrideReason.trim()) {
+    fieldErrors.mlOverrideReason = "Override requires a reason.";
+  }
+
+  if (isrcRequiresRecheck(values.isrc, values.songstatsTrackId)) {
+    fieldErrors.isrc = ISRC_RECHECK_ERROR;
+  }
+
+  const dateWarning = releaseDateWarning(
+    values.releaseDate,
+    values.fetchedReleaseDate ?? "",
+  );
+  if (dateWarning) {
+    warnings.push(dateWarning);
   }
 
   const valid =
