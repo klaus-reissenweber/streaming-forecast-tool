@@ -96,7 +96,7 @@ async function main(): Promise<number> {
     typed.set(row.day_number, row.streams);
     stored.set(row.day_number, {
       streams_songstats: row.streams_songstats,
-      quality: row.songstats_quality,
+      quality: null,
     });
   }
 
